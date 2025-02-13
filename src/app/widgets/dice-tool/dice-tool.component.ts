@@ -33,16 +33,16 @@ interface DiceType {
   `,
   styles: [`
     .dice-container {
-      padding: 16px;
+      padding: 8px;
     }
     .dice-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: 8px;
-      margin-bottom: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+      gap: 4px;
+      margin-bottom: 8px;
     }
     .dice-button {
-      padding: 4px;
+      padding: 2px;
       min-width: unset;
       height: auto;
       aspect-ratio: 1;
@@ -59,7 +59,7 @@ interface DiceType {
       border-radius: 4px;
     }
     .result-text {
-      font-size: 1.5em;
+      font-size: 1em;
       margin: 0;
       font-weight: bold;
     }
