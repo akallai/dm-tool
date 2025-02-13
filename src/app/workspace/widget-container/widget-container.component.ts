@@ -11,10 +11,11 @@ import { ImagePdfViewerComponent } from '../../widgets/image-pdf-viewer/image-pd
 import { NotepadComponent } from '../../widgets/notepad/notepad.component';
 import { RandomGeneratorComponent } from '../../widgets/random-generator/random-generator.component';
 import { DiceToolComponent } from '../../widgets/dice-tool/dice-tool.component';
+import { MusicWidgetComponent } from '../../widgets/music-widget/music-widget.component';
 import { ResizableDirective } from './resizable.directive';
 import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
 import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
-
+import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/music-settings-dialog/music-settings-dialog.component';
 
 @Component({
   selector: 'app-widget-container',
@@ -30,6 +31,7 @@ import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-set
     NotepadComponent,
     RandomGeneratorComponent,
     DiceToolComponent,
+    MusicWidgetComponent,
     ResizableDirective
   ]
 })
@@ -40,24 +42,19 @@ export class WidgetContainerComponent {
 
   constructor(private dialog: MatDialog) {}
 
-  
-
-  // Update the getTitle method in WidgetContainerComponent
-getTitle(type: WidgetType): string {
-  // If there's a title in the settings, use that instead of the default
-  if (this.widgetData.settings?.title) {
-    return this.widgetData.settings.title;
+  getTitle(type: WidgetType): string {
+    if (this.widgetData.settings?.title) {
+      return this.widgetData.settings.title;
+    }
+    const titles: Record<WidgetType, string> = {
+      'IMAGE_PDF': 'Image/PDF Viewer',
+      'NOTEPAD': 'Notepad',
+      'RANDOM_GENERATOR': 'Random Generator',
+      'DICE_TOOL': 'Dice Tool',
+      'MUSIC_WIDGET': 'Music Widget'
+    };
+    return titles[type] || 'Widget';
   }
-
-  // Otherwise fall back to the default titles
-  const titles: Record<WidgetType, string> = {
-    'IMAGE_PDF': 'Image/PDF Viewer',
-    'NOTEPAD': 'Notepad',
-    'RANDOM_GENERATOR': 'Random Generator',
-    'DICE_TOOL': 'Dice Tool'
-  };
-  return titles[type] || 'Widget';
-}
 
   onDragEnd(event: CdkDragEnd) {
     const currentTransform = this.widgetData.position;
@@ -106,7 +103,6 @@ getTitle(type: WidgetType): string {
         }
       });
     } else if (this.widgetData.type === 'RANDOM_GENERATOR') {
-      // Initialize settings if they don't exist
       if (!this.widgetData.settings.elements) {
         this.widgetData.settings.elements = [];
       }
@@ -118,6 +114,19 @@ getTitle(type: WidgetType): string {
   
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
+          this.widgetData.settings = result;
+          this.update.emit();
+        }
+      });
+    } else if (this.widgetData.type === 'MUSIC_WIDGET') {
+      const dialogRef = this.dialog.open(MusicSettingsDialogComponent, {
+        width: '400px',
+        data: { settings: this.widgetData.settings }
+      });
+    
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          console.log('Music settings result:', result);
           this.widgetData.settings = result;
           this.update.emit();
         }

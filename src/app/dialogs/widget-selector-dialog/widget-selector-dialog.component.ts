@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL';
+export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET';
 
 @Component({
   selector: 'app-widget-selector-dialog',
@@ -24,7 +24,8 @@ export class WidgetSelectorDialogComponent {
     { type: 'IMAGE_PDF', label: 'Image/PDF Viewer' },
     { type: 'NOTEPAD', label: 'Notepad' },
     { type: 'RANDOM_GENERATOR', label: 'Random Generator' },
-    { type: 'DICE_TOOL', label: 'Dice Tool' }
+    { type: 'DICE_TOOL', label: 'Dice Tool' },
+    { type: 'MUSIC_WIDGET', label: 'Music Widget' } // <-- New
   ];
 
   constructor(private dialogRef: MatDialogRef<WidgetSelectorDialogComponent>) {}

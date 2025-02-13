@@ -1,0 +1,11 @@
+<div class="music-widget">
+  <div class="button-grid">
+    <button mat-raised-button 
+            *ngFor="let mapping of mappings" 
+            (click)="playSound(mapping)" 
+            [disabled]="!mapping.fileDataUrl"
+            [class.playing]="currentMapping === mapping">
+      {{ mapping.key || 'No Key' }}
+    </button>
+  </div>
+</div>
