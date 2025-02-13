@@ -13,6 +13,8 @@ import { RandomGeneratorComponent } from '../../widgets/random-generator/random-
 import { DiceToolComponent } from '../../widgets/dice-tool/dice-tool.component';
 import { ResizableDirective } from './resizable.directive';
 import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
+import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
+
 
 @Component({
   selector: 'app-widget-container',
@@ -37,6 +39,8 @@ export class WidgetContainerComponent {
   @Output() update = new EventEmitter<void>();
 
   constructor(private dialog: MatDialog) {}
+
+  
 
   // Update the getTitle method in WidgetContainerComponent
 getTitle(type: WidgetType): string {
@@ -94,7 +98,24 @@ getTitle(type: WidgetType): string {
         width: '300px',
         data: { settings: this.widgetData.settings }
       });
-
+  
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.widgetData.settings = result;
+          this.update.emit();
+        }
+      });
+    } else if (this.widgetData.type === 'RANDOM_GENERATOR') {
+      // Initialize settings if they don't exist
+      if (!this.widgetData.settings.elements) {
+        this.widgetData.settings.elements = [];
+      }
+  
+      const dialogRef = this.dialog.open(RandomGeneratorSettingsDialogComponent, {
+        width: '400px',
+        data: { settings: this.widgetData.settings }
+      });
+  
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
           this.widgetData.settings = result;
