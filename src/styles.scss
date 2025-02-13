@@ -42,3 +42,36 @@ body {
   right: 16px;
   z-index: 1000;
 }
+.resize-handle {
+  background: transparent;
+  position: absolute;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Middle edges
+.resize-handle-n,
+.resize-handle-s {
+  left: 6px;
+  right: 6px;
+  height: 6px;
+}
+
+.resize-handle-e,
+.resize-handle-w {
+  top: 6px;
+  bottom: 6px;
+  width: 6px;
+}
+
+// Corners
+.resize-handle-ne,
+.resize-handle-nw,
+.resize-handle-se,
+.resize-handle-sw {
+  width: 6px;
+  height: 6px;
+}
