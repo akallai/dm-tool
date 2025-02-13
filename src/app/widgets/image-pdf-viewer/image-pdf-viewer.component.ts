@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, ElementRef, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -8,7 +8,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   template: `
     <div class="viewer-container">
       <!-- Show when no file is selected -->
-      <div *ngIf="!currentFile" class="empty-state">
+      <div *ngIf="!currentFile && !fileUrl" class="empty-state">
         <input
           #fileInput
           type="file"
@@ -23,7 +23,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
       <!-- Show when an image is selected -->
       <img
-        *ngIf="currentFile && isImage"
+        *ngIf="(currentFile || fileUrl) && isImage"
         [src]="fileUrl"
         class="content-view"
         alt="Selected image"
@@ -31,14 +31,14 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
       <!-- Show when a PDF is selected -->
       <iframe
-        *ngIf="currentFile && !isImage"
+        *ngIf="(currentFile || fileUrl) && !isImage"
         [src]="safeFileUrl"
         class="content-view"
         type="application/pdf"
       ></iframe>
 
       <!-- File controls when a file is open -->
-      <div *ngIf="currentFile" class="file-controls">
+      <div *ngIf="currentFile || fileUrl" class="file-controls">
         <button mat-button (click)="clearFile()">Clear</button>
       </div>
     </div>
@@ -80,7 +80,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   standalone: true,
   imports: [CommonModule, MatButtonModule]
 })
-export class ImagePdfViewerComponent {
+export class ImagePdfViewerComponent implements OnInit {
   @Input() settings: any;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -91,6 +91,18 @@ export class ImagePdfViewerComponent {
 
   constructor(private sanitizer: DomSanitizer) {}
 
+  ngOnInit() {
+    // Restore file from settings if available
+    if (this.settings && this.settings.fileDataUrl) {
+      this.fileUrl = this.settings.fileDataUrl;
+      this.isImage = this.settings.fileType?.startsWith('image/') || false;
+      if (!this.isImage && this.fileUrl) {
+        // Use non-null assertion here
+        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl!);
+      }
+    }
+  }
+
   openFileDialog() {
     this.fileInput.nativeElement.click();
   }
@@ -100,51 +112,39 @@ export class ImagePdfViewerComponent {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       this.currentFile = file;
-      
-      // Check if the file is an image
       this.isImage = file.type.startsWith('image/');
       
-      // Clean up previous URL if it exists
-      if (this.fileUrl) {
-        URL.revokeObjectURL(this.fileUrl);
-      }
-
-      // Create a new URL for the file
-      this.fileUrl = URL.createObjectURL(file);
-      
-      // For PDFs, create a sanitized URL
-      if (!this.isImage) {
-        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl);
-      }
-
-      // Save file info to settings
-      if (this.settings) {
-        this.settings.fileName = file.name;
-        this.settings.fileType = file.type;
-      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.fileUrl = reader.result as string;
+        if (!this.isImage && this.fileUrl) {
+          // Use non-null assertion here as well
+          this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl!);
+        }
+        // Save file info to settings for persistence
+        if (this.settings) {
+          this.settings.fileName = file.name;
+          this.settings.fileType = file.type;
+          this.settings.fileDataUrl = this.fileUrl;
+        }
+      };
+      reader.readAsDataURL(file);
     }
   }
 
   clearFile() {
-    if (this.fileUrl) {
-      URL.revokeObjectURL(this.fileUrl);
-    }
     this.currentFile = null;
     this.fileUrl = null;
     this.safeFileUrl = null;
     this.fileInput.nativeElement.value = '';
-    
-    // Clear settings
     if (this.settings) {
       this.settings.fileName = null;
       this.settings.fileType = null;
+      this.settings.fileDataUrl = null;
     }
   }
 
   ngOnDestroy() {
-    // Clean up the object URL when the component is destroyed
-    if (this.fileUrl) {
-      URL.revokeObjectURL(this.fileUrl);
-    }
+    // No cleanup needed for Data URLs
   }
 }

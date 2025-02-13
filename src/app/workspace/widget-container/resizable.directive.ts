@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit } from '@angular/core';
 
 @Directive({
   selector: '[appResizable]',
   standalone: true
 })
-export class ResizableDirective {
+export class ResizableDirective implements OnInit {
   @Input() resizableWidth = 300;
   @Input() resizableHeight = 200;
   @Output() resizeEnd = new EventEmitter<{ width: number, height: number }>();
@@ -19,7 +19,9 @@ export class ResizableDirective {
   private startTop = 0;
   private handleSize = 6;
 
-  constructor(private el: ElementRef, private renderer: Renderer2) {
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  ngOnInit() {
     this.initializeElement();
     this.createHandles();
   }
@@ -65,7 +67,7 @@ export class ResizableDirective {
   private onMouseDown(event: MouseEvent, handle: string) {
     event.preventDefault();
     event.stopPropagation();
-    
+
     this.dragging = true;
     this.currentHandle = handle;
     this.startX = event.clientX;

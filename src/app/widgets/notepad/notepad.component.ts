@@ -8,34 +8,32 @@ import { marked } from 'marked';
   selector: 'app-notepad',
   template: `
     <div class="notepad-container">
-      <!-- If no file is open, ask to open or create one -->
-      <ng-container *ngIf="!fileHandle; else editor">
-        <div class="empty-state">
-          <button class="action-btn" (click)="openExistingFile()">Open File</button>
-          <button class="action-btn" (click)="createNewFile()">New File</button>
-        </div>
-      </ng-container>
-      
-      <!-- Editor / Display -->
-      <ng-template #editor>
-        <!-- Rendered markdown view when not editing -->
-        <div *ngIf="!isEditing"
-             class="markdown-display"
-             [innerHTML]="renderedContent"
-             (click)="enableEditing()">
-        </div>
-        <!-- Plain textarea shown in editing mode -->
-        <textarea *ngIf="isEditing"
-                  #textareaElement
-                  [(ngModel)]="content" 
-                  (ngModelChange)="onContentChange()"
-                  (blur)="onBlur()"
-                  (focus)="onFocus()"
-                  placeholder="Write your notes here..."
-                  class="notepad-textarea">
-        </textarea>
-      </ng-template>
+  <ng-container *ngIf="fileHandle || content; else emptyState">
+    <!-- Editor / Display -->
+    <div *ngIf="!isEditing"
+         class="markdown-display"
+         [innerHTML]="renderedContent"
+         (click)="enableEditing()">
     </div>
+    <textarea *ngIf="isEditing"
+              #textareaElement
+              [(ngModel)]="content" 
+              (ngModelChange)="onContentChange()"
+              (blur)="onBlur()"
+              (focus)="onFocus()"
+              placeholder="Write your notes here..."
+              class="notepad-textarea">
+    </textarea>
+  </ng-container>
+  
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <button class="action-btn" (click)="openExistingFile()">Open File</button>
+      <button class="action-btn" (click)="createNewFile()">New File</button>
+    </div>
+  </ng-template>
+</div>
+
   `,
   styles: [`
     .notepad-container {
@@ -172,7 +170,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
 
   @ViewChild('textareaElement') textareaElement?: ElementRef;
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(private sanitizer: DomSanitizer) { }
 
   ngOnInit() {
     // Load any previously saved content from settings
