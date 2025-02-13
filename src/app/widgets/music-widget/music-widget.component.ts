@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -10,62 +10,103 @@ interface MusicMapping {
 
 @Component({
   selector: 'app-music-widget',
-  templateUrl: './music-widget.component.html',
-  styleUrls: ['./music-widget.component.scss'],
+  template: `
+    <div class="music-widget">
+      <div class="button-grid">
+        <button mat-raised-button 
+                *ngFor="let mapping of mappings" 
+                (click)="playSound(mapping)" 
+                [disabled]="!mapping.fileDataUrl"
+                [class.playing]="isPlaying(mapping)">
+          {{ mapping.key || 'No Key' }}
+        </button>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .music-widget {
+      padding: 8px;
+    }
+    .button-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      min-width: 60px;
+      transition: background-color 0.2s;
+    }
+    button.playing {
+      background-color: #4caf50 !important;
+      color: white;
+    }
+  `],
   standalone: true,
   imports: [CommonModule, MatButtonModule]
 })
-export class MusicWidgetComponent implements OnInit, OnChanges {
+export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   @Input() settings: any;
   mappings: MusicMapping[] = [];
-
-  // Track the currently playing audio and its mapping
-  currentAudio: HTMLAudioElement | null = null;
-  currentMapping: MusicMapping | null = null;
+  activeAudios: Map<string, HTMLAudioElement> = new Map();
 
   ngOnInit() {
-    this.mappings = this['settings']?.mappings || [];
+    this.mappings = this.settings?.mappings || [];
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['settings']) {
-      this.mappings = this['settings']?.mappings || [];
+      this.mappings = this.settings?.mappings || [];
     }
   }
 
+  isPlaying(mapping: MusicMapping): boolean {
+    const audio = this.activeAudios.get(mapping.key);
+    return !!audio && !audio.paused;
+  }
+
   playSound(mapping: MusicMapping) {
-    // If clicking on the mapping that is already playing, stop the sound.
-    if (this.currentMapping === mapping) {
-      if (this.currentAudio) {
-        this.currentAudio.pause();
-        this.currentAudio.currentTime = 0;
-      }
-      this.currentAudio = null;
-      this.currentMapping = null;
+    // If this mapping is already playing
+    if (this.activeAudios.has(mapping.key)) {
+      const existingAudio = this.activeAudios.get(mapping.key)!;
+      existingAudio.pause();
+      existingAudio.currentTime = 0;
+      this.activeAudios.delete(mapping.key);
       return;
     }
 
-    // If another sound is playing, stop it.
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
+    // If we don't allow multiple sounds and something is playing
+    if (!this.settings.allowMultiple) {
+      this.stopAllSounds();
     }
 
-    // Play the new sound if available.
     if (mapping.fileDataUrl) {
       const audio = new Audio(mapping.fileDataUrl);
+      
+      // Set loop based on settings
+      audio.loop = this.settings.loopEnabled;
+
       audio.play();
 
-      // When the audio ends, clear the current mapping so the button visual resets.
+      // Add event listener for when the audio ends
       audio.addEventListener('ended', () => {
-        if (this.currentAudio === audio) {
-          this.currentAudio = null;
-          this.currentMapping = null;
+        if (!audio.loop) {
+          this.activeAudios.delete(mapping.key);
         }
       });
 
-      this.currentAudio = audio;
-      this.currentMapping = mapping;
+      this.activeAudios.set(mapping.key, audio);
     }
+  }
+
+  private stopAllSounds() {
+    this.activeAudios.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    this.activeAudios.clear();
+  }
+
+  ngOnDestroy() {
+    this.stopAllSounds();
   }
 }
