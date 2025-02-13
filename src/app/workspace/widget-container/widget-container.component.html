@@ -1,15 +1,17 @@
 <div
   class="widget-container"
   cdkDrag
-  [cdkDragFreeDragPosition]="{x: widgetData.position.x, y: widgetData.position.y}"
+  [cdkDragFreeDragPosition]="widgetData.position"
   (cdkDragEnded)="onDragEnd($event)"
   appResizable
   [resizableWidth]="widgetData.size.width"
   [resizableHeight]="widgetData.size.height"
   (resizeEnd)="onResizeEnd($event)">
   
-  <!-- Header -->
-  <div class="widget-header">
+  <!-- Header as drag handle -->
+  <div 
+    class="widget-header"
+    cdkDragHandle>
     <span class="title">{{ getTitle(widgetData.type) }}</span>
     <div class="controls">
       <button mat-icon-button (click)="openSettings($event)">
@@ -34,7 +36,6 @@
       <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings"></app-notepad>
       <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings"></app-random-generator>
       <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
-      <!-- Add more widget types here -->
     </ng-container>
   </div>
 </div>

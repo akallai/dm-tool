@@ -45,10 +45,14 @@ export class WidgetContainerComponent {
   }
 
   onDragEnd(event: CdkDragEnd) {
+    const currentTransform = this.widgetData.position;
+    const dragDistance = event.distance;
+    
     this.widgetData.position = {
-      x: event.source.getFreeDragPosition().x,
-      y: event.source.getFreeDragPosition().y
+      x: currentTransform.x + dragDistance.x,
+      y: currentTransform.y + dragDistance.y
     };
+    
     this.update.emit();
   }
 
@@ -59,8 +63,6 @@ export class WidgetContainerComponent {
 
   openSettings(event: MouseEvent) {
     event.stopPropagation();
-    // Open a settings dialog specific to widget type.
-    // (You would create a dialog component per widget type or a generic one.)
     console.log('Open settings for', this.widgetData.type);
   }
 
@@ -73,7 +75,6 @@ export class WidgetContainerComponent {
   toggleMaximize(event: MouseEvent) {
     event.stopPropagation();
     this.widgetData.maximized = !this.widgetData.maximized;
-    // When maximizing, you might set the widgetData.position to 0,0 and size to viewport dimensions.
     if (this.widgetData.maximized) {
       this.widgetData.position = { x: 0, y: 0 };
       this.widgetData.size = { width: window.innerWidth, height: window.innerHeight };
