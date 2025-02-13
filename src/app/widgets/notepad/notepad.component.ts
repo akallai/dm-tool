@@ -1,6 +1,9 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+
 
 @Component({
   selector: 'app-notepad',
@@ -13,16 +16,26 @@ import { FormsModule } from '@angular/forms';
         <button class="action-btn" (click)="createNewFile()">New File</button>
       </ng-container>
       
-      <!-- The text editor is shown once a file is selected -->
+      <!-- Editor / Display -->
       <ng-template #editor>
         <div class="file-info">
           <strong>{{ fileName }}</strong>
         </div>
-        <textarea 
-          [(ngModel)]="content" 
-          (ngModelChange)="onContentChange()"
-          placeholder="Write your notes here..."
-          class="notepad-textarea">
+        <!-- Rendered markdown view when not editing -->
+        <div *ngIf="!isEditing"
+             class="markdown-display"
+             [innerHTML]="renderedContent"
+             (click)="enableEditing()">
+        </div>
+        <!-- Plain textarea shown in editing mode -->
+        <textarea *ngIf="isEditing"
+                  #textareaElement
+                  [(ngModel)]="content" 
+                  (ngModelChange)="onContentChange()"
+                  (blur)="onBlur()"
+                  (focus)="onFocus()"
+                  placeholder="Write your notes here..."
+                  class="notepad-textarea">
         </textarea>
       </ng-template>
     </div>
@@ -44,6 +57,18 @@ import { FormsModule } from '@angular/forms';
       padding: 8px;
       box-sizing: border-box;
       font-family: inherit;
+      font-size: 14px;
+    }
+    .markdown-display {
+      flex: 1;
+      width: 100%;
+      border: 1px solid #ccc;
+      padding: 8px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      cursor: text;
+      font-size: 14px;
+      line-height: 1.4;
     }
     .action-btn {
       margin-right: 8px;
@@ -51,6 +76,76 @@ import { FormsModule } from '@angular/forms';
     }
     .file-info {
       margin-bottom: 8px;
+    }
+    /* Base markdown content styles */
+    :host ::ng-deep {
+      h1 { font-size: 1.5em; margin: 0.5em 0; }
+      h2 { font-size: 1.3em; margin: 0.4em 0; }
+      h3 { font-size: 1.2em; margin: 0.3em 0; }
+      h4 { font-size: 1.1em; margin: 0.2em 0; }
+      h5, h6 { font-size: 1em; margin: 0.1em 0; }
+      
+      p { margin: 0.5em 0; }
+      
+      ul, ol {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+      }
+      
+      li {
+        margin: 0.2em 0;
+      }
+      
+      blockquote {
+        margin: 0.5em 0;
+        padding-left: 1em;
+        border-left: 3px solid #ccc;
+        color: #666;
+      }
+      
+      code {
+        font-size: 0.9em;
+        padding: 0.1em 0.3em;
+        background: #f5f5f5;
+        border-radius: 3px;
+      }
+      
+      pre {
+        margin: 0.5em 0;
+        padding: 0.5em;
+        background: #f5f5f5;
+        border-radius: 3px;
+        font-size: 0.9em;
+        overflow-x: auto;
+      }
+      
+      pre code {
+        padding: 0;
+        background: none;
+      }
+    }
+    /* Markdown table styles */
+    :host ::ng-deep table {
+      border-collapse: collapse;
+      margin: 0.5em 0;
+      width: 100%;
+      font-size: 0.9em;
+    }
+    :host ::ng-deep th,
+    :host ::ng-deep td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    :host ::ng-deep th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+    :host ::ng-deep tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+    :host ::ng-deep tr:hover {
+      background-color: #f0f0f0;
     }
   `],
   standalone: true,
@@ -62,12 +157,18 @@ export class NotepadComponent implements OnInit, OnDestroy {
   fileHandle: FileSystemFileHandle | null = null;
   fileName = '';
   saveTimeout: any;
+  isEditing = false;
+  renderedContent: SafeHtml = '';
+
+  @ViewChild('textareaElement') textareaElement?: ElementRef;
+
+  constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
-    // If you previously stored content in settings, load it.
-    // (Note: file handles cannot be stored in localStorage.)
+    // Load any previously saved content from settings
     this.content = this.settings?.content || '';
     this.fileName = this.settings?.fileName || '';
+    this.updateRenderedContent();
   }
 
   async openExistingFile() {
@@ -85,6 +186,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
         this.content = await file.text();
         this.settings.fileName = this.fileName;
         this.settings.content = this.content;
+        this.updateRenderedContent();
       } else {
         alert('File System Access API is not supported in this browser.');
       }
@@ -108,7 +210,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
         this.content = '';
         this.settings.fileName = this.fileName;
         this.settings.content = this.content;
-        // Optionally, write the initial (empty) content immediately:
+        this.updateRenderedContent();
         await this.autoSave();
       } else {
         alert('File System Access API is not supported in this browser.');
@@ -119,18 +221,41 @@ export class NotepadComponent implements OnInit, OnDestroy {
   }
 
   onContentChange() {
-    // Update widget settings (for state persistence)
+    // Update settings and schedule auto-save
     if (this.settings) {
       this.settings.content = this.content;
     }
-    // Debounce auto-save so we’re not writing on every keystroke
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
     this.saveTimeout = setTimeout(() => {
       this.autoSave();
-    }, 1000); // Save after 1 second of inactivity
+    }, 1000);
   }
+
+  onBlur() {
+    // When the textarea loses focus, update the rendered markdown
+    this.isEditing = false;
+    this.updateRenderedContent();
+  }
+
+  onFocus() {
+    this.isEditing = true;
+  }
+
+  enableEditing() {
+    this.isEditing = true;
+    // Focus the textarea after it appears
+    setTimeout(() => {
+      this.textareaElement?.nativeElement.focus();
+    }, 0);
+  }
+
+  async updateRenderedContent() {
+    const html = await marked.parse(this.content || '');
+    this.renderedContent = this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+  
 
   async autoSave() {
     if (this.fileHandle) {
