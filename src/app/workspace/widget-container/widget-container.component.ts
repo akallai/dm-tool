@@ -48,9 +48,28 @@ export class WidgetContainerComponent {
     const currentTransform = this.widgetData.position;
     const dragDistance = event.distance;
     
+    // Calculate new position
+    const newX = currentTransform.x + dragDistance.x;
+    const newY = currentTransform.y + dragDistance.y;
+    
+    // Get window dimensions
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Get widget dimensions
+    const widgetWidth = this.widgetData.size.width;
+    const widgetHeight = this.widgetData.size.height;
+    
+    // Calculate bounds
+    const minX = 0;
+    const minY = 0;
+    const maxX = windowWidth - widgetWidth;
+    const maxY = windowHeight - widgetHeight;
+    
+    // Constrain position within bounds
     this.widgetData.position = {
-      x: currentTransform.x + dragDistance.x,
-      y: currentTransform.y + dragDistance.y
+      x: Math.max(minX, Math.min(maxX, newX)),
+      y: Math.max(minY, Math.min(maxY, newY))
     };
     
     this.update.emit();
