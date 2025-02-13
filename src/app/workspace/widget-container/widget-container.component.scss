@@ -1,0 +1,30 @@
+.widget-container {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  .widget-header {
+    background: #3f51b5;
+    color: white;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+  }
+  
+  .controls button {
+    color: white;
+  }
+  
+  .widget-content {
+    flex: 1;
+    overflow: auto;
+    padding: 8px;
+  }
+  

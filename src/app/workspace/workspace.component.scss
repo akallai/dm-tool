@@ -1,0 +1,15 @@
+.workspace {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: #f0f0f0;
+    overflow: hidden;
+  }
+  
+  .add-widget-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+  }
+  

@@ -1,0 +1,16 @@
+<div class="workspace">
+    <!-- Floating "Add Widget" button in the top right -->
+    <button mat-fab color="primary" class="add-widget-btn" (click)="openWidgetSelector()">
+      <mat-icon>add</mat-icon>
+    </button>
+  
+    <!-- Render all widget containers -->
+    <ng-container *ngFor="let widget of widgets">
+      <app-widget-container
+        [widgetData]="widget"
+        (closeEvent)="removeWidget(widget.id)"
+        (update)="saveWidgets()">
+      </app-widget-container>
+    </ng-container>
+  </div>
+  

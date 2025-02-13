@@ -1,0 +1,8 @@
+<h2 mat-dialog-title>Add a Widget</h2>
+<mat-dialog-content>
+  <mat-list>
+    <mat-list-item *ngFor="let widget of widgetTypes" (click)="select(widget.type)">
+      {{ widget.label }}
+    </mat-list-item>
+  </mat-list>
+</mat-dialog-content>
