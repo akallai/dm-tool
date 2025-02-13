@@ -36,23 +36,50 @@ interface MusicSettings {
 
       <div class="mapping-list">
         <div *ngFor="let mapping of mappings; let i = index" class="mapping-item">
-          <mat-form-field appearance="fill" class="mapping-field">
-            <mat-label>Key</mat-label>
-            <input matInput [(ngModel)]="mapping.key" placeholder="Enter key">
-          </mat-form-field>
-          <div class="file-section">
-            <span *ngIf="mapping.fileName">Selected file: {{ mapping.fileName }}</span>
-            <input type="file" accept="audio/*" #fileInput (change)="onFileSelected($event, i)" style="display: none">
-            <button mat-button (click)="fileInput.click()">
-              {{ mapping.fileName ? 'Change File' : 'Select File' }}
-            </button>
+          <div class="mapping-content">
+            <mat-form-field appearance="fill" class="key-field">
+              <mat-label>Key</mat-label>
+              <input matInput [(ngModel)]="mapping.key" placeholder="Enter key">
+            </mat-form-field>
+            
+            <div class="file-section">
+              <div class="file-info" [title]="mapping.fileName || ''">
+                <span *ngIf="mapping.fileName" class="file-name">
+                  {{ mapping.fileName }}
+                </span>
+                <span *ngIf="!mapping.fileName" class="no-file">
+                  No file selected
+                </span>
+              </div>
+              <div class="file-actions">
+                <input 
+                  type="file" 
+                  accept="audio/*" 
+                  #fileInput 
+                  (change)="onFileSelected($event, i)" 
+                  style="display: none"
+                >
+                <button 
+                  mat-stroked-button 
+                  (click)="fileInput.click()" 
+                  class="file-button">
+                  {{ mapping.fileName ? 'Change' : 'Select File' }}
+                </button>
+                <button 
+                  mat-icon-button 
+                  color="warn" 
+                  (click)="removeMapping(i)"
+                  class="remove-button">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
           </div>
-          <button mat-icon-button color="warn" (click)="removeMapping(i)">
-            <mat-icon>delete</mat-icon>
-          </button>
         </div>
       </div>
-      <button mat-button (click)="addMapping()">Add Mapping</button>
+      <button mat-stroked-button color="primary" (click)="addMapping()" class="add-mapping-btn">
+        Add Mapping
+      </button>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
@@ -60,33 +87,97 @@ interface MusicSettings {
     </mat-dialog-actions>
   `,
   styles: [`
+    mat-dialog-content {
+      min-height: 200px;
+      max-height: 80vh;
+    }
+
     .playback-options {
       display: flex;
       flex-direction: column;
       gap: 8px;
       margin-bottom: 16px;
-      padding: 8px;
+      padding: 12px;
       background-color: #f5f5f5;
       border-radius: 4px;
     }
+
     .mapping-list {
       display: flex;
       flex-direction: column;
       gap: 16px;
       margin-bottom: 16px;
     }
+
     .mapping-item {
+      background-color: #f8f8f8;
+      border-radius: 4px;
+      padding: 12px;
+    }
+
+    .mapping-content {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 8px;
     }
-    .mapping-field {
-      flex: 1;
+
+    .key-field {
+      width: 100%;
+      margin-bottom: -1.25em;
     }
+
     .file-section {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
+    }
+
+    .file-info {
+      background-color: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+      min-height: 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .file-name {
+      font-size: 0.9em;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .no-file {
+      color: #888;
+      font-style: italic;
+      font-size: 0.9em;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .file-button {
+      flex: 0 0 auto;
+    }
+
+    .remove-button {
+      flex: 0 0 auto;
+    }
+
+    .add-mapping-btn {
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    :host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
     }
   `],
   standalone: true,
@@ -109,7 +200,6 @@ export class MusicSettingsDialogComponent {
     public dialogRef: MatDialogRef<MusicSettingsDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { settings: MusicSettings }
   ) {
-    // Initialize settings with defaults if not provided
     this.settings = {
       mappings: data.settings.mappings || [],
       allowMultiple: data.settings.allowMultiple ?? false,
