@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { MatDialog } from '@angular/material/dialog';
 import { WidgetInstance } from '../workspace.component';
 import { WidgetType } from '../../dialogs/widget-selector-dialog/widget-selector-dialog.component';
 import { ImagePdfViewerComponent } from '../../widgets/image-pdf-viewer/image-pdf-viewer.component';
@@ -11,6 +12,7 @@ import { NotepadComponent } from '../../widgets/notepad/notepad.component';
 import { RandomGeneratorComponent } from '../../widgets/random-generator/random-generator.component';
 import { DiceToolComponent } from '../../widgets/dice-tool/dice-tool.component';
 import { ResizableDirective } from './resizable.directive';
+import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
 
 @Component({
   selector: 'app-widget-container',
@@ -34,6 +36,8 @@ export class WidgetContainerComponent {
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
 
+  constructor(private dialog: MatDialog) {}
+
   getTitle(type: WidgetType): string {
     const titles: Record<WidgetType, string> = {
       'IMAGE_PDF': 'Image/PDF Viewer',
@@ -48,25 +52,20 @@ export class WidgetContainerComponent {
     const currentTransform = this.widgetData.position;
     const dragDistance = event.distance;
     
-    // Calculate new position
     const newX = currentTransform.x + dragDistance.x;
     const newY = currentTransform.y + dragDistance.y;
     
-    // Get window dimensions
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
-    // Get widget dimensions
     const widgetWidth = this.widgetData.size.width;
     const widgetHeight = this.widgetData.size.height;
     
-    // Calculate bounds
     const minX = 0;
     const minY = 0;
     const maxX = windowWidth - widgetWidth;
     const maxY = windowHeight - widgetHeight;
     
-    // Constrain position within bounds
     this.widgetData.position = {
       x: Math.max(minX, Math.min(maxX, newX)),
       y: Math.max(minY, Math.min(maxY, newY))
@@ -82,7 +81,20 @@ export class WidgetContainerComponent {
 
   openSettings(event: MouseEvent) {
     event.stopPropagation();
-    console.log('Open settings for', this.widgetData.type);
+    
+    if (this.widgetData.type === 'DICE_TOOL') {
+      const dialogRef = this.dialog.open(DiceSettingsDialogComponent, {
+        width: '300px',
+        data: { settings: this.widgetData.settings }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.widgetData.settings = result;
+          this.update.emit();
+        }
+      });
+    }
   }
 
   toggleMinimize(event: MouseEvent) {

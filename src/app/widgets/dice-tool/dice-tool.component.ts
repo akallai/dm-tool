@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
 interface DiceType {
   sides: number;
   image: string;
+  enabled: boolean;
 }
 
 @Component({
@@ -14,7 +15,7 @@ interface DiceType {
       <div class="dice-grid">
         <button 
           mat-button 
-          *ngFor="let dice of diceTypes" 
+          *ngFor="let dice of availableDice" 
           (click)="roll(dice.sides)"
           class="dice-button"
         >
@@ -66,20 +67,36 @@ interface DiceType {
   standalone: true,
   imports: [CommonModule, MatButtonModule]
 })
-export class DiceToolComponent {
+export class DiceToolComponent implements OnInit {
   @Input() settings: any;
   
-  diceTypes: DiceType[] = [
-    { sides: 4, image: '/images/d4.png' },
-    { sides: 6, image: '/images/d6.png' },
-    { sides: 8, image: '/images/d8.png' },
-    { sides: 10, image: '/images/d10.png' },
-    { sides: 12, image: '/images/d12.png' },
-    { sides: 20, image: '/images/d20.jpg' },
-    { sides: 100, image: '/images/d100.png' }
+  allDiceTypes: DiceType[] = [
+    { sides: 4, image: '/images/d4.png', enabled: true },
+    { sides: 6, image: '/images/d6.png', enabled: true },
+    { sides: 8, image: '/images/d8.png', enabled: true },
+    { sides: 10, image: '/images/d10.png', enabled: true },
+    { sides: 12, image: '/images/d12.png', enabled: true },
+    { sides: 20, image: '/images/d20.jpg', enabled: true },
+    { sides: 100, image: '/images/d100.png', enabled: true }
   ];
   
+  get availableDice(): DiceType[] {
+    if (this.settings?.enabledDice) {
+      return this.allDiceTypes.filter(dice => this.settings.enabledDice[dice.sides]);
+    }
+    return this.allDiceTypes;
+  }
+  
   result: number | null = null;
+
+  ngOnInit() {
+    if (!this.settings.enabledDice) {
+      this.settings.enabledDice = this.allDiceTypes.reduce((acc, dice) => {
+        acc[dice.sides] = true;
+        return acc;
+      }, {} as Record<number, boolean>);
+    }
+  }
 
   roll(sides: number) {
     this.result = Math.floor(Math.random() * sides) + 1;
