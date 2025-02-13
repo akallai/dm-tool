@@ -38,15 +38,22 @@ export class WidgetContainerComponent {
 
   constructor(private dialog: MatDialog) {}
 
-  getTitle(type: WidgetType): string {
-    const titles: Record<WidgetType, string> = {
-      'IMAGE_PDF': 'Image/PDF Viewer',
-      'NOTEPAD': 'Notepad',
-      'RANDOM_GENERATOR': 'Random Generator',
-      'DICE_TOOL': 'Dice Tool'
-    };
-    return titles[type] || 'Widget';
+  // Update the getTitle method in WidgetContainerComponent
+getTitle(type: WidgetType): string {
+  // If there's a title in the settings, use that instead of the default
+  if (this.widgetData.settings?.title) {
+    return this.widgetData.settings.title;
   }
+
+  // Otherwise fall back to the default titles
+  const titles: Record<WidgetType, string> = {
+    'IMAGE_PDF': 'Image/PDF Viewer',
+    'NOTEPAD': 'Notepad',
+    'RANDOM_GENERATOR': 'Random Generator',
+    'DICE_TOOL': 'Dice Tool'
+  };
+  return titles[type] || 'Widget';
+}
 
   onDragEnd(event: CdkDragEnd) {
     const currentTransform = this.widgetData.position;

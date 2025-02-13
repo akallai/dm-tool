@@ -4,23 +4,20 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 
-
 @Component({
   selector: 'app-notepad',
   template: `
     <div class="notepad-container">
       <!-- If no file is open, ask to open or create one -->
       <ng-container *ngIf="!fileHandle; else editor">
-        <p>Please choose an option:</p>
-        <button class="action-btn" (click)="openExistingFile()">Open File</button>
-        <button class="action-btn" (click)="createNewFile()">New File</button>
+        <div class="empty-state">
+          <button class="action-btn" (click)="openExistingFile()">Open File</button>
+          <button class="action-btn" (click)="createNewFile()">New File</button>
+        </div>
       </ng-container>
       
       <!-- Editor / Display -->
       <ng-template #editor>
-        <div class="file-info">
-          <strong>{{ fileName }}</strong>
-        </div>
         <!-- Rendered markdown view when not editing -->
         <div *ngIf="!isEditing"
              class="markdown-display"
@@ -44,38 +41,49 @@ import { marked } from 'marked';
     .notepad-container {
       width: 100%;
       height: 100%;
-      padding: 8px;
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
+    }
+    .empty-state {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
     }
     .notepad-textarea {
       flex: 1;
       width: 100%;
       resize: none;
-      border: 1px solid #ccc;
+      border: none;
       padding: 8px;
       box-sizing: border-box;
       font-family: inherit;
       font-size: 14px;
+      line-height: 1.6;
+      outline: none;
     }
     .markdown-display {
       flex: 1;
       width: 100%;
-      border: 1px solid #ccc;
       padding: 8px;
       box-sizing: border-box;
       overflow-y: auto;
       cursor: text;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.6;
     }
     .action-btn {
-      margin-right: 8px;
-      margin-bottom: 8px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #1976d2;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
     }
-    .file-info {
-      margin-bottom: 8px;
+    .action-btn:hover {
+      background: #1565c0;
     }
     /* Base markdown content styles */
     :host ::ng-deep {
@@ -123,29 +131,32 @@ import { marked } from 'marked';
         padding: 0;
         background: none;
       }
-    }
-    /* Markdown table styles */
-    :host ::ng-deep table {
-      border-collapse: collapse;
-      margin: 0.5em 0;
-      width: 100%;
-      font-size: 0.9em;
-    }
-    :host ::ng-deep th,
-    :host ::ng-deep td {
-      border: 1px solid #ddd;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    :host ::ng-deep th {
-      background-color: #f5f5f5;
-      font-weight: bold;
-    }
-    :host ::ng-deep tr:nth-child(even) {
-      background-color: #fafafa;
-    }
-    :host ::ng-deep tr:hover {
-      background-color: #f0f0f0;
+      
+      table {
+        border-collapse: collapse;
+        margin: 0.5em 0;
+        width: 100%;
+        font-size: 0.9em;
+      }
+      
+      th, td {
+        border: 1px solid #ddd;
+        padding: 4px 6px;
+        text-align: left;
+      }
+      
+      th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+      }
+      
+      tr:nth-child(even) {
+        background-color: #fafafa;
+      }
+      
+      tr:hover {
+        background-color: #f0f0f0;
+      }
     }
   `],
   standalone: true,
@@ -155,7 +166,6 @@ export class NotepadComponent implements OnInit, OnDestroy {
   @Input() settings: any;
   content = '';
   fileHandle: FileSystemFileHandle | null = null;
-  fileName = '';
   saveTimeout: any;
   isEditing = false;
   renderedContent: SafeHtml = '';
@@ -167,7 +177,9 @@ export class NotepadComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // Load any previously saved content from settings
     this.content = this.settings?.content || '';
-    this.fileName = this.settings?.fileName || '';
+    if (this.settings?.fileName) {
+      this.settings.title = this.settings.fileName;
+    }
     this.updateRenderedContent();
   }
 
@@ -181,10 +193,9 @@ export class NotepadComponent implements OnInit, OnDestroy {
           }]
         });
         this.fileHandle = handle;
-        this.fileName = handle.name;
+        this.settings.title = handle.name;
         const file = await handle.getFile();
         this.content = await file.text();
-        this.settings.fileName = this.fileName;
         this.settings.content = this.content;
         this.updateRenderedContent();
       } else {
@@ -206,9 +217,8 @@ export class NotepadComponent implements OnInit, OnDestroy {
           }]
         });
         this.fileHandle = handle;
-        this.fileName = handle.name;
+        this.settings.title = handle.name;
         this.content = '';
-        this.settings.fileName = this.fileName;
         this.settings.content = this.content;
         this.updateRenderedContent();
         await this.autoSave();
@@ -255,7 +265,6 @@ export class NotepadComponent implements OnInit, OnDestroy {
     const html = await marked.parse(this.content || '');
     this.renderedContent = this.sanitizer.bypassSecurityTrustHtml(html);
   }
-  
 
   async autoSave() {
     if (this.fileHandle) {
