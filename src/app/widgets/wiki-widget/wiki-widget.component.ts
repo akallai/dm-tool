@@ -1,9 +1,10 @@
-import { Component, Input, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, Input, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked } from 'marked';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { marked } from 'marked';
 
 export interface WikiArticle {
   id: string;
@@ -20,22 +21,30 @@ export interface WikiData {
   templateUrl: './wiki-widget.component.html',
   styleUrls: ['./wiki-widget.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule ]
+  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule]
 })
 export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() settings: any;
   wikiData: WikiData = { articles: [] };
   currentArticle: WikiArticle | null = null;
-  isEditing = false;
+  isEditing: boolean = false;
   fileHandle: FileSystemFileHandle | null = null;
   fileName: string = '';
   saveTimeout: any;
   renderedContent: SafeHtml = '';
+  
+  // Controls whether the articles sidebar is collapsed.
+  sidebarCollapsed: boolean = false;
+
+  // Handler for wiki link events.
+  wikiLinkHandler = (event: CustomEvent) => {
+    this.handleWikiLink(event.detail);
+  };
 
   constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
-    // Load wiki data from settings if available
+    // Load wiki data from settings if available.
     if (this.settings && this.settings.wikiData) {
       this.wikiData = this.settings.wikiData;
       if (this.wikiData.articles.length > 0) {
@@ -59,7 +68,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
         const file = await handle.getFile();
         const text = await file.text();
         this.wikiData = JSON.parse(text);
-        this.settings.wikiData = this.wikiData;
+        if (this.settings) {
+          this.settings.wikiData = this.wikiData;
+        }
         if (this.wikiData.articles.length > 0) {
           this.currentArticle = this.wikiData.articles[0];
         }
@@ -85,7 +96,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
         this.fileHandle = handle;
         this.fileName = handle.name;
         this.wikiData = { articles: [] };
-        this.settings.wikiData = this.wikiData;
+        if (this.settings) {
+          this.settings.wikiData = this.wikiData;
+        }
         this.currentArticle = null;
         this.updateRenderedContent();
       } else {
@@ -141,6 +154,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateRenderedContent();
     }
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    // Auto-save after 1 second of no changes.
     this.saveTimeout = setTimeout(() => {
       this.saveWiki();
     }, 1000);
@@ -159,6 +173,11 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // Toggle the collapsed state of the sidebar.
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
   async updateRenderedContent() {
     if (this.currentArticle) {
       let content = this.currentArticle.content || '';
@@ -166,11 +185,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
       content = content.replace(/\[\[([^\]]+)\]\]/g, (match, p1) => {
         return `<a href="#" class="wiki-link" onclick="event.preventDefault(); window.dispatchEvent(new CustomEvent('wikiLink', { detail: '${p1}' }))">${p1}</a>`;
       });
-      const html: string = await marked.parse(content); // await the result
+      const html: string = await marked.parse(content);
       this.renderedContent = this.sanitizer.bypassSecurityTrustHtml(html);
     }
   }
-  
 
   handleWikiLink(title: string) {
     const found = this.wikiData.articles.find(a => a.title === title);
@@ -181,15 +199,12 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Listen for wiki link clicks from the rendered content
   ngAfterViewInit() {
-    window.addEventListener('wikiLink', (event: any) => {
-      this.handleWikiLink(event.detail);
-    });
+    window.addEventListener('wikiLink', this.wikiLinkHandler as EventListener);
   }
 
   ngOnDestroy() {
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    window.removeEventListener('wikiLink', this.handleWikiLink as any);
+    window.removeEventListener('wikiLink', this.wikiLinkHandler as EventListener);
   }
 }

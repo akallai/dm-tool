@@ -9,6 +9,10 @@
       padding: 8px;
       background: #3f51b5;
       color: white;
+      // Ensure header button texts are white for readability.
+      button {
+        color: white !important;
+      }
     }
   
     .wiki-body {
@@ -22,9 +26,32 @@
       background: #f5f5f5;
       padding: 8px;
       overflow-y: auto;
+      transition: width 0.3s, padding 0.3s;
   
-      h3 {
-        margin-top: 0;
+      &.collapsed {
+        width: 40px; /* Minimal width when collapsed */
+        padding: 8px 4px;
+        
+        /* Hide inner elements except the toggle button */
+        .sidebar-header h3,
+        button:not(.mat-icon-button),
+        ul {
+          display: none;
+        }
+        .sidebar-header {
+          justify-content: center;
+        }
+      }
+  
+      .sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+  
+        button {
+          display: block;
+        }
       }
   
       ul {

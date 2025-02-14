@@ -2,21 +2,30 @@
     <div class="wiki-header">
       <button mat-button (click)="openExistingWiki()">Open Wiki</button>
       <button mat-button (click)="createNewWiki()">New Wiki</button>
-      <button mat-button (click)="saveWiki()" [disabled]="!fileHandle">Save Wiki</button>
+      <!-- "Save Wiki" button removed since auto-save is used -->
     </div>
     <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
-      <div class="wiki-sidebar">
-        <h3>Articles</h3>
-        <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
-        <ul>
-          <li *ngFor="let article of wikiData.articles" [class.active]="article.id === currentArticle?.id">
-            <span (click)="selectArticle(article)">{{ article.title }}</span>
-            <button mat-icon-button color="warn" (click)="deleteArticle(article)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </li>
-        </ul>
+      <!-- Sidebar with toggle functionality -->
+      <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
+        <div class="sidebar-header">
+          <h3 *ngIf="!sidebarCollapsed">Articles</h3>
+          <button mat-icon-button (click)="toggleSidebar()">
+            <mat-icon>{{ sidebarCollapsed ? 'arrow_right' : 'arrow_left' }}</mat-icon>
+          </button>
+        </div>
+        <ng-container *ngIf="!sidebarCollapsed">
+          <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
+          <ul>
+            <li *ngFor="let article of wikiData.articles" [class.active]="article.id === currentArticle?.id">
+              <span (click)="selectArticle(article)">{{ article.title }}</span>
+              <button mat-icon-button color="warn" (click)="deleteArticle(article)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </li>
+          </ul>
+        </ng-container>
       </div>
+      <!-- Main content area -->
       <div class="wiki-content">
         <div *ngIf="currentArticle">
           <div class="article-header">
