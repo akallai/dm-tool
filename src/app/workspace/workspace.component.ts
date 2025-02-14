@@ -1,3 +1,4 @@
+// workspace.component.ts
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
@@ -47,9 +48,13 @@ export class WorkspaceComponent implements OnInit {
       width: '300px'
     });
 
-    dialogRef.afterClosed().subscribe((selectedType: WidgetType) => {
-      if (selectedType) {
-        this.addWidget(selectedType);
+    dialogRef.afterClosed().subscribe((result: { action: string, type?: WidgetType }) => {
+      if (result) {
+        if (result.action === 'add' && result.type) {
+          this.addWidget(result.type);
+        } else if (result.action === 'reset') {
+          this.resetWorkspace();
+        }
       }
     });
   }
@@ -60,7 +65,7 @@ export class WorkspaceComponent implements OnInit {
       type,
       position: { x: 100, y: 100 },
       size: { width: 300, height: 200 },
-      settings: {} // initial settings per widget type
+      settings: {}
     };
     this.widgets.push(newWidget);
     this.saveWidgets();
@@ -68,6 +73,11 @@ export class WorkspaceComponent implements OnInit {
 
   removeWidget(id: string) {
     this.widgets = this.widgets.filter(w => w.id !== id);
+    this.saveWidgets();
+  }
+
+  resetWorkspace() {
+    this.widgets = [];
     this.saveWidgets();
   }
 
