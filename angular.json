@@ -21,6 +21,7 @@
             "outputPath": "dist/dm-tool",
             "index": "src/index.html",
             "browser": "src/main.ts",
+            "baseHref": "/dm-tool/",
             "polyfills": [
               "zone.js"
             ],
@@ -98,6 +99,9 @@
             ],
             "scripts": []
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }

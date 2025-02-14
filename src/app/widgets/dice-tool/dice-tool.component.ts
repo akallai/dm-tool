@@ -71,14 +71,14 @@ export class DiceToolComponent implements OnInit {
   @Input() settings: any;
   
   allDiceTypes: DiceType[] = [
-    { sides: 4, image: '/images/d4.png', enabled: true },
-    { sides: 6, image: '/images/d6.png', enabled: true },
-    { sides: 8, image: '/images/d8.png', enabled: true },
-    { sides: 10, image: '/images/d10.png', enabled: true },
-    { sides: 12, image: '/images/d12.png', enabled: true },
-    { sides: 20, image: '/images/d20.jpg', enabled: true },
-    { sides: 100, image: '/images/d100.png', enabled: true }
-  ];
+    { sides: 4, image: '/dm-tool/images/d4.png', enabled: true },
+    { sides: 6, image: '/dm-tool/images/d6.png', enabled: true },
+    { sides: 8, image: '/dm-tool/images/d8.png', enabled: true },
+    { sides: 10, image: '/dm-tool/images/d10.png', enabled: true },
+    { sides: 12, image: '/dm-tool/images/d12.png', enabled: true },
+    { sides: 20, image: '/dm-tool/images/d20.jpg', enabled: true },
+    { sides: 100, image: '/dm-tool/images/d100.png', enabled: true }
+];
   
   get availableDice(): DiceType[] {
     if (this.settings?.enabledDice) {
