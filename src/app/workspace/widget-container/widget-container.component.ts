@@ -134,22 +134,6 @@ export class WidgetContainerComponent {
     }
   }
 
-  toggleMinimize(event: MouseEvent) {
-    event.stopPropagation();
-    this.widgetData.minimized = !this.widgetData.minimized;
-    this.update.emit();
-  }
-
-  toggleMaximize(event: MouseEvent) {
-    event.stopPropagation();
-    this.widgetData.maximized = !this.widgetData.maximized;
-    if (this.widgetData.maximized) {
-      this.widgetData.position = { x: 0, y: 0 };
-      this.widgetData.size = { width: window.innerWidth, height: window.innerHeight };
-    }
-    this.update.emit();
-  }
-
   close(event: MouseEvent) {
     event.stopPropagation();
     this.closeEvent.emit();

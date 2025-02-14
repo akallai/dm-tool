@@ -14,8 +14,6 @@ export interface WidgetInstance {
   position: { x: number, y: number };
   size: { width: number, height: number };
   settings: any;
-  minimized?: boolean;
-  maximized?: boolean;
 }
 
 @Component({

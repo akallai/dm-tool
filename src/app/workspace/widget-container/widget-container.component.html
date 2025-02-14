@@ -17,20 +17,14 @@
       <button mat-icon-button (click)="openSettings($event)">
         <mat-icon>settings</mat-icon>
       </button>
-      <button mat-icon-button (click)="toggleMinimize($event)">
-        <mat-icon>{{ widgetData.minimized ? 'unfold_more' : 'minimize' }}</mat-icon>
-      </button>
-      <button mat-icon-button (click)="toggleMaximize($event)">
-        <mat-icon>{{ widgetData.maximized ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-      </button>
       <button mat-icon-button (click)="close($event)">
         <mat-icon>close</mat-icon>
       </button>
     </div>
   </div>
 
-  <!-- Content (if not minimized) -->
-  <div class="widget-content" *ngIf="!widgetData.minimized">
+  <!-- Content -->
+  <div class="widget-content">
     <ng-container [ngSwitch]="widgetData.type">
       <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings"></app-image-pdf-viewer>
       <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings"></app-notepad>
