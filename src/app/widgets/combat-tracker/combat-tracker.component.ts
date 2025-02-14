@@ -1,4 +1,3 @@
-// src/app/widgets/combat-tracker/combat-tracker.component.ts
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,14 +18,16 @@ interface Combatant {
   selector: 'app-combat-tracker',
   template: `
     <div class="combat-tracker">
-      <!-- Header -->
+      <!-- Compact Header -->
       <div class="tracker-header">
-        <span class="round-counter" *ngIf="showRoundCounter">
-          Round: {{ currentRound }}
-        </span>
-        <button mat-button color="primary" (click)="addCombatant()">
-          <mat-icon>add</mat-icon> Add Combatant
-        </button>
+        <div class="header-content">
+          <span class="round-counter" *ngIf="showRoundCounter">
+            Round {{ currentRound }}
+          </span>
+          <button mat-button color="primary" (click)="addCombatant()" class="add-btn">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
       </div>
 
       <!-- Combatant List -->
@@ -41,7 +42,7 @@ interface Combatant {
             <input [(ngModel)]="combatant.name" 
                    class="name-input" 
                    placeholder="Name">
-            <button mat-icon-button color="warn" (click)="removeCombatant(i)">
+            <button mat-icon-button color="warn" (click)="removeCombatant(i)" class="remove-btn">
               <mat-icon>close</mat-icon>
             </button>
           </div>
@@ -76,16 +77,18 @@ interface Combatant {
         </div>
       </div>
 
-      <!-- Controls -->
+      <!-- Compact Controls -->
       <div class="tracker-controls">
-        <button mat-raised-button color="primary" 
+        <button mat-button color="primary" 
                 (click)="nextTurn()"
-                [disabled]="combatants.length === 0">
-          Next Turn
+                [disabled]="combatants.length === 0"
+                class="control-btn">
+          Next
         </button>
         <button mat-button color="warn" 
                 (click)="reset()"
-                [disabled]="combatants.length === 0">
+                [disabled]="combatants.length === 0"
+                class="control-btn">
           Reset
         </button>
       </div>
@@ -95,21 +98,34 @@ interface Combatant {
     .combat-tracker {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 8px;
+      gap: 4px;
+      padding: 4px;
       height: 100%;
       box-sizing: border-box;
     }
 
     .tracker-header {
+      padding: 2px 4px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 0;
+      height: 24px;
     }
 
     .round-counter {
-      font-weight: 500;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .add-btn {
+      min-width: unset;
+      padding: 0 8px;
+      line-height: 24px;
+      height: 24px;
     }
 
     .combatant-list {
@@ -117,16 +133,16 @@ interface Combatant {
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
     }
 
     .combatant-card {
       background: #f5f5f5;
       border-radius: 4px;
-      padding: 8px;
+      padding: 4px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       position: relative;
       
       &.active {
@@ -142,21 +158,21 @@ interface Combatant {
     .combatant-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
     }
 
     .turn-marker {
       font-family: monospace;
-      font-size: 1.2em;
-      width: 20px;
+      font-size: 1rem;
+      width: 16px;
     }
 
     .name-input {
       flex: 1;
       border: none;
       background: transparent;
-      font-size: 1em;
-      padding: 4px;
+      font-size: 0.9rem;
+      padding: 2px;
       border-bottom: 1px solid transparent;
       
       &:focus {
@@ -165,29 +181,44 @@ interface Combatant {
       }
     }
 
+    .remove-btn {
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      
+      .mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+      }
+    }
+
     .health-bar-container {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
     .health-inputs {
       display: flex;
       align-items: center;
       gap: 4px;
+      font-size: 0.8rem;
     }
 
     .health-input {
-      width: 60px;
-      padding: 4px;
+      width: 40px;
+      padding: 2px;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 2px;
+      font-size: 0.8rem;
     }
 
     .health-bar {
-      height: 8px;
+      height: 4px;
       background: #ffcdd2;
-      border-radius: 4px;
+      border-radius: 2px;
       overflow: hidden;
     }
 
@@ -199,10 +230,11 @@ interface Combatant {
 
     .notes-input {
       width: 100%;
-      padding: 4px;
+      padding: 2px;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 2px;
       box-sizing: border-box;
+      font-size: 0.8rem;
       
       &:focus {
         outline: none;
@@ -212,16 +244,27 @@ interface Combatant {
 
     .drag-handle {
       position: absolute;
-      right: 8px;
-      bottom: 8px;
+      right: 4px;
+      bottom: 4px;
       cursor: move;
       color: #999;
+      font-size: 16px;
     }
 
     .tracker-controls {
       display: flex;
-      gap: 8px;
-      padding: 8px 0;
+      gap: 4px;
+      padding: 2px;
+      border-top: 1px solid #eee;
+    }
+
+    .control-btn {
+      flex: 1;
+      min-width: unset;
+      padding: 0 8px;
+      line-height: 24px;
+      height: 24px;
+      font-size: 0.8rem;
     }
   `],
   standalone: true,
