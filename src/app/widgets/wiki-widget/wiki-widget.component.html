@@ -1,0 +1,42 @@
+<div class="wiki-widget">
+    <div class="wiki-header">
+      <button mat-button (click)="openExistingWiki()">Open Wiki</button>
+      <button mat-button (click)="createNewWiki()">New Wiki</button>
+      <button mat-button (click)="saveWiki()" [disabled]="!fileHandle">Save Wiki</button>
+    </div>
+    <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
+      <div class="wiki-sidebar">
+        <h3>Articles</h3>
+        <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
+        <ul>
+          <li *ngFor="let article of wikiData.articles" [class.active]="article.id === currentArticle?.id">
+            <span (click)="selectArticle(article)">{{ article.title }}</span>
+            <button mat-icon-button color="warn" (click)="deleteArticle(article)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="wiki-content">
+        <div *ngIf="currentArticle">
+          <div class="article-header">
+            <input type="text" [(ngModel)]="currentArticle.title" (ngModelChange)="updateArticle()" placeholder="Article Title">
+            <button mat-button (click)="toggleEditing()">
+              {{ isEditing ? 'Preview' : 'Edit' }}
+            </button>
+          </div>
+          <div *ngIf="isEditing">
+            <textarea [(ngModel)]="currentArticle.content" (ngModelChange)="updateArticle()" placeholder="Write your article here..."></textarea>
+          </div>
+          <div *ngIf="!isEditing" [innerHTML]="renderedContent" class="article-preview"></div>
+        </div>
+        <div *ngIf="!currentArticle" class="empty-state">
+          <p>No article selected. Add an article from the sidebar.</p>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="!fileHandle && wikiData.articles.length === 0" class="empty-wiki">
+      <p>No wiki loaded. Open an existing wiki or create a new one.</p>
+    </div>
+  </div>
+  

@@ -16,6 +16,9 @@ import { ResizableDirective } from './resizable.directive';
 import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
 import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
 import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/music-settings-dialog/music-settings-dialog.component';
+import { WikiWidgetComponent } from '../../widgets/wiki-widget/wiki-widget.component';
+
+
 
 @Component({
   selector: 'app-widget-container',
@@ -32,7 +35,8 @@ import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/musi
     RandomGeneratorComponent,
     DiceToolComponent,
     MusicWidgetComponent,
-    ResizableDirective
+    ResizableDirective,
+    WikiWidgetComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -51,7 +55,8 @@ export class WidgetContainerComponent {
       'NOTEPAD': 'Notepad',
       'RANDOM_GENERATOR': 'Random Generator',
       'DICE_TOOL': 'Dice Tool',
-      'MUSIC_WIDGET': 'Music Widget'
+      'MUSIC_WIDGET': 'Music Widget',
+      'WIKI_WIDGET': 'Wiki'
     };
     return titles[type] || 'Widget';
   }
