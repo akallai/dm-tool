@@ -2,7 +2,6 @@
     <div class="wiki-header">
       <button mat-button (click)="openExistingWiki()">Open Wiki</button>
       <button mat-button (click)="createNewWiki()">New Wiki</button>
-      <!-- "Save Wiki" button removed since auto-save is used -->
     </div>
     <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
       <!-- Sidebar with toggle functionality -->
@@ -25,20 +24,35 @@
           </ul>
         </ng-container>
       </div>
+      
       <!-- Main content area -->
       <div class="wiki-content">
-        <div *ngIf="currentArticle">
+        <div *ngIf="currentArticle" class="article-container">
           <div class="article-header">
-            <input type="text" [(ngModel)]="currentArticle.title" (ngModelChange)="updateArticle()" placeholder="Article Title">
+            <input 
+              type="text" 
+              [(ngModel)]="currentArticle.title" 
+              (ngModelChange)="updateArticle()" 
+              placeholder="Article Title"
+              class="title-input"
+            >
             <button mat-button (click)="toggleEditing()">
               {{ isEditing ? 'Preview' : 'Edit' }}
             </button>
           </div>
-          <div *ngIf="isEditing">
-            <textarea [(ngModel)]="currentArticle.content" (ngModelChange)="updateArticle()" placeholder="Write your article here..."></textarea>
+          
+          <div *ngIf="isEditing" class="editor-container">
+            <textarea 
+              [(ngModel)]="currentArticle.content" 
+              (ngModelChange)="updateArticle()" 
+              placeholder="Write your article here..."
+              class="content-editor"
+            ></textarea>
           </div>
-          <div *ngIf="!isEditing" [innerHTML]="renderedContent" class="article-preview"></div>
+          
+          <div *ngIf="!isEditing" class="preview-container" [innerHTML]="renderedContent"></div>
         </div>
+        
         <div *ngIf="!currentArticle" class="empty-state">
           <p>No article selected. Add an article from the sidebar.</p>
         </div>
@@ -48,4 +62,3 @@
       <p>No wiki loaded. Open an existing wiki or create a new one.</p>
     </div>
   </div>
-  
