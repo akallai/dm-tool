@@ -1,4 +1,3 @@
-// workspace.component.ts
 import { Component, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
@@ -32,6 +31,21 @@ export interface WidgetInstance {
 })
 export class WorkspaceComponent implements OnInit {
   widgets: WidgetInstance[] = [];
+
+  // List of available backgrounds (ensure these images exist in the public/backgrounds folder)
+  backgrounds: string[] = [
+    '/dm-tool/backgrounds/paper.webp',
+    '/dm-tool/backgrounds/cyberpunk.webp',
+    '/dm-tool/backgrounds/dragon_battle.webp',
+    '/dm-tool/backgrounds/peaceful_valley.webp',
+    '/dm-tool/backgrounds/zombies.webp',
+    '/dm-tool/backgrounds/space.webp'
+  ];
+  currentBackgroundIndex: number = 0;
+
+  get currentBackground(): string {
+    return this.backgrounds[this.currentBackgroundIndex];
+  }
 
   constructor(
     private dialog: MatDialog,
@@ -83,5 +97,13 @@ export class WorkspaceComponent implements OnInit {
 
   saveWidgets() {
     this.widgetStorage.saveWidgets(this.widgets);
+  }
+
+  nextBackground() {
+    this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgrounds.length;
+  }
+
+  previousBackground() {
+    this.currentBackgroundIndex = (this.currentBackgroundIndex - 1 + this.backgrounds.length) % this.backgrounds.length;
   }
 }

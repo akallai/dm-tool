@@ -8,32 +8,31 @@ import { marked } from 'marked';
   selector: 'app-notepad',
   template: `
     <div class="notepad-container">
-  <ng-container *ngIf="fileHandle || content; else emptyState">
-    <!-- Editor / Display -->
-    <div *ngIf="!isEditing"
-         class="markdown-display"
-         [innerHTML]="renderedContent"
-         (click)="enableEditing()">
+      <ng-container *ngIf="fileHandle || content; else emptyState">
+        <!-- Editor / Display -->
+        <div *ngIf="!isEditing"
+             class="markdown-display"
+             [innerHTML]="renderedContent"
+             (click)="enableEditing()">
+        </div>
+        <textarea *ngIf="isEditing"
+                  #textareaElement
+                  [(ngModel)]="content" 
+                  (ngModelChange)="onContentChange()"
+                  (blur)="onBlur()"
+                  (focus)="onFocus()"
+                  placeholder="Write your notes here..."
+                  class="notepad-textarea">
+        </textarea>
+      </ng-container>
+      
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <button class="action-btn" (click)="openExistingFile()">Open File</button>
+          <button class="action-btn" (click)="createNewFile()">New File</button>
+        </div>
+      </ng-template>
     </div>
-    <textarea *ngIf="isEditing"
-              #textareaElement
-              [(ngModel)]="content" 
-              (ngModelChange)="onContentChange()"
-              (blur)="onBlur()"
-              (focus)="onFocus()"
-              placeholder="Write your notes here..."
-              class="notepad-textarea">
-    </textarea>
-  </ng-container>
-  
-  <ng-template #emptyState>
-    <div class="empty-state">
-      <button class="action-btn" (click)="openExistingFile()">Open File</button>
-      <button class="action-btn" (click)="createNewFile()">New File</button>
-    </div>
-  </ng-template>
-</div>
-
   `,
   styles: [`
     .notepad-container {
@@ -128,6 +127,14 @@ import { marked } from 'marked';
       pre code {
         padding: 0;
         background: none;
+      }
+      
+      /* Image responsiveness styles */
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0.5em 0;
       }
       
       table {

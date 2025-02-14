@@ -1,15 +1,38 @@
 .workspace {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: #f0f0f0;
-    overflow: hidden;
-  }
-  
-  .add-widget-btn {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 1000;
-  }
-  
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.add-widget-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.bg-switch-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: white;
+  cursor: pointer;
+  z-index: 1;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-switch-btn.left {
+  left: 16px;
+}
+
+.bg-switch-btn.right {
+  right: 16px;
+}
