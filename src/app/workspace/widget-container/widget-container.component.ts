@@ -12,17 +12,52 @@ import { NotepadComponent } from '../../widgets/notepad/notepad.component';
 import { RandomGeneratorComponent } from '../../widgets/random-generator/random-generator.component';
 import { DiceToolComponent } from '../../widgets/dice-tool/dice-tool.component';
 import { MusicWidgetComponent } from '../../widgets/music-widget/music-widget.component';
+import { WikiWidgetComponent } from '../../widgets/wiki-widget/wiki-widget.component';
+import { CombatTrackerComponent } from '../../widgets/combat-tracker/combat-tracker.component';
 import { ResizableDirective } from './resizable.directive';
 import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
 import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
 import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/music-settings-dialog/music-settings-dialog.component';
-import { WikiWidgetComponent } from '../../widgets/wiki-widget/wiki-widget.component';
-
 
 
 @Component({
   selector: 'app-widget-container',
-  templateUrl: './widget-container.component.html',
+  template: `
+    <div
+      class="widget-container"
+      cdkDrag
+      [cdkDragFreeDragPosition]="widgetData.position"
+      (cdkDragEnded)="onDragEnd($event)"
+      appResizable
+      [resizableWidth]="widgetData.size.width"
+      [resizableHeight]="widgetData.size.height"
+      (resizeEnd)="onResizeEnd($event)">
+      
+      <div class="widget-header" cdkDragHandle>
+        <span class="title">{{ getTitle(widgetData.type) }}</span>
+        <div class="controls">
+          <button mat-icon-button (click)="openSettings($event)">
+            <mat-icon>settings</mat-icon>
+          </button>
+          <button mat-icon-button (click)="close($event)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="widget-content">
+        <ng-container [ngSwitch]="widgetData.type">
+          <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings"></app-image-pdf-viewer>
+          <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings"></app-notepad>
+          <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings"></app-random-generator>
+          <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
+          <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings"></app-music-widget>
+          <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings"></app-wiki-widget>
+          <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
+        </ng-container>
+      </div>
+    </div>
+  `,
   styleUrls: ['./widget-container.component.scss'],
   standalone: true,
   imports: [
@@ -35,8 +70,9 @@ import { WikiWidgetComponent } from '../../widgets/wiki-widget/wiki-widget.compo
     RandomGeneratorComponent,
     DiceToolComponent,
     MusicWidgetComponent,
-    ResizableDirective,
-    WikiWidgetComponent
+    WikiWidgetComponent,
+    CombatTrackerComponent,
+    ResizableDirective
   ]
 })
 export class WidgetContainerComponent {
@@ -56,7 +92,8 @@ export class WidgetContainerComponent {
       'RANDOM_GENERATOR': 'Random Generator',
       'DICE_TOOL': 'Dice Tool',
       'MUSIC_WIDGET': 'Music Widget',
-      'WIKI_WIDGET': 'Wiki'
+      'WIKI_WIDGET': 'Wiki',
+      'COMBAT_TRACKER': 'Combat Tracker'
     };
     return titles[type] || 'Widget';
   }

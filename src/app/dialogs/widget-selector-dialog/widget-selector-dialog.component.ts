@@ -1,4 +1,3 @@
-// widget-selector-dialog.component.ts
 import { MatDialogRef } from '@angular/material/dialog';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,7 +6,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET';
+export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER';
 
 @Component({
   selector: 'app-widget-selector-dialog',
@@ -63,7 +62,8 @@ export class WidgetSelectorDialogComponent {
     { type: 'RANDOM_GENERATOR', label: 'Random Generator' },
     { type: 'DICE_TOOL', label: 'Dice Tool' },
     { type: 'MUSIC_WIDGET', label: 'Music Widget' },
-    { type: 'WIKI_WIDGET', label: 'Wiki' }
+    { type: 'WIKI_WIDGET', label: 'Wiki' },
+    { type: 'COMBAT_TRACKER', label: 'Combat Tracker' }
   ];
 
   constructor(private dialogRef: MatDialogRef<WidgetSelectorDialogComponent>) {}
