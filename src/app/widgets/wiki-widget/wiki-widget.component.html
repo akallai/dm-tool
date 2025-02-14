@@ -14,8 +14,15 @@
         </div>
         <ng-container *ngIf="!sidebarCollapsed">
           <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
+          <!-- Search input added here -->
+          <input
+            type="text"
+            placeholder="Search articles..."
+            [(ngModel)]="searchTerm"
+            class="search-input"
+          />
           <ul>
-            <li *ngFor="let article of wikiData.articles" [class.active]="article.id === currentArticle?.id">
+            <li *ngFor="let article of filteredArticles" [class.active]="article.id === currentArticle?.id">
               <span (click)="selectArticle(article)">{{ article.title }}</span>
               <button mat-icon-button color="warn" (click)="deleteArticle(article)">
                 <mat-icon>delete</mat-icon>
@@ -62,3 +69,4 @@
       <p>No wiki loaded. Open an existing wiki or create a new one.</p>
     </div>
   </div>
+  
