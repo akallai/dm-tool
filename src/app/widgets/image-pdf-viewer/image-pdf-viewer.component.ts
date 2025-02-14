@@ -114,23 +114,30 @@ export class ImagePdfViewerComponent implements OnInit {
       this.currentFile = file;
       this.isImage = file.type.startsWith('image/');
       
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.fileUrl = reader.result as string;
-        if (!this.isImage && this.fileUrl) {
-          // Use non-null assertion here as well
-          this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl!);
-        }
-        // Save file info to settings for persistence
-        if (this.settings) {
-          this.settings.fileName = file.name;
-          this.settings.fileType = file.type;
-          this.settings.fileDataUrl = this.fileUrl;
-        }
-      };
-      reader.readAsDataURL(file);
+      if (this.isImage) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.fileUrl = reader.result as string;
+          // For images, a Data URL is usually fine.
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For PDFs, use a blob URL instead of a data URL
+        const blobUrl = URL.createObjectURL(file);
+        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+        // Optionally, store blobUrl in settings if needed
+        this.fileUrl = blobUrl;
+      }
+  
+      // Save file info to settings for persistence
+      if (this.settings) {
+        this.settings.fileName = file.name;
+        this.settings.fileType = file.type;
+        this.settings.fileDataUrl = this.fileUrl;
+      }
     }
   }
+  
 
   clearFile() {
     this.currentFile = null;
