@@ -1,6 +1,7 @@
 .widget-container {
+  border-radius: 8px;
   position: absolute;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.7);  // Changed from #fff to rgba with 30% opacity
   border: 1px solid #ccc;
   box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
   display: flex;
@@ -13,7 +14,7 @@
 }
 
 .widget-header {
-  background: #3f51b5;
+  background: #871313;
   color: white;
   padding: 2px 4px;
   display: flex;

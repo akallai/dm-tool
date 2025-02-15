@@ -76,7 +76,7 @@ export class DiceToolComponent implements OnInit {
     { sides: 8, image: '/dm-tool/images/d8.png', enabled: true },
     { sides: 10, image: '/dm-tool/images/d10.png', enabled: true },
     { sides: 12, image: '/dm-tool/images/d12.png', enabled: true },
-    { sides: 20, image: '/dm-tool/images/d20.jpg', enabled: true },
+    { sides: 20, image: '/dm-tool/images/d20.png', enabled: true },
     { sides: 100, image: '/dm-tool/images/d100.png', enabled: true }
 ];
   
