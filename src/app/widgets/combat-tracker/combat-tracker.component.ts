@@ -18,7 +18,7 @@ interface Combatant {
   selector: 'app-combat-tracker',
   template: `
     <div class="combat-tracker">
-      <!-- Compact Header -->
+      <!-- Header -->
       <div class="tracker-header">
         <div class="header-content">
           <span class="round-counter" *ngIf="showRoundCounter">
@@ -30,54 +30,58 @@ interface Combatant {
         </div>
       </div>
 
-      <!-- Combatant List -->
-      <div class="combatant-list" cdkDropList (cdkDropListDropped)="drop($event)">
-        <div *ngFor="let combatant of combatants; let i = index" 
-             class="combatant-card"
-             [class.active]="i === activeIndex"
-             cdkDrag>
-          <!-- Combatant Header -->
-          <div class="combatant-header">
-            <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
-            <input [(ngModel)]="combatant.name" 
-                   class="name-input" 
-                   placeholder="Name">
-            <button mat-icon-button color="warn" (click)="removeCombatant(i)" class="remove-btn">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-
-          <!-- Health Bar -->
-          <div class="health-bar-container">
-            <div class="health-inputs">
-              <input type="number" 
-                     [(ngModel)]="combatant.currentHealth" 
-                     class="health-input"
-                     (ngModelChange)="validateHealth(combatant)">
-              <span>/</span>
-              <input type="number" 
-                     [(ngModel)]="combatant.maxHealth" 
-                     class="health-input"
-                     (ngModelChange)="validateHealth(combatant)">
-            </div>
-            <div class="health-bar">
-              <div class="health-bar-fill" 
-                   [style.width.%]="(combatant.currentHealth / combatant.maxHealth) * 100">
+      <!-- Combatant List Container -->
+      <div class="list-container">
+        <div class="combatant-list" cdkDropList (cdkDropListDropped)="drop($event)">
+          <div *ngFor="let combatant of combatants; let i = index" 
+               class="combatant-card"
+               [class.active]="i === activeIndex"
+               cdkDrag>
+            <div class="card-content">
+              <!-- Combatant Header -->
+              <div class="combatant-header">
+                <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
+                <input [(ngModel)]="combatant.name" 
+                       class="name-input" 
+                       placeholder="Name">
+                <button mat-icon-button color="warn" (click)="removeCombatant(i)" class="remove-btn">
+                  <mat-icon>close</mat-icon>
+                </button>
               </div>
-            </div>
-          </div>
 
-          <!-- Notes -->
-          <input [(ngModel)]="combatant.notes" 
-                 class="notes-input" 
-                 placeholder="Notes">
-          
-          <!-- Drag Handle -->
-          <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+              <!-- Health Section -->
+              <div class="health-section">
+                <div class="health-inputs">
+                  <input type="number" 
+                         [(ngModel)]="combatant.currentHealth" 
+                         class="health-input"
+                         (ngModelChange)="validateHealth(combatant)">
+                  <span>/</span>
+                  <input type="number" 
+                         [(ngModel)]="combatant.maxHealth" 
+                         class="health-input"
+                         (ngModelChange)="validateHealth(combatant)">
+                </div>
+                <div class="health-bar">
+                  <div class="health-bar-fill" 
+                       [style.width.%]="(combatant.currentHealth / combatant.maxHealth) * 100">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <input [(ngModel)]="combatant.notes" 
+                     class="notes-input" 
+                     placeholder="Notes">
+            </div>
+            
+            <!-- Drag Handle -->
+            <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+          </div>
         </div>
       </div>
 
-      <!-- Compact Controls -->
+      <!-- Controls -->
       <div class="tracker-controls">
         <button mat-button color="primary" 
                 (click)="nextTurn()"
@@ -98,14 +102,14 @@ interface Combatant {
     .combat-tracker {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 4px;
       height: 100%;
+      width: 100%;
       box-sizing: border-box;
     }
 
     .tracker-header {
-      padding: 2px 4px;
+      flex: 0 0 auto;
+      padding: 4px;
       border-bottom: 1px solid #eee;
     }
 
@@ -113,98 +117,66 @@ interface Combatant {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      height: 24px;
     }
 
-    .round-counter {
-      font-size: 0.8rem;
-      color: #666;
-    }
-
-    .add-btn {
-      min-width: unset;
-      padding: 0 8px;
-      line-height: 24px;
-      height: 24px;
+    .list-container {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-height: 0;
     }
 
     .combatant-list {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      padding: 4px;
     }
 
     .combatant-card {
       background: #f5f5f5;
       border-radius: 4px;
-      padding: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      margin-bottom: 4px;
       position: relative;
-      
-      &.active {
-        background: #e3f2fd;
-        border-left: 4px solid #2196f3;
-      }
+      width: 100%;
+      box-sizing: border-box;
+    }
 
-      &.cdk-drag-placeholder {
-        opacity: 0.5;
-      }
+    .card-content {
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .combatant-header {
       display: flex;
       align-items: center;
       gap: 4px;
+      width: 100%;
+      margin-bottom: 4px;
     }
 
     .turn-marker {
-      font-family: monospace;
-      font-size: 1rem;
+      flex: 0 0 auto;
       width: 16px;
+      text-align: center;
     }
 
     .name-input {
-      flex: 1;
+      flex: 1 1 auto;
+      min-width: 0;
       border: none;
       background: transparent;
-      font-size: 0.9rem;
       padding: 2px;
-      border-bottom: 1px solid transparent;
-      
-      &:focus {
-        outline: none;
-        border-bottom: 1px solid #2196f3;
-      }
     }
 
-    .remove-btn {
-      width: 20px;
-      height: 20px;
-      line-height: 20px;
-      
-      .mat-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-        line-height: 16px;
-      }
-    }
-
-    .health-bar-container {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    .health-section {
+      margin: 4px 0;
+      width: 100%;
     }
 
     .health-inputs {
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 0.8rem;
+      margin-bottom: 2px;
     }
 
     .health-input {
@@ -212,7 +184,6 @@ interface Combatant {
       padding: 2px;
       border: 1px solid #ddd;
       border-radius: 2px;
-      font-size: 0.8rem;
     }
 
     .health-bar {
@@ -220,6 +191,7 @@ interface Combatant {
       background: #ffcdd2;
       border-radius: 2px;
       overflow: hidden;
+      width: 100%;
     }
 
     .health-bar-fill {
@@ -234,11 +206,19 @@ interface Combatant {
       border: 1px solid #ddd;
       border-radius: 2px;
       box-sizing: border-box;
-      font-size: 0.8rem;
+    }
+
+    .remove-btn {
+      flex: 0 0 auto;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
       
-      &:focus {
-        outline: none;
-        border-color: #2196f3;
+      .mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
       }
     }
 
@@ -252,19 +232,20 @@ interface Combatant {
     }
 
     .tracker-controls {
+      flex: 0 0 auto;
       display: flex;
       gap: 4px;
-      padding: 2px;
+      padding: 4px;
       border-top: 1px solid #eee;
     }
 
     .control-btn {
       flex: 1;
-      min-width: unset;
-      padding: 0 8px;
-      line-height: 24px;
-      height: 24px;
-      font-size: 0.8rem;
+    }
+
+    .active {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
     }
   `],
   standalone: true,
