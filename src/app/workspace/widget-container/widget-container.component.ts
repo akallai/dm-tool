@@ -80,7 +80,7 @@ export class WidgetContainerComponent {
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
 
-  constructor(private dialog: MatDialog) {}
+  constructor(private dialog: MatDialog) { }
 
   getTitle(type: WidgetType): string {
     if (this.widgetData.settings?.title) {
@@ -101,26 +101,26 @@ export class WidgetContainerComponent {
   onDragEnd(event: CdkDragEnd) {
     const currentTransform = this.widgetData.position;
     const dragDistance = event.distance;
-    
+
     const newX = currentTransform.x + dragDistance.x;
     const newY = currentTransform.y + dragDistance.y;
-    
+
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    
+
     const widgetWidth = this.widgetData.size.width;
     const widgetHeight = this.widgetData.size.height;
-    
+
     const minX = 0;
     const minY = 0;
     const maxX = windowWidth - widgetWidth;
     const maxY = windowHeight - widgetHeight;
-    
+
     this.widgetData.position = {
       x: Math.max(minX, Math.min(maxX, newX)),
       y: Math.max(minY, Math.min(maxY, newY))
     };
-    
+
     this.update.emit();
   }
 
@@ -131,29 +131,28 @@ export class WidgetContainerComponent {
 
   openSettings(event: MouseEvent) {
     event.stopPropagation();
-    
+
     if (this.widgetData.type === 'DICE_TOOL') {
       const dialogRef = this.dialog.open(DiceSettingsDialogComponent, {
         width: '300px',
         data: { settings: this.widgetData.settings }
       });
-  
+
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
           this.widgetData.settings = result;
           this.update.emit();
         }
       });
+      // In widget-container.component.ts (inside openSettings method):
     } else if (this.widgetData.type === 'RANDOM_GENERATOR') {
-      if (!this.widgetData.settings.elements) {
-        this.widgetData.settings.elements = [];
+      if (!this.widgetData.settings.mappings) {
+        this.widgetData.settings.mappings = [];
       }
-  
       const dialogRef = this.dialog.open(RandomGeneratorSettingsDialogComponent, {
         width: '400px',
         data: { settings: this.widgetData.settings }
       });
-  
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
           this.widgetData.settings = result;
@@ -165,7 +164,7 @@ export class WidgetContainerComponent {
         width: '400px',
         data: { settings: this.widgetData.settings }
       });
-    
+
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
           console.log('Music settings result:', result);

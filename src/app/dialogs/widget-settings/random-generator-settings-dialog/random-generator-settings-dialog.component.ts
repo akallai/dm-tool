@@ -3,37 +3,53 @@ import { CommonModule } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
+
+interface RandomMapping {
+  key: string;
+  itemsText: string; // One item per line.
+}
+
+export interface RandomGeneratorSettings {
+  mappings: RandomMapping[];
+}
 
 @Component({
   selector: 'app-random-generator-settings-dialog',
   template: `
     <h2 mat-dialog-title>Random Generator Settings</h2>
     <mat-dialog-content>
-      <div class="settings-container">
-        <div class="file-input">
-          <input
-            #fileInput
-            type="file"
-            accept=".txt"
-            style="display: none"
-            (change)="onFileSelected($event)"
-          />
-          <button mat-button (click)="fileInput.click()">Import Items from File</button>
-          <p *ngIf="fileName" class="file-name">Selected file: {{ fileName }}</p>
-        </div>
-        
-        <div class="manual-input">
-          <h3>Manual Input</h3>
-          <p>Enter items manually (one per line):</p>
-          <textarea
-            [(ngModel)]="itemList"
-            rows="10"
-            placeholder="Enter items here&#10;One item per line"
-            class="items-textarea"
-          ></textarea>
+      <div class="mapping-list">
+        <div *ngFor="let mapping of mappings; let i = index" class="mapping-item">
+          <div class="mapping-header">
+            <mat-form-field appearance="fill" class="mapping-key-field">
+              <mat-label>Key</mat-label>
+              <input matInput [(ngModel)]="mapping.key" placeholder="Enter key">
+            </mat-form-field>
+            <button mat-icon-button color="warn" (click)="removeMapping(i)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+          <div class="mapping-body">
+            <mat-form-field appearance="fill" class="mapping-items-field">
+              <mat-label>Items (one per line)</mat-label>
+              <textarea
+                matInput
+                [(ngModel)]="mapping.itemsText"
+                placeholder="Enter items here, one per line"
+                rows="5">
+              </textarea>
+            </mat-form-field>
+            <div class="import-section">
+              <input type="file" accept=".txt" #fileInput (change)="onFileSelected($event, i)" style="display: none">
+              <button mat-stroked-button color="primary" (click)="fileInput.click()">Import</button>
+            </div>
+          </div>
         </div>
       </div>
+      <button mat-stroked-button color="primary" (click)="addMapping()">Add Mapping</button>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
@@ -41,81 +57,91 @@ import { MatInputModule } from '@angular/material/input';
     </mat-dialog-actions>
   `,
   styles: [`
-    .settings-container {
+    .mapping-list {
       display: flex;
       flex-direction: column;
       gap: 16px;
-      min-width: 300px;
+      margin-bottom: 16px;
     }
-    .file-input {
+    .mapping-item {
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .mapping-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .mapping-key-field {
+      flex: 1;
+      max-width: 120px;
+      margin-right: 8px;
+    }
+    .mapping-body {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .mapping-items-field {
+      flex: 1;
+    }
+    .import-section {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      justify-content: flex-end;
     }
-    .file-name {
-      margin: 0;
-      font-size: 0.9em;
-      color: #666;
-    }
-    .items-textarea {
-      width: 100%;
-      min-height: 150px;
-      padding: 8px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      resize: vertical;
+    .import-section button {
+      font-size: 0.8em;
+      padding: 4px 8px;
     }
   `],
   standalone: true,
   imports: [
     CommonModule,
     MatDialogModule,
+    FormsModule,
     MatButtonModule,
+    MatFormFieldModule,
     MatInputModule,
-    FormsModule
+    MatIconModule
   ]
 })
 export class RandomGeneratorSettingsDialogComponent {
-  itemList: string = '';
-  fileName: string = '';
+  mappings: RandomMapping[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<RandomGeneratorSettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { settings: { elements: string[] } }
+    @Inject(MAT_DIALOG_DATA) public data: { settings: RandomGeneratorSettings }
   ) {
-    // Initialize textarea with existing items
-    this.itemList = data.settings.elements.join('\n');
+    // Initialize with existing mappings or a default one.
+    this.mappings = data.settings.mappings ? [...data.settings.mappings] : [{ key: '', itemsText: '' }];
   }
 
-  async onFileSelected(event: Event) {
+  addMapping() {
+    this.mappings.push({ key: '', itemsText: '' });
+  }
+
+  removeMapping(index: number) {
+    this.mappings.splice(index, 1);
+  }
+
+  async onFileSelected(event: Event, index: number) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
-      const file = input.files[0];
-      this.fileName = file.name;
-      
       try {
+        const file = input.files[0];
         const text = await file.text();
-        // Append file content to existing items
-        if (this.itemList) {
-          this.itemList += '\n' + text;
-        } else {
-          this.itemList = text;
-        }
+        // Replace existing text with the file's content.
+        this.mappings[index].itemsText = text;
       } catch (error) {
         console.error('Error reading file:', error);
-        // Handle error appropriately
       }
     }
   }
 
   save() {
-    // Split the text into an array, filter out empty lines
-    const elements = this.itemList
-      .split('\n')
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
-    
-    this.dialogRef.close({ elements });
+    this.dialogRef.close({ mappings: this.mappings });
   }
 }

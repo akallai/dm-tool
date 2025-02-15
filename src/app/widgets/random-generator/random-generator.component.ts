@@ -1,30 +1,37 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+
+interface RandomMapping {
+  key: string;
+  itemsText: string;
+}
+
+interface RandomGeneratorSettings {
+  mappings: RandomMapping[];
+}
 
 @Component({
   selector: 'app-random-generator',
   template: `
     <div class="random-generator">
-      <div class="content">
-        <div class="result" *ngIf="selectedElement">
-          {{ selectedElement }}
+      <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
+        No mappings available. Add mappings in settings.
+      </div>
+      
+      <div *ngIf="mappings.length > 0" class="content-wrapper">
+        <div class="button-grid">
+          <button 
+            mat-raised-button 
+            *ngFor="let mapping of mappings" 
+            (click)="randomize(mapping)"
+            [disabled]="!hasItems(mapping)">
+            {{ mapping.key || 'No Key' }}
+          </button>
         </div>
         
-        <button 
-          mat-raised-button 
-          color="primary" 
-          (click)="randomize()"
-          [disabled]="!hasElements"
-          class="randomize-button"
-        >
-          Generate Random
-        </button>
-        
-        <div class="empty-message" *ngIf="!hasElements">
-          No items available. Add items in settings.
+        <div *ngIf="lastResult" class="result">
+          <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
         </div>
       </div>
     </div>
@@ -35,65 +42,80 @@ import { MatIconModule } from '@angular/material/icon';
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
     }
 
-    .content {
-      text-align: center;
+    .content-wrapper {
       width: 100%;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 8px;
     }
 
     .result {
-      font-size: 1.5em;
-      margin-bottom: 24px;
-      padding: 16px;
+      text-align: center;
+      padding: 12px;
       background: #f5f5f5;
       border-radius: 4px;
-      word-break: break-word;
-    }
-
-    .randomize-button {
-      min-width: 150px;
+      margin-top: auto;
     }
 
     .empty-message {
-      margin-top: 16px;
       color: #666;
       font-size: 0.9em;
+      text-align: center;
+      padding: 16px;
     }
   `],
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatButtonModule,
-    MatIconModule
-  ]
+  imports: [CommonModule, MatButtonModule]
 })
-export class RandomGeneratorComponent {
+export class RandomGeneratorComponent implements OnInit, OnChanges {
   @Input() settings: any;
-  elements: string[] = [];
-  selectedElement?: string;
-
-  get hasElements(): boolean {
-    return this.elements.length > 0;
-  }
+  mappings: RandomMapping[] = [];
+  lastResult: string = '';
+  lastKey: string = '';
 
   ngOnInit() {
-    this.elements = this.settings?.elements || [];
-  }
-
-  ngOnChanges() {
-    // Update elements when settings change
-    if (this.settings?.elements) {
-      this.elements = this.settings.elements;
+    if (this.settings && this.settings.mappings) {
+      this.mappings = this.settings.mappings;
+    } else {
+      this.mappings = [];
     }
   }
 
-  randomize() {
-    if (this.elements.length > 0) {
-      const index = Math.floor(Math.random() * this.elements.length);
-      this.selectedElement = this.elements[index];
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['settings'] && this.settings && this.settings.mappings) {
+      this.mappings = this.settings.mappings;
+    }
+  }
+
+  getItems(mapping: RandomMapping): string[] {
+    if (!mapping.itemsText) {
+      return [];
+    }
+    return mapping.itemsText
+      .split('\n')
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  }
+
+  hasItems(mapping: RandomMapping): boolean {
+    return this.getItems(mapping).length > 0;
+  }
+
+  randomize(mapping: RandomMapping) {
+    const items = this.getItems(mapping);
+    if (items.length > 0) {
+      const index = Math.floor(Math.random() * items.length);
+      this.lastResult = items[index];
+      this.lastKey = mapping.key;
     }
   }
 }
