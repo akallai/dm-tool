@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 
 @Directive({
   selector: '[appResizable]',
   standalone: true
 })
-export class ResizableDirective implements OnInit {
+export class ResizableDirective implements OnInit, OnChanges {
   @Input() resizableWidth = 300;
   @Input() resizableHeight = 200;
   @Output() resizeEnd = new EventEmitter<{ width: number, height: number }>();
@@ -24,6 +24,15 @@ export class ResizableDirective implements OnInit {
   ngOnInit() {
     this.initializeElement();
     this.createHandles();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['resizableWidth']) {
+      this.renderer.setStyle(this.el.nativeElement, 'width', this.resizableWidth + 'px');
+    }
+    if (changes['resizableHeight']) {
+      this.renderer.setStyle(this.el.nativeElement, 'height', this.resizableHeight + 'px');
+    }
   }
 
   private initializeElement() {

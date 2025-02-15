@@ -19,45 +19,9 @@ import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-
 import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
 import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/music-settings-dialog/music-settings-dialog.component';
 
-
 @Component({
   selector: 'app-widget-container',
-  template: `
-    <div
-      class="widget-container"
-      cdkDrag
-      [cdkDragFreeDragPosition]="widgetData.position"
-      (cdkDragEnded)="onDragEnd($event)"
-      appResizable
-      [resizableWidth]="widgetData.size.width"
-      [resizableHeight]="widgetData.size.height"
-      (resizeEnd)="onResizeEnd($event)">
-      
-      <div class="widget-header" cdkDragHandle>
-        <span class="title">{{ getTitle(widgetData.type) }}</span>
-        <div class="controls">
-          <button mat-icon-button (click)="openSettings($event)">
-            <mat-icon>settings</mat-icon>
-          </button>
-          <button mat-icon-button (click)="close($event)">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-      </div>
-
-      <div class="widget-content">
-        <ng-container [ngSwitch]="widgetData.type">
-          <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings"></app-image-pdf-viewer>
-          <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings"></app-notepad>
-          <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings"></app-random-generator>
-          <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
-          <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings"></app-music-widget>
-          <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings"></app-wiki-widget>
-          <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
-        </ng-container>
-      </div>
-    </div>
-  `,
+  templateUrl: './widget-container.component.html',
   styleUrls: ['./widget-container.component.scss'],
   standalone: true,
   imports: [
@@ -79,6 +43,13 @@ export class WidgetContainerComponent {
   @Input() widgetData!: WidgetInstance;
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
+
+  // Flag to track maximized state
+  isMaximized = false;
+
+  // Store previous state so we can restore it
+  private previousPosition!: { x: number, y: number };
+  private previousSize!: { width: number, height: number };
 
   constructor(private dialog: MatDialog) { }
 
@@ -129,6 +100,28 @@ export class WidgetContainerComponent {
     this.update.emit();
   }
 
+  toggleMaximize(event: MouseEvent) {
+    event.stopPropagation();
+    if (!this.isMaximized) {
+      // Save current state
+      this.previousPosition = { ...this.widgetData.position };
+      this.previousSize = { ...this.widgetData.size };
+
+      // Set widget to full screen (top left corner and full viewport size)
+      this.widgetData.position = { x: 0, y: 0 };
+      this.widgetData.size = { width: window.innerWidth, height: window.innerHeight };
+
+      this.isMaximized = true;
+    } else {
+      // Restore previous state
+      this.widgetData.position = { ...this.previousPosition };
+      this.widgetData.size = { ...this.previousSize };
+
+      this.isMaximized = false;
+    }
+    this.update.emit();
+  }
+
   openSettings(event: MouseEvent) {
     event.stopPropagation();
 
@@ -144,7 +137,6 @@ export class WidgetContainerComponent {
           this.update.emit();
         }
       });
-      // In widget-container.component.ts (inside openSettings method):
     } else if (this.widgetData.type === 'RANDOM_GENERATOR') {
       if (!this.widgetData.settings.mappings) {
         this.widgetData.settings.mappings = [];

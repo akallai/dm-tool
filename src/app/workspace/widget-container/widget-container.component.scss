@@ -1,15 +1,21 @@
 .widget-container {
   border-radius: 8px;
   position: absolute;
-  background: rgba(255, 255, 255, 0.7);  // Changed from #fff to rgba with 30% opacity
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid #ccc;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   z-index: 2;
+
   &.cdk-drag-dragging {
     cursor: grabbing;
+  }
+
+  // When maximized, raise the z-index so the widget appears on top
+  &.maximized {
+    z-index: 9999;
   }
 }
 

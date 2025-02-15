@@ -1,5 +1,6 @@
 <div
   class="widget-container"
+  [class.maximized]="isMaximized"
   cdkDrag
   [cdkDragFreeDragPosition]="widgetData.position"
   (cdkDragEnded)="onDragEnd($event)"
@@ -7,13 +8,15 @@
   [resizableWidth]="widgetData.size.width"
   [resizableHeight]="widgetData.size.height"
   (resizeEnd)="onResizeEnd($event)">
-  
+
   <!-- Header as drag handle -->
-  <div 
-    class="widget-header"
-    cdkDragHandle>
+  <div class="widget-header" cdkDragHandle>
     <span class="title">{{ getTitle(widgetData.type) }}</span>
     <div class="controls">
+      <!-- Maximize button -->
+      <button mat-icon-button (click)="toggleMaximize($event)">
+        <mat-icon>{{ isMaximized ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+      </button>
       <button mat-icon-button (click)="openSettings($event)">
         <mat-icon>settings</mat-icon>
       </button>
@@ -32,6 +35,7 @@
       <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
       <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings"></app-music-widget>
       <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings"></app-wiki-widget>
+      <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
     </ng-container>
   </div>
 </div>
