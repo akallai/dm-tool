@@ -1,72 +1,82 @@
 <div class="wiki-widget">
-    <div class="wiki-header">
-      <button mat-button (click)="openExistingWiki()">Open Wiki</button>
-      <button mat-button (click)="createNewWiki()">New Wiki</button>
-    </div>
-    <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
-      <!-- Sidebar with toggle functionality -->
-      <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
+  <div class="wiki-header">
+    <button mat-button (click)="openExistingWiki()">Open Wiki</button>
+    <button mat-button (click)="createNewWiki()">New Wiki</button>
+  </div>
+  <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
+    <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
+      <div class="sidebar-toggle">
+        <button mat-icon-button (click)="toggleSidebar()">
+          <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+      </div>
+      <div class="sidebar-content" [class.hidden]="sidebarCollapsed">
         <div class="sidebar-header">
-          <h3 *ngIf="!sidebarCollapsed">Articles</h3>
-          <button mat-icon-button (click)="toggleSidebar()">
-            <mat-icon>{{ sidebarCollapsed ? 'arrow_right' : 'arrow_left' }}</mat-icon>
+          <h3>Articles</h3>
+        </div>
+        <!-- Button to add a root article -->
+        <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
+        <input
+          type="text"
+          placeholder="Search articles..."
+          [(ngModel)]="searchTerm"
+          class="search-input"
+        />
+        <ul>
+          <ng-container *ngFor="let article of filteredArticles">
+            <ng-container *ngTemplateOutlet="recursiveList; context:{ article: article, level: 0 }"></ng-container>
+          </ng-container>
+        </ul>
+      </div>
+    </div>
+    <div class="wiki-content">
+      <div *ngIf="currentArticle" class="article-container">
+        <div class="article-header">
+          <input 
+            type="text" 
+            [(ngModel)]="currentArticle.title" 
+            (ngModelChange)="updateArticle()" 
+            placeholder="Article Title"
+            class="title-input"
+          >
+          <button mat-button (click)="toggleEditing()">
+            {{ isEditing ? 'Preview' : 'Edit' }}
           </button>
         </div>
-        <ng-container *ngIf="!sidebarCollapsed">
-          <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
-          <!-- Search input added here -->
-          <input
-            type="text"
-            placeholder="Search articles..."
-            [(ngModel)]="searchTerm"
-            class="search-input"
-          />
-          <ul>
-            <li *ngFor="let article of filteredArticles" [class.active]="article.id === currentArticle?.id">
-              <span (click)="selectArticle(article)">{{ article.title }}</span>
-              <button mat-icon-button color="warn" (click)="deleteArticle(article)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </li>
-          </ul>
-        </ng-container>
-      </div>
-      
-      <!-- Main content area -->
-      <div class="wiki-content">
-        <div *ngIf="currentArticle" class="article-container">
-          <div class="article-header">
-            <input 
-              type="text" 
-              [(ngModel)]="currentArticle.title" 
-              (ngModelChange)="updateArticle()" 
-              placeholder="Article Title"
-              class="title-input"
-            >
-            <button mat-button (click)="toggleEditing()">
-              {{ isEditing ? 'Preview' : 'Edit' }}
-            </button>
-          </div>
-          
-          <div *ngIf="isEditing" class="editor-container">
-            <textarea 
-              [(ngModel)]="currentArticle.content" 
-              (ngModelChange)="updateArticle()" 
-              placeholder="Write your article here..."
-              class="content-editor"
-            ></textarea>
-          </div>
-          
-          <div *ngIf="!isEditing" class="preview-container" [innerHTML]="renderedContent"></div>
+        <div *ngIf="isEditing" class="editor-container">
+          <textarea 
+            [(ngModel)]="currentArticle.content" 
+            (ngModelChange)="updateArticle()" 
+            placeholder="Write your article here..."
+            class="content-editor"
+          ></textarea>
         </div>
-        
-        <div *ngIf="!currentArticle" class="empty-state">
-          <p>No article selected. Add an article from the sidebar.</p>
-        </div>
+        <div *ngIf="!isEditing" class="preview-container" [innerHTML]="renderedContent"></div>
       </div>
-    </div>
-    <div *ngIf="!fileHandle && wikiData.articles.length === 0" class="empty-wiki">
-      <p>No wiki loaded. Open an existing wiki or create a new one.</p>
+      <div *ngIf="!currentArticle" class="empty-state">
+        <p>No article selected. Add an article from the sidebar.</p>
+      </div>
     </div>
   </div>
-  
+  <div *ngIf="!fileHandle && wikiData.articles.length === 0" class="empty-wiki">
+    <p>No wiki loaded. Open an existing wiki or create a new one.</p>
+  </div>
+</div>
+
+<!-- Recursive template for hierarchical display -->
+<ng-template #recursiveList let-article="article" let-level="level">
+  <li [style.paddingLeft.px]="level * 16" [class.active]="article.id === currentArticle?.id">
+    <span (click)="selectArticle(article)">{{ article.title }}</span>
+    <button mat-icon-button color="warn" (click)="deleteArticle(article, $event)">
+      <mat-icon>delete</mat-icon>
+    </button>
+    <button mat-icon-button color="primary" (click)="addSubArticle(article, $event)">
+      <mat-icon>add</mat-icon>
+    </button>
+  </li>
+  <ng-container *ngIf="article.children && article.children.length">
+    <ng-container *ngFor="let child of article.children">
+      <ng-container *ngTemplateOutlet="recursiveList; context:{ article: child, level: level + 1 }"></ng-container>
+    </ng-container>
+  </ng-container>
+</ng-template>
