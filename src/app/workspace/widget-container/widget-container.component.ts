@@ -18,6 +18,8 @@ import { ResizableDirective } from './resizable.directive';
 import { DiceSettingsDialogComponent } from '../../dialogs/widget-settings/dice-settings-dialog/dice-settings-dialog.component';
 import { RandomGeneratorSettingsDialogComponent } from '../../dialogs/widget-settings/random-generator-settings-dialog/random-generator-settings-dialog.component';
 import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/music-settings-dialog/music-settings-dialog.component';
+import { DaytimeTrackerComponent } from '../../widgets/daytime-tracker/daytime-tracker.component';
+
 
 @Component({
   selector: 'app-widget-container',
@@ -36,7 +38,8 @@ import { MusicSettingsDialogComponent } from '../../dialogs/widget-settings/musi
     MusicWidgetComponent,
     WikiWidgetComponent,
     CombatTrackerComponent,
-    ResizableDirective
+    ResizableDirective,
+    DaytimeTrackerComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -64,7 +67,8 @@ export class WidgetContainerComponent {
       'DICE_TOOL': 'Dice Tool',
       'MUSIC_WIDGET': 'Music Widget',
       'WIKI_WIDGET': 'Wiki',
-      'COMBAT_TRACKER': 'Combat Tracker'
+      'COMBAT_TRACKER': 'Combat Tracker',
+      'DAYTIME_TRACKER': 'Daytime Tracker'
     };
     return titles[type] || 'Widget';
   }
