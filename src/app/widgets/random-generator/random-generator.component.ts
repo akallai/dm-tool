@@ -1,14 +1,10 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
 interface RandomMapping {
   key: string;
   itemsText: string;
-}
-
-interface RandomGeneratorSettings {
-  mappings: RandomMapping[];
 }
 
 @Component({
@@ -18,18 +14,15 @@ interface RandomGeneratorSettings {
       <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
         No mappings available. Add mappings in settings.
       </div>
-      
       <div *ngIf="mappings.length > 0" class="content-wrapper">
         <div class="button-grid">
-          <button 
-            mat-raised-button 
-            *ngFor="let mapping of mappings" 
-            (click)="randomize(mapping)"
-            [disabled]="!hasItems(mapping)">
+          <button mat-raised-button 
+                  *ngFor="let mapping of mappings" 
+                  (click)="randomize(mapping)"
+                  [disabled]="!hasItems(mapping)">
             {{ mapping.key || 'No Key' }}
           </button>
         </div>
-        
         <div *ngIf="lastResult" class="result">
           <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
         </div>
@@ -43,7 +36,6 @@ interface RandomGeneratorSettings {
       align-items: center;
       justify-content: center;
     }
-
     .content-wrapper {
       width: 100%;
       padding: 16px;
@@ -51,13 +43,11 @@ interface RandomGeneratorSettings {
       flex-direction: column;
       gap: 16px;
     }
-
     .button-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
       gap: 8px;
     }
-
     .result {
       text-align: center;
       padding: 12px;
@@ -65,7 +55,6 @@ interface RandomGeneratorSettings {
       border-radius: 4px;
       margin-top: auto;
     }
-
     .empty-message {
       color: #666;
       font-size: 0.9em;
@@ -77,22 +66,28 @@ interface RandomGeneratorSettings {
   imports: [CommonModule, MatButtonModule]
 })
 export class RandomGeneratorComponent implements OnInit, OnChanges {
-  @Input() settings: any;
+  private _settings: any;
+  @Input() set settings(value: any) {
+    this._settings = value;
+    this.mappings = this._settings?.mappings || [];
+  }
+  get settings() {
+    return this._settings;
+  }
+  // (Optional) if you need to emit changes:
+  @Output() settingsChange = new EventEmitter<any>();
+
   mappings: RandomMapping[] = [];
   lastResult: string = '';
   lastKey: string = '';
 
   ngOnInit() {
-    if (this.settings && this.settings.mappings) {
-      this.mappings = this.settings.mappings;
-    } else {
-      this.mappings = [];
-    }
+    this.mappings = this.settings?.mappings || [];
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['settings'] && this.settings && this.settings.mappings) {
-      this.mappings = this.settings.mappings;
+    if (changes['settings']) {
+      this.mappings = this.settings?.mappings || [];
     }
   }
 
@@ -116,6 +111,8 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
       const index = Math.floor(Math.random() * items.length);
       this.lastResult = items[index];
       this.lastKey = mapping.key;
+      // Optionally, emit settingsChange if internal state is modified.
+      // this.settingsChange.emit(this.settings);
     }
   }
 }

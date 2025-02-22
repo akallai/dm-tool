@@ -1,4 +1,3 @@
-// workspace/widget-container/widget-container.component.ts
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CdkDragEnd } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
@@ -16,10 +15,8 @@ import { WikiWidgetComponent } from '../../widgets/wiki-widget/wiki-widget.compo
 import { CombatTrackerComponent } from '../../widgets/combat-tracker/combat-tracker.component';
 import { DaytimeTrackerComponent } from '../../widgets/daytime-tracker/daytime-tracker.component';
 import { ResizableDirective } from './resizable.directive';
-// src/app/workspace/widget-container/widget-container.component.ts
 import { SettingsService } from '../../settings/services/settings.service';
 import { SettingsConfig } from '../../settings/types/settings.types';
-
 
 @Component({
   selector: 'app-widget-container',
@@ -51,7 +48,7 @@ export class WidgetContainerComponent {
   private previousPosition!: { x: number, y: number };
   private previousSize!: { width: number, height: number };
 
-  constructor(private settingsService: SettingsService) {}
+  constructor(private settingsService: SettingsService) { }
 
   getTitle(type: WidgetType): string {
     if (this.widgetData.settings?.title) {
@@ -72,9 +69,7 @@ export class WidgetContainerComponent {
 
   openSettings(event: MouseEvent) {
     event.stopPropagation();
-    
     const config = this.getWidgetSettingsConfig(this.widgetData.type);
-    
     if (config) {
       this.settingsService.openSettings(config, this.widgetData.settings)
         .subscribe(result => {
@@ -211,22 +206,18 @@ export class WidgetContainerComponent {
           ]
         };
 
-      // IMAGE_PDF and NOTEPAD don't need settings as they handle their own file operations
+      // IMAGE_PDF and NOTEPAD typically handle their own file operations.
       default:
         return null;
     }
   }
 
-  // Existing methods remain unchanged
   onDragEnd(event: CdkDragEnd) {
-    const currentTransform = this.widgetData.position;
     const dragDistance = event.distance;
-
     this.widgetData.position = {
-      x: currentTransform.x + dragDistance.x,
-      y: currentTransform.y + dragDistance.y
+      x: this.widgetData.position.x + dragDistance.x,
+      y: this.widgetData.position.y + dragDistance.y
     };
-
     this.update.emit();
   }
 
@@ -241,10 +232,7 @@ export class WidgetContainerComponent {
       this.previousPosition = { ...this.widgetData.position };
       this.previousSize = { ...this.widgetData.size };
       this.widgetData.position = { x: 0, y: 0 };
-      this.widgetData.size = { 
-        width: window.innerWidth, 
-        height: window.innerHeight 
-      };
+      this.widgetData.size = { width: window.innerWidth, height: window.innerHeight };
     } else {
       this.widgetData.position = { ...this.previousPosition };
       this.widgetData.size = { ...this.previousSize };
@@ -256,5 +244,10 @@ export class WidgetContainerComponent {
   close(event: MouseEvent) {
     event.stopPropagation();
     this.closeEvent.emit();
+  }
+
+  onSettingsChange() {
+    // When a child widget’s settings change, emit update so that the parent workspace saves state.
+    this.update.emit();
   }
 }

@@ -13,7 +13,6 @@
   <div class="widget-header" cdkDragHandle>
     <span class="title">{{ getTitle(widgetData.type) }}</span>
     <div class="controls">
-      <!-- Maximize button -->
       <button mat-icon-button (click)="toggleMaximize($event)">
         <mat-icon>{{ isMaximized ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
@@ -29,11 +28,11 @@
   <!-- Content -->
   <div class="widget-content">
     <ng-container [ngSwitch]="widgetData.type">
-      <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings"></app-image-pdf-viewer>
+      <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-image-pdf-viewer>
       <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings"></app-notepad>
-      <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings"></app-random-generator>
+      <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-random-generator>
       <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
-      <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings"></app-music-widget>
+      <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-music-widget>
       <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings"></app-wiki-widget>
       <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
       <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings"></app-daytime-tracker>

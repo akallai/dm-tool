@@ -1,4 +1,4 @@
-import { Component, Input, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, Input, ElementRef, ViewChild, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -52,14 +52,12 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       background: #f5f5f5;
       position: relative;
     }
-
     .empty-state {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-
     .content-view {
       flex: 1;
       width: 100%;
@@ -67,7 +65,6 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       object-fit: contain;
       border: none;
     }
-
     .file-controls {
       position: absolute;
       top: 8px;
@@ -82,6 +79,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 })
 export class ImagePdfViewerComponent implements OnInit {
   @Input() settings: any;
+  @Output() settingsChange = new EventEmitter<any>();
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   currentFile: File | null = null;
@@ -92,13 +90,12 @@ export class ImagePdfViewerComponent implements OnInit {
   constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
-    // Restore file from settings if available
+    // Restore previously saved file if available
     if (this.settings && this.settings.fileDataUrl) {
       this.fileUrl = this.settings.fileDataUrl;
       this.isImage = this.settings.fileType?.startsWith('image/') || false;
       if (!this.isImage && this.fileUrl) {
-        // Use non-null assertion here
-        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl!);
+        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl);
       }
     }
   }
@@ -114,30 +111,24 @@ export class ImagePdfViewerComponent implements OnInit {
       this.currentFile = file;
       this.isImage = file.type.startsWith('image/');
       
-      if (this.isImage) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.fileUrl = reader.result as string;
-          // For images, a Data URL is usually fine.
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // For PDFs, use a blob URL instead of a data URL
-        const blobUrl = URL.createObjectURL(file);
-        this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
-        // Optionally, store blobUrl in settings if needed
-        this.fileUrl = blobUrl;
-      }
-  
-      // Save file info to settings for persistence
-      if (this.settings) {
-        this.settings.fileName = file.name;
-        this.settings.fileType = file.type;
-        this.settings.fileDataUrl = this.fileUrl;
-      }
+      // Use FileReader to create a data URL (works for both images and PDFs)
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.fileUrl = reader.result as string;
+        if (!this.isImage) {
+          this.safeFileUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl);
+        }
+        // Save file info into settings and notify parent of change
+        if (this.settings) {
+          this.settings.fileName = file.name;
+          this.settings.fileType = file.type;
+          this.settings.fileDataUrl = this.fileUrl;
+          this.notifySettingsChange();
+        }
+      };
+      reader.readAsDataURL(file);
     }
   }
-  
 
   clearFile() {
     this.currentFile = null;
@@ -148,10 +139,11 @@ export class ImagePdfViewerComponent implements OnInit {
       this.settings.fileName = null;
       this.settings.fileType = null;
       this.settings.fileDataUrl = null;
+      this.notifySettingsChange();
     }
   }
 
-  ngOnDestroy() {
-    // No cleanup needed for Data URLs
+  private notifySettingsChange() {
+    this.settingsChange.emit(this.settings);
   }
 }

@@ -69,7 +69,7 @@ interface DiceType {
 })
 export class DiceToolComponent implements OnInit {
   @Input() settings: any;
-  
+
   allDiceTypes: DiceType[] = [
     { sides: 4, image: '/dm-tool/images/d4.png', enabled: true },
     { sides: 6, image: '/dm-tool/images/d6.png', enabled: true },
@@ -78,24 +78,32 @@ export class DiceToolComponent implements OnInit {
     { sides: 12, image: '/dm-tool/images/d12.png', enabled: true },
     { sides: 20, image: '/dm-tool/images/d20.png', enabled: true },
     { sides: 100, image: '/dm-tool/images/d100.png', enabled: true }
-];
-  
-  get availableDice(): DiceType[] {
-    if (this.settings?.enabledDice) {
-      return this.allDiceTypes.filter(dice => this.settings.enabledDice[dice.sides]);
-    }
-    return this.allDiceTypes;
-  }
-  
+  ];
+
+  // Declare a property to hold the dice roll result.
   result: number | null = null;
 
   ngOnInit() {
+    // If there is no enabledDice setting, initialize it as an array.
     if (!this.settings.enabledDice) {
-      this.settings.enabledDice = this.allDiceTypes.reduce((acc, dice) => {
-        acc[dice.sides] = true;
-        return acc;
-      }, {} as Record<number, boolean>);
+      this.settings.enabledDice = this.allDiceTypes.map(dice => ({
+        key: dice.sides.toString(),
+        value: true
+      }));
     }
+  }
+
+  get availableDice(): DiceType[] {
+    // Convert the settings.enabledDice array to an object for easy lookup.
+    let enabledMapping: Record<number, boolean> = {};
+    if (Array.isArray(this.settings.enabledDice)) {
+      this.settings.enabledDice.forEach((item: { key: string, value: boolean }) => {
+        enabledMapping[Number(item.key)] = item.value;
+      });
+    } else if (this.settings.enabledDice) {
+      enabledMapping = this.settings.enabledDice;
+    }
+    return this.allDiceTypes.filter(dice => enabledMapping[dice.sides]);
   }
 
   roll(sides: number) {

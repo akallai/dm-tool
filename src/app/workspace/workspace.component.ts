@@ -31,8 +31,6 @@ export interface WidgetInstance {
 })
 export class WorkspaceComponent implements OnInit {
   widgets: WidgetInstance[] = [];
-
-  // List of available backgrounds (ensure these images exist in the public/backgrounds folder)
   backgrounds: string[] = [
     '/dm-tool/backgrounds/paper.webp',
     '/dm-tool/backgrounds/cyberpunk.webp',
@@ -53,15 +51,12 @@ export class WorkspaceComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Load saved widget state from local storage
+    // Load saved widget state from localStorage
     this.widgets = this.widgetStorage.loadWidgets();
   }
 
   openWidgetSelector() {
-    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, {
-      width: '300px'
-    });
-
+    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, { width: '300px' });
     dialogRef.afterClosed().subscribe((result: { action: string, type?: WidgetType }) => {
       if (result) {
         if (result.action === 'add' && result.type) {

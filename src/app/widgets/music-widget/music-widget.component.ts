@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 
@@ -24,9 +24,7 @@ interface MusicMapping {
     </div>
   `,
   styles: [`
-    .music-widget {
-      padding: 8px;
-    }
+    .music-widget { padding: 8px; }
     .button-grid {
       display: flex;
       flex-wrap: wrap;
@@ -45,7 +43,17 @@ interface MusicMapping {
   imports: [CommonModule, MatButtonModule]
 })
 export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() settings: any;
+  private _settings: any;
+  @Input() set settings(value: any) {
+    this._settings = value;
+    this.mappings = this._settings?.mappings || [];
+  }
+  get settings() {
+    return this._settings;
+  }
+  // (Optional) if you want to emit changes from this widget in the future:
+  @Output() settingsChange = new EventEmitter<any>();
+
   mappings: MusicMapping[] = [];
   activeAudios: Map<string, HTMLAudioElement> = new Map();
 
@@ -65,7 +73,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   playSound(mapping: MusicMapping) {
-    // If this mapping is already playing
+    // Toggle playing: if already playing, stop it.
     if (this.activeAudios.has(mapping.key)) {
       const existingAudio = this.activeAudios.get(mapping.key)!;
       existingAudio.pause();
@@ -73,27 +81,19 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.activeAudios.delete(mapping.key);
       return;
     }
-
-    // If we don't allow multiple sounds and something is playing
+    // If multiple sounds are not allowed, stop all currently playing sounds.
     if (!this.settings.allowMultiple) {
       this.stopAllSounds();
     }
-
     if (mapping.fileDataUrl) {
       const audio = new Audio(mapping.fileDataUrl);
-      
-      // Set loop based on settings
       audio.loop = this.settings.loopEnabled;
-
       audio.play();
-
-      // Add event listener for when the audio ends
       audio.addEventListener('ended', () => {
         if (!audio.loop) {
           this.activeAudios.delete(mapping.key);
         }
       });
-
       this.activeAudios.set(mapping.key, audio);
     }
   }
