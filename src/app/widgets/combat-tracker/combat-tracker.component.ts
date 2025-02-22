@@ -9,8 +9,7 @@ import { DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 interface Combatant {
   id: string;
   name: string;
-  currentHealth: number;
-  maxHealth: number;
+  health: number;
   notes: string;
 }
 
@@ -51,22 +50,10 @@ interface Combatant {
 
               <!-- Health Section -->
               <div class="health-section">
-                <div class="health-inputs">
-                  <input type="number" 
-                         [(ngModel)]="combatant.currentHealth" 
-                         class="health-input"
-                         (ngModelChange)="validateHealth(combatant)">
-                  <span>/</span>
-                  <input type="number" 
-                         [(ngModel)]="combatant.maxHealth" 
-                         class="health-input"
-                         (ngModelChange)="validateHealth(combatant)">
-                </div>
-                <div class="health-bar">
-                  <div class="health-bar-fill" 
-                       [style.width.%]="(combatant.currentHealth / combatant.maxHealth) * 100">
-                  </div>
-                </div>
+                <input type="number" 
+                       [(ngModel)]="combatant.health" 
+                       class="health-input"
+                       placeholder="HP">
               </div>
 
               <!-- Notes -->
@@ -172,32 +159,11 @@ interface Combatant {
       width: 100%;
     }
 
-    .health-inputs {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 2px;
-    }
-
     .health-input {
-      width: 40px;
+      width: 60px;
       padding: 2px;
       border: 1px solid #ddd;
       border-radius: 2px;
-    }
-
-    .health-bar {
-      height: 4px;
-      background: #ffcdd2;
-      border-radius: 2px;
-      overflow: hidden;
-      width: 100%;
-    }
-
-    .health-bar-fill {
-      height: 100%;
-      background: #4caf50;
-      transition: width 0.3s ease;
     }
 
     .notes-input {
@@ -279,8 +245,7 @@ export class CombatTrackerComponent {
     const newCombatant: Combatant = {
       id: Date.now().toString(),
       name: '',
-      currentHealth: 100,
-      maxHealth: 100,
+      health: 100,
       notes: ''
     };
     this.combatants.push(newCombatant);
@@ -312,12 +277,6 @@ export class CombatTrackerComponent {
       this.currentRound = 1;
       this.saveState();
     }
-  }
-
-  validateHealth(combatant: Combatant) {
-    combatant.currentHealth = Math.min(combatant.currentHealth, combatant.maxHealth);
-    combatant.currentHealth = Math.max(0, combatant.currentHealth);
-    this.saveState();
   }
 
   drop(event: any) {
