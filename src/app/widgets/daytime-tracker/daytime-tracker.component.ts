@@ -36,7 +36,7 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `,
   styles: [`
-    .daytime-tracker {
+  .daytime-tracker {
   padding: 4px;
   border-radius: 4px;
   background: white;
@@ -113,17 +113,37 @@ import { MatIconModule } from '@angular/material/icon';
   text-align: center;
 }
 
-/* Override Angular Material and MDC slider styles to vertically center the thumb */
+/* Override MDC slider CSS variables */
+:host {
+  --mdc-slider-track-active-color: transparent;
+  --mdc-slider-active-track-color: transparent;
+}
+
+/* Deep overrides to adjust slider appearance */
 :host ::ng-deep {
-  .mdc-slider__thumb-container,
+  /* Ensure thumb container stays centered */
   .mat-mdc-slider-thumb-container,
-  .mdc-slider__track-container,
-  .mat-mdc-slider-track-container {
+  .mdc-slider__thumb-container {
     top: 50% !important;
     transform: translateY(-50%) !important;
   }
+  
+  /* Ensure track container is centered */
+  .mat-mdc-slider-track-container,
+  .mdc-slider__track-container {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  /* Hide the active (blue) track fill entirely */
+  .mat-mdc-slider-track-active,
+  .mdc-slider__track--active {
+    display: none !important;
+    background: none !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
 }
-
 
   `],
   standalone: true,
