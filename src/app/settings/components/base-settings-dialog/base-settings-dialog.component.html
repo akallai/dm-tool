@@ -1,0 +1,113 @@
+<!-- src/app/settings/components/base-settings-dialog/base-settings-dialog.component.html -->
+<h2 mat-dialog-title>{{ config.title }}</h2>
+<mat-dialog-content>
+  <div class="settings-form">
+    <ng-container *ngFor="let field of config.fields">
+      <!-- Text input -->
+      <mat-form-field *ngIf="field.type === 'text'" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input matInput 
+               [(ngModel)]="settings[field.key]" 
+               [placeholder]="(field as TextFieldConfig).placeholder || ''"
+               [required]="field.required || false">
+        <mat-error *ngIf="getFieldError(field)">
+          {{ getFieldError(field) }}
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Number input -->
+      <mat-form-field *ngIf="field.type === 'number'" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <input matInput 
+               type="number" 
+               [(ngModel)]="settings[field.key]"
+               [min]="(field as NumberFieldConfig).min ?? null"
+               [max]="(field as NumberFieldConfig).max ?? null"
+               [required]="field.required || false">
+        <mat-error *ngIf="getFieldError(field)">
+          {{ getFieldError(field) }}
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Checkbox -->
+      <mat-checkbox *ngIf="field.type === 'checkbox'"
+                    [(ngModel)]="settings[field.key]"
+                    [required]="field.required || false"
+                    class="full-width">
+        {{ field.label }}
+      </mat-checkbox>
+
+      <!-- Select dropdown -->
+      <mat-form-field *ngIf="field.type === 'select'" class="full-width">
+        <mat-label>{{ field.label }}</mat-label>
+        <mat-select [(ngModel)]="settings[field.key]"
+                   [required]="field.required || false">
+          <mat-option *ngFor="let option of (field as SelectFieldConfig).options" [value]="option.value">
+            {{ option.label }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="getFieldError(field)">
+          {{ getFieldError(field) }}
+        </mat-error>
+      </mat-form-field>
+
+      <!-- File input -->
+      <div *ngIf="field.type === 'file'" class="file-field">
+        <label>{{ field.label }}</label>
+        <input type="file" 
+               [accept]="(field as FileFieldConfig).accept || '*'"
+               [multiple]="(field as FileFieldConfig).multiple || false"
+               (change)="onFileSelected($event, field.key)"
+               [required]="field.required || false">
+        <mat-error *ngIf="getFieldError(field)">
+          {{ getFieldError(field) }}
+        </mat-error>
+      </div>
+
+      <!-- Mapping field -->
+      <div *ngIf="field.type === 'mapping'" class="mapping-field">
+        <h3>{{ field.label }}</h3>
+        <div *ngFor="let mapping of settings[field.key] || []; let i = index" class="mapping-item">
+          <mat-form-field class="mapping-key">
+            <mat-label>{{ (field as MappingFieldConfig).mappingConfig.keyLabel }}</mat-label>
+            <input matInput [(ngModel)]="mapping.key">
+          </mat-form-field>
+
+          <ng-container [ngSwitch]="(field as MappingFieldConfig).mappingConfig.valueType">
+            <mat-form-field *ngSwitchCase="'text'" class="mapping-value">
+              <mat-label>{{ (field as MappingFieldConfig).mappingConfig.valueLabel }}</mat-label>
+              <input matInput [(ngModel)]="mapping.value">
+            </mat-form-field>
+
+            <div *ngSwitchCase="'file'" class="mapping-file">
+              <input type="file" 
+                     [accept]="(field as MappingFieldConfig).mappingConfig.fileAccept || '*'"
+                     (change)="onMappingFileSelected($event, field.key, i)">
+              <span *ngIf="mapping.fileName">{{ mapping.fileName }}</span>
+            </div>
+
+            <mat-checkbox *ngSwitchCase="'checkbox'"
+                         [(ngModel)]="mapping.value"
+                         class="mapping-value">
+              {{ (field as MappingFieldConfig).mappingConfig.valueLabel }}
+            </mat-checkbox>
+
+            <mat-form-field *ngSwitchCase="'textarea'" class="mapping-value">
+              <mat-label>{{ (field as MappingFieldConfig).mappingConfig.valueLabel }}</mat-label>
+              <textarea matInput [(ngModel)]="mapping.value" rows="3"></textarea>
+            </mat-form-field>
+          </ng-container>
+
+          <button mat-icon-button color="warn" (click)="removeMapping(field.key, i)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+        <button mat-button (click)="addMapping(field.key)">Add Item</button>
+      </div>
+    </ng-container>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close()">Cancel</button>
+  <button mat-button color="primary" (click)="save()">Save</button>
+</mat-dialog-actions>
