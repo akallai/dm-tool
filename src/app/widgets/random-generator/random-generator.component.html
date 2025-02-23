@@ -1,1 +1,31 @@
-<p>random-generator works!</p>
+<div class="random-generator">
+    <ng-container *ngIf="!fileHandle; else loadedState">
+      <div class="empty-state">
+        <button mat-stroked-button color="primary" (click)="openExistingFile()">
+          Open Random Generator File
+        </button>
+        <button mat-stroked-button color="accent" (click)="createNewFile()">
+          New Random Generator File
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #loadedState>
+      <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
+        No mappings available. Add mappings in settings.
+      </div>
+      <div *ngIf="mappings.length > 0" class="content-wrapper">
+        <div class="button-grid">
+          <button mat-raised-button 
+                  *ngFor="let mapping of mappings" 
+                  (click)="randomize(mapping)"
+                  [disabled]="!hasItems(mapping)">
+            {{ mapping.key || 'No Key' }}
+          </button>
+        </div>
+        <div *ngIf="lastResult" class="result">
+          <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
+        </div>
+      </div>
+    </ng-template>
+  </div>
+  

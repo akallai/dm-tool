@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 interface RandomMapping {
   key: string;
@@ -9,77 +10,50 @@ interface RandomMapping {
 
 @Component({
   selector: 'app-random-generator',
-  template: `
-    <div class="random-generator">
-      <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
-        No mappings available. Add mappings in settings.
-      </div>
-      <div *ngIf="mappings.length > 0" class="content-wrapper">
-        <div class="button-grid">
-          <button mat-raised-button 
-                  *ngFor="let mapping of mappings" 
-                  (click)="randomize(mapping)"
-                  [disabled]="!hasItems(mapping)">
-            {{ mapping.key || 'No Key' }}
-          </button>
-        </div>
-        <div *ngIf="lastResult" class="result">
-          <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .random-generator {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .content-wrapper {
-      width: 100%;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .button-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: 8px;
-    }
-    .result {
-      text-align: center;
-      padding: 12px;
-      background: #f5f5f5;
-      border-radius: 4px;
-      margin-top: auto;
-    }
-    .empty-message {
-      color: #666;
-      font-size: 0.9em;
-      text-align: center;
-      padding: 16px;
-    }
-  `],
+  templateUrl: './random-generator.component.html',
+  styleUrls: ['./random-generator.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule]
+  imports: [CommonModule, MatButtonModule, MatIconModule]
 })
 export class RandomGeneratorComponent implements OnInit, OnChanges {
-  private _settings: any;
+  // Use a private settings object so that we can update it in place.
+  private _settings: any = {};
+  
   @Input() set settings(value: any) {
-    this._settings = value;
-    this.mappings = this._settings?.mappings || [];
+    if (value && typeof value === 'object') {
+      // If _settings is empty, initialize it with the new value.
+      if (!this._settings || Object.keys(this._settings).length === 0) {
+        this._settings = value;
+      } else {
+        Object.assign(this._settings, value);
+      }
+    } else {
+      this._settings = {};
+    }
+    // Ensure that _settings has a mappings array.
+    if (!Array.isArray(this._settings.mappings)) {
+      this._settings.mappings = [];
+    }
+    this.mappings = this._settings.mappings;
+
+    // Trigger auto-save whenever settings are updated (e.g. when a new mapping is added)
+    this.scheduleAutoSave();
   }
   get settings() {
     return this._settings;
   }
-  // (Optional) if you need to emit changes:
+  
+  // Emit updated settings so the parent can update its reference.
   @Output() settingsChange = new EventEmitter<any>();
 
   mappings: RandomMapping[] = [];
   lastResult: string = '';
   lastKey: string = '';
+
+  // File handle for the JSON file (the file name isn’t displayed).
+  fileHandle: FileSystemFileHandle | null = null;
+
+  saveTimeout: any;
 
   ngOnInit() {
     this.mappings = this.settings?.mappings || [];
@@ -111,8 +85,87 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
       const index = Math.floor(Math.random() * items.length);
       this.lastResult = items[index];
       this.lastKey = mapping.key;
-      // Optionally, emit settingsChange if internal state is modified.
-      // this.settingsChange.emit(this.settings);
+      // Trigger an auto-save after changes.
+      this.scheduleAutoSave();
     }
+  }
+
+  // Opens an existing JSON file and updates _settings in place.
+  async openExistingFile() {
+    try {
+      if (window.showOpenFilePicker) {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{
+            description: 'Random Generator Files',
+            accept: { 'application/json': ['.json'] }
+          }]
+        });
+        this.fileHandle = handle;
+        const file = await handle.getFile();
+        const text = await file.text();
+        const data = JSON.parse(text);
+        // Update _settings in place so that parent's reference isn’t replaced.
+        Object.assign(this._settings, data);
+        if (!Array.isArray(this._settings.mappings)) {
+          this._settings.mappings = [];
+        }
+        this.mappings = this._settings.mappings;
+        // Emit the updated settings so the parent can update its widgetData.settings.
+        this.settingsChange.emit(this._settings);
+      } else {
+        alert('File System Access API is not supported in this browser.');
+      }
+    } catch (error) {
+      console.error('Error opening file:', error);
+    }
+  }
+
+  // Creates a new JSON file with default settings.
+  async createNewFile() {
+    try {
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: 'untitled_random_generator.json',
+          types: [{
+            description: 'Random Generator Files',
+            accept: { 'application/json': ['.json'] }
+          }]
+        });
+        this.fileHandle = handle;
+        // Initialize default settings.
+        this._settings = { mappings: [] };
+        this.mappings = this._settings.mappings;
+        // Emit new settings.
+        this.settingsChange.emit(this._settings);
+        this.scheduleAutoSave();
+      } else {
+        alert('File System Access API is not supported in this browser.');
+      }
+    } catch (error) {
+      console.error('Error creating file:', error);
+    }
+  }
+
+  // Auto-saves the current settings to the JSON file.
+  async saveFile() {
+    if (this.fileHandle) {
+      try {
+        const writable = await this.fileHandle.createWritable();
+        await writable.write(JSON.stringify(this._settings, null, 2));
+        await writable.close();
+      } catch (error) {
+        console.error('Error saving file:', error);
+      }
+    }
+  }
+
+  // Debounce auto-saving by waiting 1 second after the last change.
+  scheduleAutoSave() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    this.saveTimeout = setTimeout(() => {
+      this.saveFile();
+    }, 1000);
   }
 }

@@ -1,0 +1,31 @@
+.random-generator {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .content-wrapper {
+    width: 100%;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  .result {
+    text-align: center;
+    padding: 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    margin-top: auto;
+  }
+  .empty-message {
+    color: #666;
+    font-size: 0.9em;
+    text-align: center;
+    padding: 16px;
+  }
