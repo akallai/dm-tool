@@ -1,1 +1,108 @@
-<p>combat-tracker works!</p>
+<div class="combat-tracker">
+    <!-- Header -->
+    <div class="tracker-header">
+      <div class="header-content">
+        <span class="round-counter" *ngIf="showRoundCounter">Round {{ currentRound }}</span>
+        <button mat-button color="primary" (click)="addCombatant()" class="add-btn">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+    </div>
+  
+    <!-- Combatant List Container -->
+    <div class="list-container">
+      <div class="combatant-list" cdkDropList (cdkDropListDropped)="drop($event)">
+        <div *ngFor="let combatant of combatants; let i = index" 
+             class="combatant-card"
+             [class.active]="i === activeIndex"
+             [class.defeated]="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0"
+             cdkDrag>
+          <div class="card-content">
+            <!-- Defeated Icon for general mode only -->
+            <div class="defeated-icon" *ngIf="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0">
+              <mat-icon>close</mat-icon>
+            </div>
+            
+            <!-- Combatant Header -->
+            <div class="combatant-header">
+              <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
+              <input [(ngModel)]="combatant.name" 
+                     class="name-input" 
+                     placeholder="Name">
+              <button mat-icon-button color="warn" (click)="removeCombatant(i)" class="remove-btn">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+  
+            <!-- Mutant Year Zero Mode (Compact) -->
+            <div *ngIf="settings?.gameMode === 'mutant_year_zero'; else generalMode">
+              <div class="mutant-row">
+                <div class="field-group role-group">
+                  <label>Role</label>
+                  <input type="text" [(ngModel)]="combatant.role" placeholder="Role">
+                </div>
+                <div class="field-group attr-group">
+                  <label>Str</label>
+                  <input type="number" [(ngModel)]="combatant.strength" placeholder="0">
+                </div>
+                <div class="field-group attr-group">
+                  <label>Agi</label>
+                  <input type="number" [(ngModel)]="combatant.agility" placeholder="0">
+                </div>
+                <div class="field-group attr-group">
+                  <label>Wits</label>
+                  <input type="number" [(ngModel)]="combatant.wits" placeholder="0">
+                </div>
+                <div class="field-group attr-group">
+                  <label>Emp</label>
+                  <input type="number" [(ngModel)]="combatant.empathy" placeholder="0">
+                </div>
+              </div>
+              <div class="field-group skills-group">
+                <label>Skills</label>
+                <input type="text" [(ngModel)]="combatant.skills" placeholder="Skills">
+              </div>
+              <div class="field-group notes-group">
+                <label>Notes</label>
+                <input type="text" [(ngModel)]="combatant.notes" placeholder="Notes">
+              </div>
+            </div>
+            
+            <!-- General Mode -->
+            <ng-template #generalMode>
+              <div class="health-section">
+                <input type="number" 
+                       [(ngModel)]="combatant.health" 
+                       class="health-input"
+                       [class.health-zero]="combatant.health !== undefined && combatant.health <= 0"
+                       placeholder="HP">
+              </div>
+              <input [(ngModel)]="combatant.notes" 
+                     class="notes-input" 
+                     placeholder="Notes">
+            </ng-template>
+          </div>
+          
+          <!-- Drag Handle -->
+          <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Controls -->
+    <div class="tracker-controls">
+      <button mat-button color="primary" 
+              (click)="nextTurn()"
+              [disabled]="combatants.length === 0"
+              class="control-btn">
+        Next
+      </button>
+      <button mat-button color="warn" 
+              (click)="reset()"
+              [disabled]="combatants.length === 0"
+              class="control-btn">
+        Reset
+      </button>
+    </div>
+  </div>
+  

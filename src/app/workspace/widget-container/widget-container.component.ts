@@ -150,6 +150,16 @@ export class WidgetContainerComponent {
           title: 'Combat Tracker Settings',
           fields: [
             {
+              key: 'gameMode',
+              type: 'select',
+              label: 'Game Mode',
+              options: [
+                { value: 'general', label: 'General' },
+                { value: 'mutant_year_zero', label: 'Mutant Year Zero' }
+              ],
+              defaultValue: 'general'
+            },
+            {
               key: 'showRoundCounter',
               type: 'checkbox',
               label: 'Show round counter'

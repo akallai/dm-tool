@@ -6,279 +6,26 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 
+// Updated interface: common fields plus optional mutant year zero stats.
 interface Combatant {
   id: string;
   name: string;
-  health: number;
   notes: string;
+  // For general mode:
+  health?: number;
+  // For Mutant Year Zero mode:
+  role?: string;
+  strength?: number;
+  agility?: number;
+  wits?: number;
+  empathy?: number;
+  skills?: string;
 }
 
 @Component({
   selector: 'app-combat-tracker',
-  template: `
-    <div class="combat-tracker">
-      <!-- Header -->
-      <div class="tracker-header">
-        <div class="header-content">
-          <span class="round-counter" *ngIf="showRoundCounter">
-            Round {{ currentRound }}
-          </span>
-          <button mat-button color="primary" (click)="addCombatant()" class="add-btn">
-            <mat-icon>add</mat-icon>
-          </button>
-        </div>
-      </div>
-
-      <!-- Combatant List Container -->
-      <div class="list-container">
-        <div class="combatant-list" cdkDropList (cdkDropListDropped)="drop($event)">
-          <div *ngFor="let combatant of combatants; let i = index" 
-               class="combatant-card"
-               [class.active]="i === activeIndex"
-               [class.defeated]="combatant.health <= 0"
-               cdkDrag>
-            <div class="card-content">
-              <!-- Defeated Icon -->
-              <div class="defeated-icon" *ngIf="combatant.health <= 0">
-                <mat-icon>close</mat-icon>
-              </div>
-              
-              <!-- Combatant Header -->
-              <div class="combatant-header">
-                <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
-                <input [(ngModel)]="combatant.name" 
-                       class="name-input" 
-                       placeholder="Name">
-                <button mat-icon-button color="warn" (click)="removeCombatant(i)" class="remove-btn">
-                  <mat-icon>close</mat-icon>
-                </button>
-              </div>
-
-              <!-- Health Section -->
-              <div class="health-section">
-                <input type="number" 
-                       [(ngModel)]="combatant.health" 
-                       class="health-input"
-                       [class.health-zero]="combatant.health <= 0"
-                       placeholder="HP">
-              </div>
-
-              <!-- Notes -->
-              <input [(ngModel)]="combatant.notes" 
-                     class="notes-input" 
-                     placeholder="Notes">
-            </div>
-            
-            <!-- Drag Handle -->
-            <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
-          </div>
-        </div>
-      </div>
-
-      <!-- Controls -->
-      <div class="tracker-controls">
-        <button mat-button color="primary" 
-                (click)="nextTurn()"
-                [disabled]="combatants.length === 0"
-                class="control-btn">
-          Next
-        </button>
-        <button mat-button color="warn" 
-                (click)="reset()"
-                [disabled]="combatants.length === 0"
-                class="control-btn">
-          Reset
-        </button>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .combat-tracker {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .tracker-header {
-      flex: 0 0 auto;
-      padding: 4px;
-      border-bottom: 1px solid #eee;
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .list-container {
-      flex: 1 1 auto;
-      overflow-y: auto;
-      overflow-x: hidden;
-      min-height: 0;
-    }
-
-    .combatant-list {
-      padding: 4px;
-    }
-
-    .combatant-card {
-      background: #f5f5f5;
-      border-radius: 4px;
-      margin-bottom: 4px;
-      position: relative;
-      width: 100%;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-    }
-
-    .combatant-card.defeated {
-      background-color: #b71c1c;
-      border: 2px solid #d50000;
-      color: white;
-      transform: scale(0.99);
-    }
-
-    .defeated-icon {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0.2;
-      
-      .mat-icon {
-        font-size: 64px;
-        width: 64px;
-        height: 64px;
-        color: #ff1744;
-      }
-    }
-
-    .card-content {
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
-      position: relative;
-    }
-
-    .combatant-header {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      width: 100%;
-      margin-bottom: 4px;
-    }
-
-    .turn-marker {
-      flex: 0 0 auto;
-      width: 16px;
-      text-align: center;
-    }
-
-    .name-input {
-      flex: 1 1 auto;
-      min-width: 0;
-      border: none;
-      background: transparent;
-      padding: 2px;
-      color: inherit;
-    }
-
-    .health-section {
-      margin: 4px 0;
-      width: 100%;
-    }
-
-    .health-input {
-      width: 60px;
-      padding: 2px;
-      border: 1px solid #ddd;
-      border-radius: 2px;
-      background: transparent;
-      color: inherit;
-      
-      &.health-zero {
-        color: #ff1744;
-        font-weight: bold;
-        border-color: #ff1744;
-      }
-    }
-
-    .notes-input {
-      width: 100%;
-      padding: 2px;
-      border: 1px solid #ddd;
-      border-radius: 2px;
-      box-sizing: border-box;
-      background: transparent;
-      color: inherit;
-    }
-
-    .remove-btn {
-      flex: 0 0 auto;
-      width: 24px;
-      height: 24px;
-      line-height: 24px;
-      
-      .mat-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-        line-height: 16px;
-      }
-    }
-
-    .drag-handle {
-      position: absolute;
-      right: 4px;
-      bottom: 4px;
-      cursor: move;
-      color: currentColor;
-      opacity: 0.5;
-      font-size: 16px;
-    }
-
-    .tracker-controls {
-      flex: 0 0 auto;
-      display: flex;
-      gap: 4px;
-      padding: 4px;
-      border-top: 1px solid #eee;
-    }
-
-    .control-btn {
-      flex: 1;
-    }
-
-    .active {
-      background: #e3f2fd;
-      border-left: 4px solid #2196f3;
-
-      &.defeated {
-        background: #d32f2f;
-        border: 2px solid #ff1744;
-        border-left: 4px solid #ff1744;
-      }
-    }
-
-    /* Override input placeholder color for defeated state */
-    .defeated {
-      input::placeholder {
-        color: rgba(255, 255, 255, 0.7);
-      }
-      
-      input {
-        color: white;
-      }
-    }
-  `],
+  templateUrl: './combat-tracker.component.html',
+  styleUrls: ['./combat-tracker.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -307,12 +54,27 @@ export class CombatTrackerComponent {
   }
 
   addCombatant() {
-    const newCombatant: Combatant = {
-      id: Date.now().toString(),
-      name: '',
-      health: 100,
-      notes: ''
-    };
+    let newCombatant: Combatant;
+    if (this.settings?.gameMode === 'mutant_year_zero') {
+      newCombatant = {
+        id: Date.now().toString(),
+        name: '',
+        role: '',
+        strength: 0,
+        agility: 0,
+        wits: 0,
+        empathy: 0,
+        skills: '',
+        notes: ''
+      };
+    } else {
+      newCombatant = {
+        id: Date.now().toString(),
+        name: '',
+        health: 100,
+        notes: ''
+      };
+    }
     this.combatants.push(newCombatant);
     this.saveState();
   }
