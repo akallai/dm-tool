@@ -168,6 +168,12 @@ export class WidgetContainerComponent {
               key: 'autoSort',
               type: 'checkbox',
               label: 'Automatically sort by initiative'
+            },
+            {
+              key: 'defaultInitiative',
+              type: 'number',
+              label: 'Default Initiative',
+              defaultValue: 0
             }
           ]
         };
