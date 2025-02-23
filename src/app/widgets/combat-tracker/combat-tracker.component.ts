@@ -35,8 +35,14 @@ interface Combatant {
           <div *ngFor="let combatant of combatants; let i = index" 
                class="combatant-card"
                [class.active]="i === activeIndex"
+               [class.defeated]="combatant.health <= 0"
                cdkDrag>
             <div class="card-content">
+              <!-- Defeated Icon -->
+              <div class="defeated-icon" *ngIf="combatant.health <= 0">
+                <mat-icon>close</mat-icon>
+              </div>
+              
               <!-- Combatant Header -->
               <div class="combatant-header">
                 <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
@@ -53,6 +59,7 @@ interface Combatant {
                 <input type="number" 
                        [(ngModel)]="combatant.health" 
                        class="health-input"
+                       [class.health-zero]="combatant.health <= 0"
                        placeholder="HP">
               </div>
 
@@ -124,12 +131,41 @@ interface Combatant {
       position: relative;
       width: 100%;
       box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    .combatant-card.defeated {
+      background-color: #b71c1c;
+      border: 2px solid #d50000;
+      color: white;
+      transform: scale(0.99);
+    }
+
+    .defeated-icon {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0.2;
+      
+      .mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        color: #ff1744;
+      }
     }
 
     .card-content {
       padding: 8px;
       width: 100%;
       box-sizing: border-box;
+      position: relative;
     }
 
     .combatant-header {
@@ -152,6 +188,7 @@ interface Combatant {
       border: none;
       background: transparent;
       padding: 2px;
+      color: inherit;
     }
 
     .health-section {
@@ -164,6 +201,14 @@ interface Combatant {
       padding: 2px;
       border: 1px solid #ddd;
       border-radius: 2px;
+      background: transparent;
+      color: inherit;
+      
+      &.health-zero {
+        color: #ff1744;
+        font-weight: bold;
+        border-color: #ff1744;
+      }
     }
 
     .notes-input {
@@ -172,6 +217,8 @@ interface Combatant {
       border: 1px solid #ddd;
       border-radius: 2px;
       box-sizing: border-box;
+      background: transparent;
+      color: inherit;
     }
 
     .remove-btn {
@@ -193,7 +240,8 @@ interface Combatant {
       right: 4px;
       bottom: 4px;
       cursor: move;
-      color: #999;
+      color: currentColor;
+      opacity: 0.5;
       font-size: 16px;
     }
 
@@ -212,6 +260,23 @@ interface Combatant {
     .active {
       background: #e3f2fd;
       border-left: 4px solid #2196f3;
+
+      &.defeated {
+        background: #d32f2f;
+        border: 2px solid #ff1744;
+        border-left: 4px solid #ff1744;
+      }
+    }
+
+    /* Override input placeholder color for defeated state */
+    .defeated {
+      input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      
+      input {
+        color: white;
+      }
     }
   `],
   standalone: true,
