@@ -1,9 +1,12 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit, Inject, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 interface Combatant {
   id: string;
@@ -19,6 +22,154 @@ interface Combatant {
   wits?: number;
   empathy?: number;
   skills?: string;
+}
+
+interface CharacterTemplate {
+  name: string;
+  role: string;
+  strength: number;
+  agility: number;
+  wits: number;
+  empathy: number;
+  skills: string;
+}
+
+@Component({
+  selector: 'app-character-template-dialog',
+  template: `
+    <h2 mat-dialog-title>Charakter auswählen</h2>
+    <mat-dialog-content>
+      <mat-form-field class="full-width">
+        <mat-label>Template</mat-label>
+        <mat-select [(ngModel)]="selectedTemplate">
+          <mat-option [value]="'default'">Default</mat-option>
+          <mat-option *ngFor="let template of availableTemplates" [value]="template">
+            {{ template.role }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="onCancel()">Abbrechen</button>
+      <button mat-button color="primary" (click)="onConfirm()">Bestätigen</button>
+    </mat-dialog-actions>
+  `,
+  styles: ['.full-width { width: 100%; }'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatSelectModule,
+    MatFormFieldModule
+  ]
+})
+export class CharacterTemplateDialogComponent implements OnInit {
+  selectedTemplate: string | CharacterTemplate = 'default';
+  availableTemplates: CharacterTemplate[] = [];
+  
+  private mutantYearZeroTemplates: CharacterTemplate[] = [
+    {
+      name: 'Vollstrecker',
+      role: 'Vollstrecker',
+      strength: 5,
+      agility: 3,
+      wits: 2,
+      empathy: 2,
+      skills: 'Einschüchtern 3, Prügeln 2, Kraftakt 1'
+    },
+    {
+      name: 'Schrauber',
+      role: 'Schrauber',
+      strength: 2,
+      agility: 2,
+      wits: 5,
+      empathy: 3,
+      skills: 'Zusammenschustern 3, Begreifen 2, Auskundschaften 1'
+    },
+    {
+      name: 'Pirscher',
+      role: 'Pirscher',
+      strength: 2,
+      agility: 5,
+      wits: 3,
+      empathy: 2,
+      skills: 'Pfadfinder 3, Schießen 2, Schleichen 1'
+    },
+    {
+      name: 'Hehler',
+      role: 'Hehler',
+      strength: 2,
+      agility: 2,
+      wits: 3,
+      empathy: 5,
+      skills: 'Aushandeln 3, Manipulieren 2, Bewegen 1'
+    },
+    {
+      name: 'Hundeführer',
+      role: 'Hundeführer',
+      strength: 3,
+      agility: 4,
+      wits: 3,
+      empathy: 2,
+      skills: 'Abrichten 3, Schießen 2, Schleichen 1'
+    },
+    {
+      name: 'Chronist',
+      role: 'Chronist',
+      strength: 2,
+      agility: 2,
+      wits: 4,
+      empathy: 4,
+      skills: 'Inspirieren 3, Begreifen 2, Heilen 1'
+    },
+    {
+      name: 'Boss',
+      role: 'Boss',
+      strength: 3,
+      agility: 3,
+      wits: 2,
+      empathy: 4,
+      skills: 'Befehligen 3, Schießen 2, Prügeln 1'
+    },
+    {
+      name: 'Sklave',
+      role: 'Sklave',
+      strength: 4,
+      agility: 4,
+      wits: 2,
+      empathy: 2,
+      skills: 'Abschütteln 3, Erdulden 2, Prügeln 1'
+    },
+    {
+      name: 'Keine Rolle',
+      role: 'Keine Rolle',
+      strength: 3,
+      agility: 3,
+      wits: 3,
+      empathy: 3,
+      skills: 'Rang 2 in einer Fertigkeit'
+    }
+  ];
+
+  constructor(
+    private dialogRef: MatDialogRef<CharacterTemplateDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) private dialogData: { isMutantYearZero: boolean }
+  ) {}
+
+  ngOnInit() {
+    // Only show Mutant Year Zero templates if the game mode is set to Mutant Year Zero
+    this.availableTemplates = this.dialogData.isMutantYearZero ? this.mutantYearZeroTemplates : [];
+  }
+
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+
+  onConfirm(): void {
+    this.dialogRef.close(this.selectedTemplate);
+  }
 }
 
 @Component({
@@ -400,7 +551,10 @@ interface Combatant {
     FormsModule,
     MatButtonModule,
     MatIconModule,
-    DragDropModule
+    MatDialogModule,
+    DragDropModule,
+    MatSelectModule,
+    MatFormFieldModule
   ]
 })
 export class CombatTrackerComponent implements OnInit {
@@ -409,6 +563,8 @@ export class CombatTrackerComponent implements OnInit {
   combatants: Combatant[] = [];
   activeIndex: number = 0;
   currentRound: number = 1;
+
+  constructor(private dialog: MatDialog) {}
 
   get sortedCombatants(): Combatant[] {
     if (this.settings?.autoSort) {
@@ -435,31 +591,60 @@ export class CombatTrackerComponent implements OnInit {
     this.settings.defaultInitiative = this.settings.defaultInitiative ?? 0;
   }
 
-  addCombatant() {
-    const defaultInitiative = this.settings.defaultInitiative !== undefined ? this.settings.defaultInitiative : 0;
-    let newCombatant: Combatant = {
-      id: Date.now().toString(),
-      name: '',
-      notes: '',
-      initiative: defaultInitiative
-    };
+  async addCombatant() {
+    const dialogRef = this.dialog.open(CharacterTemplateDialogComponent, {
+      width: '300px',
+      data: { isMutantYearZero: this.settings?.gameMode === 'mutant_year_zero' }
+    });
 
-    if (this.settings?.gameMode === 'mutant_year_zero') {
-      newCombatant = {
-        ...newCombatant,
-        role: '',
-        strength: 0,
-        agility: 0,
-        wits: 0,
-        empathy: 0,
-        skills: ''
-      };
-    } else {
-      newCombatant.health = 100;
-    }
+    dialogRef.afterClosed().subscribe((result: string | CharacterTemplate) => {
+      if (result) {
+        const defaultInitiative = this.settings.defaultInitiative !== undefined ? this.settings.defaultInitiative : 0;
+        let newCombatant: Combatant;
 
-    this.combatants.push(newCombatant);
-    this.saveState();
+        if (result === 'default') {
+          // Create default combatant
+          newCombatant = {
+            id: Date.now().toString(),
+            name: '',
+            notes: '',
+            initiative: defaultInitiative
+          };
+
+          if (this.settings?.gameMode === 'mutant_year_zero') {
+            newCombatant = {
+              ...newCombatant,
+              role: '',
+              strength: 0,
+              agility: 0,
+              wits: 0,
+              empathy: 0,
+              skills: ''
+            };
+          } else {
+            newCombatant.health = 100;
+          }
+        } else {
+          // Create combatant from template
+          const template = result as CharacterTemplate;
+          newCombatant = {
+            id: Date.now().toString(),
+            name: template.name,
+            notes: '',
+            initiative: defaultInitiative,
+            role: template.role,
+            strength: template.strength,
+            agility: template.agility,
+            wits: template.wits,
+            empathy: template.empathy,
+            skills: template.skills
+          };
+        }
+
+        this.combatants.push(newCombatant);
+        this.saveState();
+      }
+    });
   }
 
   removeCombatant(index: number) {
