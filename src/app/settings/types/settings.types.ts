@@ -43,6 +43,7 @@ export interface FileFieldConfig extends BaseFieldConfig {
 
 export interface TextareaFieldConfig extends BaseFieldConfig {
   type: 'textarea';
+  placeholder?: string;
   rows?: number;
 }
 

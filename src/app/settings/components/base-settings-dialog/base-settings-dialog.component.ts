@@ -27,28 +27,30 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       <div class="settings-form">
         <ng-container *ngFor="let field of config.fields">
           <!-- Text input -->
-          <mat-form-field *ngIf="field.type === 'text'" class="full-width">
+          <mat-form-field *ngIf="field.type === 'text'" class="full-width" appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             <input matInput 
                    [(ngModel)]="settings[field.key]"
                    [placeholder]="getTextFieldPlaceholder(field)"
-                   [required]="field.required || false">
-            <mat-error *ngIf="getFieldError(field)">
-              {{ getFieldError(field) }}
+                   [required]="field.required || false"
+                   (ngModelChange)="validateField(field)">
+            <mat-error *ngIf="fieldErrors[field.key]">
+              {{ fieldErrors[field.key] }}
             </mat-error>
           </mat-form-field>
 
           <!-- Number input -->
-          <mat-form-field *ngIf="field.type === 'number'" class="full-width">
+          <mat-form-field *ngIf="field.type === 'number'" class="full-width" appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             <input matInput 
                    type="number" 
                    [(ngModel)]="settings[field.key]"
                    [min]="getNumberFieldMin(field)"
                    [max]="getNumberFieldMax(field)"
-                   [required]="field.required || false">
-            <mat-error *ngIf="getFieldError(field)">
-              {{ getFieldError(field) }}
+                   [required]="field.required || false"
+                   (ngModelChange)="validateField(field)">
+            <mat-error *ngIf="fieldErrors[field.key]">
+              {{ fieldErrors[field.key] }}
             </mat-error>
           </mat-form-field>
 
@@ -56,21 +58,38 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           <mat-checkbox *ngIf="field.type === 'checkbox'"
                       [(ngModel)]="settings[field.key]"
                       [required]="field.required || false"
-                      class="full-width">
+                      class="full-width"
+                      (ngModelChange)="validateField(field)">
             {{ field.label }}
           </mat-checkbox>
 
           <!-- Select dropdown -->
-          <mat-form-field *ngIf="field.type === 'select'" class="full-width">
+          <mat-form-field *ngIf="field.type === 'select'" class="full-width" appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
             <mat-select [(ngModel)]="settings[field.key]"
-                       [required]="field.required || false">
+                       [required]="field.required || false"
+                       (ngModelChange)="validateField(field)">
               <mat-option *ngFor="let option of getSelectOptions(field)" [value]="option.value">
                 {{ option.label }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="getFieldError(field)">
-              {{ getFieldError(field) }}
+            <mat-error *ngIf="fieldErrors[field.key]">
+              {{ fieldErrors[field.key] }}
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Textarea -->
+          <mat-form-field *ngIf="field.type === 'textarea'" class="full-width" appearance="outline">
+            <mat-label>{{ field.label }}</mat-label>
+            <textarea matInput
+                    [(ngModel)]="settings[field.key]"
+                    [placeholder]="getTextFieldPlaceholder(field)"
+                    [required]="field.required || false"
+                    [rows]="5"
+                    (ngModelChange)="validateField(field)">
+            </textarea>
+            <mat-error *ngIf="fieldErrors[field.key]">
+              {{ fieldErrors[field.key] }}
             </mat-error>
           </mat-form-field>
 
@@ -82,8 +101,8 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                    [multiple]="getFileMultiple(field)"
                    (change)="onFileSelected($event, field.key)"
                    [required]="field.required || false">
-            <mat-error *ngIf="getFieldError(field)">
-              {{ getFieldError(field) }}
+            <mat-error *ngIf="fieldErrors[field.key]" class="field-error">
+              {{ fieldErrors[field.key] }}
             </mat-error>
           </div>
 
@@ -91,15 +110,15 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           <div *ngIf="field.type === 'mapping'" class="mapping-field">
             <h3>{{ field.label }}</h3>
             <div *ngFor="let mapping of getMappingArray(field.key); let i = index" class="mapping-item">
-              <mat-form-field class="mapping-key">
+              <mat-form-field class="mapping-key" appearance="outline">
                 <mat-label>{{ getMappingKeyLabel(field) }}</mat-label>
-                <input matInput [(ngModel)]="mapping.key">
+                <input matInput [(ngModel)]="mapping.key" (ngModelChange)="validateField(field)">
               </mat-form-field>
 
               <ng-container [ngSwitch]="getMappingValueType(field)">
-                <mat-form-field *ngSwitchCase="'text'" class="mapping-value">
+                <mat-form-field *ngSwitchCase="'text'" class="mapping-value" appearance="outline">
                   <mat-label>{{ getMappingValueLabel(field) }}</mat-label>
-                  <input matInput [(ngModel)]="mapping.value">
+                  <input matInput [(ngModel)]="mapping.value" (ngModelChange)="validateField(field)">
                 </mat-form-field>
 
                 <div *ngSwitchCase="'file'" class="mapping-file">
@@ -108,20 +127,22 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                          [multiple]="getMappingFileMultiple(field)"
                          [attr.webkitdirectory]="getMappingDirectory(field) ? '' : null"
                          (change)="onMappingFileSelected($event, field.key, i)">
-                  <span *ngIf="mapping.files">
-                    {{ getFileNames(mapping) }}
-                  </span>
                 </div>
 
                 <mat-checkbox *ngSwitchCase="'checkbox'"
                               [(ngModel)]="mapping.value"
-                              class="mapping-value">
+                              class="mapping-value"
+                              (ngModelChange)="validateField(field)">
                   {{ getMappingValueLabel(field) }}
                 </mat-checkbox>
 
-                <mat-form-field *ngSwitchCase="'textarea'" class="mapping-value">
+                <mat-form-field *ngSwitchCase="'textarea'" class="mapping-value" appearance="outline">
                   <mat-label>{{ getMappingValueLabel(field) }}</mat-label>
-                  <textarea matInput [(ngModel)]="mapping.itemsText" rows="3"></textarea>
+                  <textarea matInput 
+                           [(ngModel)]="mapping.itemsText" 
+                           rows="3"
+                           (ngModelChange)="validateField(field)">
+                  </textarea>
                 </mat-form-field>
               </ng-container>
 
@@ -136,7 +157,12 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
-      <button mat-button color="primary" (click)="save()">Save</button>
+      <button mat-button 
+              color="primary" 
+              (click)="save()"
+              [disabled]="!isValid()">
+        Save
+      </button>
     </mat-dialog-actions>
   `,
   styles: [`
@@ -145,6 +171,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       flex-direction: column;
       gap: 16px;
       padding: 16px 0;
+      min-width: 300px;
     }
     .full-width {
       width: 100%;
@@ -177,6 +204,11 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       flex-direction: column;
       gap: 4px;
     }
+    .field-error {
+      color: #f44336;
+      font-size: 12px;
+      margin-top: 4px;
+    }
   `],
   standalone: true,
   imports: [
@@ -194,6 +226,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
 export class BaseSettingsDialogComponent {
   config: SettingsConfig;
   settings: any;
+  fieldErrors: { [key: string]: string } = {};
 
   constructor(
     public dialogRef: MatDialogRef<BaseSettingsDialogComponent>,
@@ -202,6 +235,7 @@ export class BaseSettingsDialogComponent {
     this.config = data.config;
     this.settings = { ...data.settings };
     this.initializeDefaultValues();
+    this.validateAllFields();
   }
 
   // Type guard methods
@@ -289,11 +323,23 @@ export class BaseSettingsDialogComponent {
     });
   }
 
-  getFieldError(field: SettingsField): string | null {
+  validateField(field: SettingsField): void {
     if (field.required && !this.settings[field.key]) {
-      return `${field.label} is required`;
+      this.fieldErrors[field.key] = `${field.label} is required`;
+    } else {
+      delete this.fieldErrors[field.key];
     }
-    return null;
+  }
+
+  validateAllFields(): void {
+    this.config.fields.forEach(field => {
+      this.validateField(field);
+    });
+  }
+
+  isValid(): boolean {
+    this.validateAllFields();
+    return Object.keys(this.fieldErrors).length === 0;
   }
 
   onFileSelected(event: Event, key: string) {
@@ -306,6 +352,7 @@ export class BaseSettingsDialogComponent {
           fileName: file.name,
           fileDataUrl: reader.result
         };
+        this.validateField(this.config.fields.find(f => f.key === key)!);
       };
       reader.readAsDataURL(file);
     }
@@ -314,11 +361,11 @@ export class BaseSettingsDialogComponent {
   onMappingFileSelected(event: Event, key: string, index: number) {
     const input = event.target as HTMLInputElement;
     const files = input.files;
-    if (!files || files.length === 0) {
-      return;
-    }
+    if (!files || files.length === 0) return;
+
     const filesArray: any[] = [];
     let filesProcessed = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const reader = new FileReader();
@@ -330,37 +377,41 @@ export class BaseSettingsDialogComponent {
             ...this.settings[key][index],
             files: filesArray
           };
+          const field = this.config.fields.find(f => f.key === key);
+          if (field) this.validateField(field);
         }
       };
       reader.readAsDataURL(file);
     }
   }
-  
+
   addMapping(key: string) {
     if (!Array.isArray(this.settings[key])) {
       this.settings[key] = [];
     }
     this.settings[key].push({ key: '', value: '' });
+    const field = this.config.fields.find(f => f.key === key);
+    if (field) this.validateField(field);
   }
 
   removeMapping(key: string, index: number) {
     this.settings[key].splice(index, 1);
+    const field = this.config.fields.find(f => f.key === key);
+    if (field) this.validateField(field);
   }
 
   save() {
-    // Validate required fields
-    const hasErrors = this.config.fields.some(field => this.getFieldError(field));
-    if (hasErrors) {
-      return;
+    this.validateAllFields();
+    if (this.isValid()) {
+      this.dialogRef.close(this.settings);
     }
-    this.dialogRef.close(this.settings);
   }
 
   // Helper method to display file names without using an inline arrow function
   getFileNames(mapping: any): string {
-  if (mapping.files && Array.isArray(mapping.files)) {
-    return mapping.files.map((f: MusicFile) => f.fileName).join(', ');
+    if (mapping.files && Array.isArray(mapping.files)) {
+      return mapping.files.map((f: MusicFile) => f.fileName).join(', ');
+    }
+    return '';
   }
-  return '';
-}
 }

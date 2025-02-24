@@ -6,7 +6,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 import { MatDividerModule } from '@angular/material/divider';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER';
+export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT';
 
 @Component({
   selector: 'app-widget-selector-dialog',
@@ -64,7 +64,8 @@ export class WidgetSelectorDialogComponent {
     { type: 'MUSIC_WIDGET', label: 'Music Widget' },
     { type: 'WIKI_WIDGET', label: 'Wiki' },
     { type: 'COMBAT_TRACKER', label: 'Combat Tracker' },
-    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker' }
+    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker' },
+    { type: 'LLM_CHAT', label: 'LLM Chat' }
   ];
   
 

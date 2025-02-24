@@ -53,6 +53,7 @@ export class WorkspaceComponent implements OnInit {
   ngOnInit() {
     // Load saved widget state from localStorage
     this.widgets = this.widgetStorage.loadWidgets();
+    (window as any).workspace = this;
   }
 
   openWidgetSelector() {

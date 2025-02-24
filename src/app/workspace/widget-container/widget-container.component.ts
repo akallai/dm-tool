@@ -17,6 +17,8 @@ import { DaytimeTrackerComponent } from '../../widgets/daytime-tracker/daytime-t
 import { ResizableDirective } from './resizable.directive';
 import { SettingsService } from '../../settings/services/settings.service';
 import { SettingsConfig } from '../../settings/types/settings.types';
+import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
+
 
 @Component({
   selector: 'app-widget-container',
@@ -36,7 +38,8 @@ import { SettingsConfig } from '../../settings/types/settings.types';
     WikiWidgetComponent,
     CombatTrackerComponent,
     DaytimeTrackerComponent,
-    ResizableDirective
+    ResizableDirective,
+    LlmChatComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -62,7 +65,8 @@ export class WidgetContainerComponent {
       'MUSIC_WIDGET': 'Music Widget',
       'WIKI_WIDGET': 'Wiki',
       'COMBAT_TRACKER': 'Combat Tracker',
-      'DAYTIME_TRACKER': 'Daytime Tracker'
+      'DAYTIME_TRACKER': 'Daytime Tracker',
+      'LLM_CHAT': 'LLM Chat'
     };
     return titles[type] || 'Widget';
   }
@@ -225,6 +229,35 @@ export class WidgetContainerComponent {
                 { value: 'edit', label: 'Edit Mode' },
                 { value: 'preview', label: 'Preview Mode' }
               ]
+            }
+          ]
+        };
+        case 'LLM_CHAT':
+        return {
+          title: 'LLM Chat Settings',
+          fields: [
+            {
+              key: 'apiKey',
+              type: 'text',
+              label: 'API Key',
+              placeholder: 'Enter your API Key',
+              required: true
+            },
+            {
+              key: 'model',
+              type: 'text',
+              label: 'Model',
+              placeholder: 'Enter the model name',
+              required: true,
+              defaultValue: 'gpt-4o-mini'
+            },
+            {
+              key: 'prompt',
+              type: 'textarea',
+              label: 'Prompt',
+              placeholder: 'Enter your prompt here',
+              required: true,
+              defaultValue: 'You are an very experience DM. I\'m running a mutant year zero campaign. My current campaign notes include details about people, locations, scenes and more. I\'m looking for fresh ideas to enhance the story. Please help me the during my dm session, which I am currently holding, with questions where i might need inspiration or have other questions.'
             }
           ]
         };
