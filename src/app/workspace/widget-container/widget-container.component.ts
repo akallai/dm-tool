@@ -96,10 +96,15 @@ export class WidgetContainerComponent {
                 valueType: 'checkbox',
                 valueLabel: 'Enabled'
               }
+            },
+            {
+              key: 'showCustomDiceInput',
+              type: 'checkbox',
+              label: 'Show Custom Dice Input'
             }
           ]
         };
-
+      // Other widget configurations remain unchanged
       case 'MUSIC_WIDGET':
         return {
           title: 'Music Widget Settings',
@@ -127,7 +132,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-
       case 'RANDOM_GENERATOR':
         return {
           title: 'Random Generator Settings',
@@ -144,7 +148,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-
       case 'COMBAT_TRACKER':
         return {
           title: 'Combat Tracker Settings',
@@ -177,7 +180,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-
       case 'DAYTIME_TRACKER':
         return {
           title: 'Daytime Tracker Settings',
@@ -200,7 +202,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-
       case 'WIKI_WIDGET':
         return {
           title: 'Wiki Settings',
@@ -221,8 +222,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-
-      // IMAGE_PDF and NOTEPAD typically handle their own file operations.
       default:
         return null;
     }
@@ -263,7 +262,6 @@ export class WidgetContainerComponent {
   }
 
   onSettingsChange() {
-    // When a child widget’s settings change, emit update so that the parent workspace saves state.
     this.update.emit();
   }
 }
