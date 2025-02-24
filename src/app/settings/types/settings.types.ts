@@ -1,4 +1,3 @@
-// src/app/settings/types/settings.types.ts
 export type SettingsFieldType = 
   | 'text' 
   | 'number' 
@@ -54,6 +53,8 @@ export interface MappingFieldConfig extends BaseFieldConfig {
     valueType: 'text' | 'file' | 'textarea' | 'checkbox';
     valueLabel: string;
     fileAccept?: string;
+    multiple?: boolean;
+    directory?: boolean;
   };
 }
 

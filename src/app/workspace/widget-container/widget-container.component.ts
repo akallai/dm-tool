@@ -104,7 +104,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-      // Other widget configurations remain unchanged
       case 'MUSIC_WIDGET':
         return {
           title: 'Music Widget Settings',
@@ -120,14 +119,21 @@ export class WidgetContainerComponent {
               label: 'Loop audio files'
             },
             {
+              key: 'randomOrder',
+              type: 'checkbox',
+              label: 'Play files in random order'
+            },
+            {
               key: 'mappings',
               type: 'mapping',
               label: 'Sound Mappings',
               mappingConfig: {
                 keyLabel: 'Label',
                 valueType: 'file',
-                valueLabel: 'Audio File',
-                fileAccept: 'audio/*'
+                valueLabel: 'Audio Files',
+                fileAccept: 'audio/*',
+                multiple: true,
+                directory: true
               }
             }
           ]

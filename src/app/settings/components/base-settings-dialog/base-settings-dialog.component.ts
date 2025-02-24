@@ -17,6 +17,7 @@ import {
   FileFieldConfig,
   MappingFieldConfig
 } from '../../types/settings.types';
+import { MusicFile } from '../../../widgets/music-widget/music-widget.component';
 
 @Component({
   selector: 'app-base-settings-dialog',
@@ -104,19 +105,23 @@ import {
                 <div *ngSwitchCase="'file'" class="mapping-file">
                   <input type="file" 
                          [accept]="getMappingFileAccept(field)"
+                         [multiple]="getMappingFileMultiple(field)"
+                         [attr.webkitdirectory]="getMappingDirectory(field) ? '' : null"
                          (change)="onMappingFileSelected($event, field.key, i)">
-                  <span *ngIf="mapping.fileName">{{ mapping.fileName }}</span>
+                  <span *ngIf="mapping.files">
+                    {{ getFileNames(mapping) }}
+                  </span>
                 </div>
 
                 <mat-checkbox *ngSwitchCase="'checkbox'"
-                           [(ngModel)]="mapping.value"
-                           class="mapping-value">
+                              [(ngModel)]="mapping.value"
+                              class="mapping-value">
                   {{ getMappingValueLabel(field) }}
                 </mat-checkbox>
 
                 <mat-form-field *ngSwitchCase="'textarea'" class="mapping-value">
-                <mat-label>{{ getMappingValueLabel(field) }}</mat-label>
-                <textarea matInput [(ngModel)]="mapping.itemsText" rows="3"></textarea>
+                  <mat-label>{{ getMappingValueLabel(field) }}</mat-label>
+                  <textarea matInput [(ngModel)]="mapping.itemsText" rows="3"></textarea>
                 </mat-form-field>
               </ng-container>
 
@@ -261,6 +266,14 @@ export class BaseSettingsDialogComponent {
     return this.isMappingFieldConfig(field) ? field.mappingConfig.fileAccept || '*' : '*';
   }
 
+  getMappingFileMultiple(field: SettingsField): boolean {
+    return this.isMappingFieldConfig(field) ? field.mappingConfig.multiple || false : false;
+  }
+
+  getMappingDirectory(field: SettingsField): boolean {
+    return this.isMappingFieldConfig(field) ? field.mappingConfig.directory || false : false;
+  }
+
   getMappingArray(key: string): any[] {
     return this.settings[key] || [];
   }
@@ -291,7 +304,7 @@ export class BaseSettingsDialogComponent {
       reader.onload = () => {
         this.settings[key] = {
           fileName: file.name,
-          fileData: reader.result
+          fileDataUrl: reader.result
         };
       };
       reader.readAsDataURL(file);
@@ -300,21 +313,29 @@ export class BaseSettingsDialogComponent {
 
   onMappingFileSelected(event: Event, key: string, index: number) {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
+    const files = input.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    const filesArray: any[] = [];
+    let filesProcessed = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const reader = new FileReader();
       reader.onload = () => {
-        this.settings[key][index] = {
-          ...this.settings[key][index],
-          fileName: file.name,
-          fileDataUrl: reader.result  // Changed from fileData to fileDataUrl
-        };
+        filesArray.push({ fileName: file.name, fileDataUrl: reader.result });
+        filesProcessed++;
+        if (filesProcessed === files.length) {
+          this.settings[key][index] = {
+            ...this.settings[key][index],
+            files: filesArray
+          };
+        }
       };
       reader.readAsDataURL(file);
     }
   }
   
-
   addMapping(key: string) {
     if (!Array.isArray(this.settings[key])) {
       this.settings[key] = [];
@@ -334,4 +355,12 @@ export class BaseSettingsDialogComponent {
     }
     this.dialogRef.close(this.settings);
   }
+
+  // Helper method to display file names without using an inline arrow function
+  getFileNames(mapping: any): string {
+  if (mapping.files && Array.isArray(mapping.files)) {
+    return mapping.files.map((f: MusicFile) => f.fileName).join(', ');
+  }
+  return '';
+}
 }
