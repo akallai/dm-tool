@@ -36,8 +36,8 @@ export class WorkspaceComponent implements OnInit {
     '/dm-tool/backgrounds/cyberpunk.webp',
     '/dm-tool/backgrounds/dragon_battle.webp',
     '/dm-tool/backgrounds/peaceful_valley.webp',
-    '/dm-tool/backgrounds/zombies.webp',
-    '/dm-tool/backgrounds/space.webp'
+    '/dm-tool/backgrounds/space.webp',
+    '/dm-tool/backgrounds/postapocalyptic.webp'
   ];
   currentBackgroundIndex: number = 0;
 

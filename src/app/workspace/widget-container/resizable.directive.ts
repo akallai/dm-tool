@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit, OnChanges, SimpleChanges, HostListener } from '@angular/core';
 
 @Directive({
   selector: '[appResizable]',
@@ -18,8 +18,16 @@ export class ResizableDirective implements OnInit, OnChanges {
   private startLeft = 0;
   private startTop = 0;
   private handleSize = 6;
+  private viewportWidth: number = window.innerWidth;
+  private viewportHeight: number = window.innerHeight;
 
   constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  @HostListener('window:resize', ['$event'])
+  onWindowResize() {
+    this.viewportWidth = window.innerWidth;
+    this.viewportHeight = window.innerHeight;
+  }
 
   ngOnInit() {
     this.initializeElement();
@@ -100,6 +108,7 @@ export class ResizableDirective implements OnInit, OnChanges {
     let newLeft = this.startLeft;
     let newTop = this.startTop;
 
+    // Calculate new dimensions and position based on resize handle
     switch (this.currentHandle) {
       case 'e':
         newWidth = this.startWidth + deltaX;
@@ -141,14 +150,67 @@ export class ResizableDirective implements OnInit, OnChanges {
     const minWidth = 100;
     const minHeight = 100;
 
-    if (newWidth >= minWidth) {
+    // Constraint 1: Ensure widget doesn't exceed viewport bounds
+    const maxWidth = this.viewportWidth;
+    const maxHeight = this.viewportHeight;
+    
+    // Constraint 2: When adjusting width from left edge, don't allow going off left side
+    if (['w', 'nw', 'sw'].includes(this.currentHandle)) {
+      if (newLeft < 0) {
+        const offset = -newLeft;
+        newLeft = 0;
+        newWidth -= offset;
+      }
+    }
+    
+    // Constraint 3: When adjusting height from top edge, don't allow going off top edge
+    if (['n', 'ne', 'nw'].includes(this.currentHandle)) {
+      if (newTop < 0) {
+        const offset = -newTop;
+        newTop = 0;
+        newHeight -= offset;
+      }
+    }
+    
+    // Constraint 4: Don't allow widget to extend beyond right edge of viewport
+    if (newLeft + newWidth > maxWidth) {
+      if (['e', 'ne', 'se'].includes(this.currentHandle)) {
+        // If dragging right edge, cap the width
+        newWidth = maxWidth - newLeft;
+      } else {
+        // If dragging left edge, cap the left position
+        const rightEdge = newLeft + newWidth;
+        const overflow = rightEdge - maxWidth;
+        if (overflow > 0) {
+          newWidth -= overflow;
+        }
+      }
+    }
+    
+    // Constraint 5: Don't allow widget to extend beyond bottom edge of viewport
+    if (newTop + newHeight > maxHeight) {
+      if (['s', 'se', 'sw'].includes(this.currentHandle)) {
+        // If dragging bottom edge, cap the height
+        newHeight = maxHeight - newTop;
+      } else {
+        // If dragging top edge, cap the top position
+        const bottomEdge = newTop + newHeight;
+        const overflow = bottomEdge - maxHeight;
+        if (overflow > 0) {
+          newHeight -= overflow;
+        }
+      }
+    }
+
+    // Apply the final dimensions and position
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
       this.renderer.setStyle(this.el.nativeElement, 'width', `${newWidth}px`);
       if (['w', 'nw', 'sw'].includes(this.currentHandle)) {
         this.renderer.setStyle(this.el.nativeElement, 'left', `${newLeft}px`);
       }
     }
 
-    if (newHeight >= minHeight) {
+    if (newHeight >= minHeight && newHeight <= maxHeight) {
       this.renderer.setStyle(this.el.nativeElement, 'height', `${newHeight}px`);
       if (['n', 'ne', 'nw'].includes(this.currentHandle)) {
         this.renderer.setStyle(this.el.nativeElement, 'top', `${newTop}px`);
