@@ -158,22 +158,28 @@ export class WidgetContainerComponent {
             }
           ]
         };
-      case 'RANDOM_GENERATOR':
-        return {
-          title: 'Random Generator Settings',
-          fields: [
-            {
-              key: 'mappings',
-              type: 'mapping',
-              label: 'Random Lists',
-              mappingConfig: {
-                keyLabel: 'List Name',
-                valueType: 'textarea',
-                valueLabel: 'Items (one per line)'
-              }
-            }
-          ]
-        };
+        case 'RANDOM_GENERATOR':
+  return {
+    title: 'Random Generator Settings',
+    fields: [
+      {
+        key: 'useWeightedSelection',
+        type: 'checkbox',
+        label: 'Use weighted selection and hide number prefixes',
+        defaultValue: true
+      },
+      {
+        key: 'mappings',
+        type: 'mapping',
+        label: 'Random Lists',
+        mappingConfig: {
+          keyLabel: 'List Name',
+          valueType: 'textarea',
+          valueLabel: 'Items (one per line)'
+        }
+      }
+    ]
+  };
       case 'COMBAT_TRACKER':
         return {
           title: 'Combat Tracker Settings',

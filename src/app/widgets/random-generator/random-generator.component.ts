@@ -50,19 +50,44 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
   lastResult: string = '';
   lastKey: string = '';
 
-  // File handle for the JSON file (the file name isn’t displayed).
+  // File handle for the JSON file (the file name isn't displayed).
   fileHandle: FileSystemFileHandle | null = null;
 
   saveTimeout: any;
 
   ngOnInit() {
     this.mappings = this.settings?.mappings || [];
+    
+    // Initialize useWeightedSelection if not already set
+    if (this.settings.useWeightedSelection === undefined) {
+      this.settings.useWeightedSelection = true; // Enable by default
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['settings']) {
       this.mappings = this.settings?.mappings || [];
     }
+  }
+
+  // Helper function to parse an item and extract range if present
+  private parseItem(item: string): { text: string, weight: number } {
+    // Regular expression to match range pattern - supports optional spaces around the minus sign
+    const rangeRegex = /^(\d+)\s*-\s*(\d+)\s+(.+)$/;
+    const match = item.match(rangeRegex);
+    
+    if (match) {
+      const start = parseInt(match[1], 10);
+      const end = parseInt(match[2], 10);
+      const text = match[3];
+      // Calculate weight as (end - start + 1), ensuring at least 1
+      const weight = Math.max(1, end - start + 1);
+      
+      return { text, weight };
+    }
+    
+    // No range found, return the original item with weight 1
+    return { text: item, weight: 1 };
   }
 
   getItems(mapping: RandomMapping): string[] {
@@ -82,10 +107,34 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
   randomize(mapping: RandomMapping) {
     const items = this.getItems(mapping);
     if (items.length > 0) {
-      const index = Math.floor(Math.random() * items.length);
-      this.lastResult = items[index];
+      // Check if weighted selection is enabled
+      const useWeightedSelection = this.settings?.useWeightedSelection !== false;
+      
+      if (useWeightedSelection) {
+        // Use weighted selection
+        const weightedPool: string[] = [];
+        
+        items.forEach(item => {
+          const { text, weight } = this.parseItem(item);
+          // Add the item to the pool 'weight' times
+          for (let i = 0; i < weight; i++) {
+            weightedPool.push(text);
+          }
+        });
+        
+        // Select a random item from the weighted pool
+        const randomIndex = Math.floor(Math.random() * weightedPool.length);
+        this.lastResult = weightedPool[randomIndex];
+      } else {
+        // Use simple random selection (one item, one chance)
+        // When weighted selection is off, use the original text with the range prefix
+        const index = Math.floor(Math.random() * items.length);
+        this.lastResult = items[index];
+      }
+      
       this.lastKey = mapping.key;
-      // Trigger an auto-save after changes.
+      
+      // Trigger an auto-save after changes
       this.scheduleAutoSave();
     }
   }
@@ -104,7 +153,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
         const file = await handle.getFile();
         const text = await file.text();
         const data = JSON.parse(text);
-        // Update _settings in place so that parent's reference isn’t replaced.
+        // Update _settings in place so that parent's reference isn't replaced.
         Object.assign(this._settings, data);
         if (!Array.isArray(this._settings.mappings)) {
           this._settings.mappings = [];
@@ -133,7 +182,10 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
         });
         this.fileHandle = handle;
         // Initialize default settings.
-        this._settings = { mappings: [] };
+        this._settings = { 
+          mappings: [],
+          useWeightedSelection: true // Enable by default for new files
+        };
         this.mappings = this._settings.mappings;
         // Emit new settings.
         this.settingsChange.emit(this._settings);
