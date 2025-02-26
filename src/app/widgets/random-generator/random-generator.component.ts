@@ -2,10 +2,12 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, Output, EventEmitte
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 interface RandomMapping {
   key: string;
   itemsText: string;
+  category?: string; // Added category property
 }
 
 @Component({
@@ -13,7 +15,7 @@ interface RandomMapping {
   templateUrl: './random-generator.component.html',
   styleUrls: ['./random-generator.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule]
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatExpansionModule]
 })
 export class RandomGeneratorComponent implements OnInit, OnChanges {
   // Use a private settings object so that we can update it in place.
@@ -62,12 +64,53 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
     if (this.settings.useWeightedSelection === undefined) {
       this.settings.useWeightedSelection = true; // Enable by default
     }
+    
+    // Apply categories from mappingCategories if available
+    this.applyCategoriesFromSettings();
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['settings']) {
       this.mappings = this.settings?.mappings || [];
+      this.applyCategoriesFromSettings();
     }
+  }
+  
+  // Apply categories from settings to mappings
+  private applyCategoriesFromSettings() {
+    if (this.settings?.mappingCategories && Array.isArray(this.settings.mappingCategories)) {
+      const categoryMap = new Map();
+      this.settings.mappingCategories.forEach((cat: any) => {
+        if (cat.key && cat.value) {
+          categoryMap.set(cat.key, cat.value);
+        }
+      });
+      
+      this.mappings.forEach(mapping => {
+        if (categoryMap.has(mapping.key)) {
+          mapping.category = categoryMap.get(mapping.key);
+        }
+      });
+    }
+  }
+
+  // Get all unique categories
+  get uniqueCategories(): string[] {
+    return [...new Set(
+      this.mappings
+        .filter(mapping => mapping.category && mapping.category.trim() !== '')
+        .map(mapping => mapping.category as string) // Add type assertion here
+    )].sort();
+  }
+
+  // Get mappings for a specific category
+  getMappingsByCategory(category: string): RandomMapping[] {
+    return this.mappings.filter(mapping => mapping.category === category);
+  }
+
+  // Get mappings without a category
+  getUncategorizedMappings(): RandomMapping[] {
+    return this.mappings.filter(mapping => !mapping.category || mapping.category.trim() === '');
   }
 
   // Helper function to parse an item and extract range if present
@@ -159,6 +202,8 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
           this._settings.mappings = [];
         }
         this.mappings = this._settings.mappings;
+        // Apply categories if they exist
+        this.applyCategoriesFromSettings();
         // Emit the updated settings so the parent can update its widgetData.settings.
         this.settingsChange.emit(this._settings);
       } else {
@@ -184,6 +229,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
         // Initialize default settings.
         this._settings = { 
           mappings: [],
+          mappingCategories: [],
           useWeightedSelection: true // Enable by default for new files
         };
         this.mappings = this._settings.mappings;
@@ -202,6 +248,9 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
   async saveFile() {
     if (this.fileHandle) {
       try {
+        // Make sure we save the categories
+        this.saveCategoriesInSettings();
+        
         const writable = await this.fileHandle.createWritable();
         await writable.write(JSON.stringify(this._settings, null, 2));
         await writable.close();
@@ -209,6 +258,35 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
         console.error('Error saving file:', error);
       }
     }
+  }
+  
+  // Save the categories from mappings to the mappingCategories array in settings
+  private saveCategoriesInSettings() {
+    if (!this._settings.mappingCategories) {
+      this._settings.mappingCategories = [];
+    }
+    
+    // Update or add categories based on mapping.category
+    this.mappings.forEach(mapping => {
+      const existingCategoryIndex = this._settings.mappingCategories.findIndex(
+        (c: any) => c.key === mapping.key
+      );
+      
+      if (mapping.category) {
+        // If category exists, add or update it
+        if (existingCategoryIndex >= 0) {
+          this._settings.mappingCategories[existingCategoryIndex].value = mapping.category;
+        } else {
+          this._settings.mappingCategories.push({
+            key: mapping.key,
+            value: mapping.category
+          });
+        }
+      } else if (existingCategoryIndex >= 0) {
+        // If mapping has no category but there's an entry in mappingCategories, remove it
+        this._settings.mappingCategories.splice(existingCategoryIndex, 1);
+      }
+    });
   }
 
   // Debounce auto-saving by waiting 1 second after the last change.

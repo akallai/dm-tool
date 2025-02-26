@@ -158,7 +158,8 @@ export class WidgetContainerComponent {
             }
           ]
         };
-        case 'RANDOM_GENERATOR':
+        // In widget-container.component.ts, update the RANDOM_GENERATOR case:
+case 'RANDOM_GENERATOR':
   return {
     title: 'Random Generator Settings',
     fields: [
@@ -176,6 +177,16 @@ export class WidgetContainerComponent {
           keyLabel: 'List Name',
           valueType: 'textarea',
           valueLabel: 'Items (one per line)'
+        }
+      },
+      {
+        key: 'mappingCategories',
+        type: 'mapping',
+        label: 'Categorize Lists (Optional)',
+        mappingConfig: {
+          keyLabel: 'List Name (must match above)',
+          valueType: 'text',
+          valueLabel: 'Category (leave empty for no category)'
         }
       }
     ]
