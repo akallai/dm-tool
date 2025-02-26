@@ -3,6 +3,11 @@
     <button mat-button (click)="openExistingWiki()">Open Wiki</button>
     <button mat-button (click)="createNewWiki()">New Wiki</button>
   </div>
+  
+  <!-- Loading/error indicators -->
+  <div *ngIf="isSaving" class="save-indicator">Saving...</div>
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  
   <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
     <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
       <div class="sidebar-toggle">
@@ -22,11 +27,14 @@
           [(ngModel)]="searchTerm"
           class="search-input"
         />
-        <ul>
-          <ng-container *ngFor="let article of filteredArticles">
-            <ng-container *ngTemplateOutlet="recursiveList; context:{ article: article, level: 0 }"></ng-container>
-          </ng-container>
-        </ul>
+        <!-- Use virtual scrolling for better performance with large article lists -->
+        <cdk-virtual-scroll-viewport itemSize="36" class="article-viewport">
+          <ul>
+            <ng-container *ngFor="let article of filteredArticles; trackBy: trackByArticleId">
+              <ng-container *ngTemplateOutlet="recursiveList; context:{ article: article, level: 0 }"></ng-container>
+            </ng-container>
+          </ul>
+        </cdk-virtual-scroll-viewport>
       </div>
     </div>
     <div class="wiki-content">
@@ -75,7 +83,7 @@
     </button>
   </li>
   <ng-container *ngIf="article.children && article.children.length">
-    <ng-container *ngFor="let child of article.children">
+    <ng-container *ngFor="let child of article.children; trackBy: trackByArticleId">
       <ng-container *ngTemplateOutlet="recursiveList; context:{ article: child, level: level + 1 }"></ng-container>
     </ng-container>
   </ng-container>

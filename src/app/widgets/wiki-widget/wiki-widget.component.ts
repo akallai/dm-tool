@@ -1,10 +1,13 @@
-import { Component, Input, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+// src/app/widgets/wiki-widget/wiki-widget.component.ts
+import { Component, Input, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { marked } from 'marked';
+import { ScrollingModule } from '@angular/cdk/scrolling';
+import { debounce } from 'lodash';
 
 export interface WikiArticle {
   id: string;
@@ -22,7 +25,14 @@ export interface WikiData {
   templateUrl: './wiki-widget.component.html',
   styleUrls: ['./wiki-widget.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule]
+  imports: [
+    CommonModule,
+    FormsModule, 
+    MatButtonModule,
+    MatIconModule,
+    ScrollingModule
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() settings: any;
@@ -31,21 +41,25 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   isEditing: boolean = false;
   fileHandle: FileSystemFileHandle | null = null;
   fileName: string = '';
-  saveTimeout: any;
   renderedContent: SafeHtml = '';
   
   sidebarCollapsed: boolean = false;
   searchTerm: string = '';
+  isSaving: boolean = false;
+  errorMessage: string = '';
 
-  // Use the recursive filter function for search
-  get filteredArticles(): WikiArticle[] {
-    if (!this.searchTerm) {
-      return this.wikiData.articles;
-    }
-    return this.filterArticles(this.wikiData.articles, this.searchTerm);
-  }
+  // Create a debounced save function
+  private debouncedSaveWiki = debounce(this.saveWiki.bind(this), 1000);
+  
+  // Handler for wiki link events as a properly bound method
+  private wikiLinkHandler = (event: CustomEvent) => {
+    this.handleWikiLink(event.detail);
+  };
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     if (this.settings && this.settings.wikiData) {
@@ -66,23 +80,47 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
             accept: { 'application/json': ['.json'] }
           }]
         });
+        
         this.fileHandle = handle;
         this.fileName = handle.name;
+        
+        // Show loading indicator
+        this.isSaving = true;
+        this.cdr.markForCheck();
+        
         const file = await handle.getFile();
         const text = await file.text();
         this.wikiData = JSON.parse(text);
+        
         if (this.settings) {
           this.settings.wikiData = this.wikiData;
         }
+        
         if (this.wikiData.articles.length > 0) {
           this.currentArticle = this.wikiData.articles[0];
         }
+        
         this.updateRenderedContent();
+        this.isSaving = false;
+        this.cdr.markForCheck();
       } else {
-        alert('File System Access API is not supported in this browser.');
+        this.errorMessage = 'File System Access API is not supported in this browser.';
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     } catch (error) {
       console.error('Error opening wiki file:', error);
+      this.errorMessage = 'Failed to open wiki file';
+      this.isSaving = false;
+      this.cdr.markForCheck();
+      
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
@@ -96,30 +134,61 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
             accept: { 'application/json': ['.json'] }
           }]
         });
+        
         this.fileHandle = handle;
         this.fileName = handle.name;
         this.wikiData = { articles: [] };
+        
         if (this.settings) {
           this.settings.wikiData = this.wikiData;
         }
+        
         this.currentArticle = null;
         this.updateRenderedContent();
+        await this.saveWiki();
       } else {
-        alert('File System Access API is not supported in this browser.');
+        this.errorMessage = 'File System Access API is not supported in this browser.';
+        this.cdr.markForCheck();
+        
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     } catch (error) {
       console.error('Error creating wiki file:', error);
+      this.errorMessage = 'Failed to create wiki file';
+      this.cdr.markForCheck();
+      
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
   async saveWiki() {
     if (this.fileHandle) {
       try {
+        this.isSaving = true;
+        this.cdr.markForCheck();
+        
         const writable = await this.fileHandle.createWritable();
         await writable.write(JSON.stringify(this.wikiData, null, 2));
         await writable.close();
+        
+        this.isSaving = false;
+        this.cdr.markForCheck();
       } catch (error) {
         console.error('Error saving wiki file:', error);
+        this.errorMessage = 'Failed to save wiki file';
+        this.isSaving = false;
+        this.cdr.markForCheck();
+        
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     }
   }
@@ -136,6 +205,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentArticle = newArticle;
     this.isEditing = true;
     this.updateSettings();
+    this.cdr.markForCheck();
   }
 
   // Add a sub-article to a given parent article
@@ -154,6 +224,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentArticle = newArticle;
     this.isEditing = true;
     this.updateSettings();
+    this.cdr.markForCheck();
   }
 
   // Recursively remove an article from a list by id
@@ -167,6 +238,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.updateSettings();
     this.updateRenderedContent();
+    this.cdr.markForCheck();
   }
 
   private removeArticle(articles: WikiArticle[], id: string): WikiArticle[] {
@@ -185,6 +257,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentArticle = article;
     this.isEditing = false;
     this.updateRenderedContent();
+    this.cdr.markForCheck();
   }
 
   updateArticle() {
@@ -192,10 +265,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isEditing) {
       this.updateRenderedContent();
     }
-    if (this.saveTimeout) clearTimeout(this.saveTimeout);
-    this.saveTimeout = setTimeout(() => {
-      this.saveWiki();
-    }, 1000);
+    this.debouncedSaveWiki();
   }
 
   updateSettings() {
@@ -209,10 +279,12 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isEditing) {
       this.updateRenderedContent();
     }
+    this.cdr.markForCheck();
   }
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.cdr.markForCheck();
   }
 
   // Convert article content to HTML with wiki links
@@ -224,18 +296,29 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
       });
       const html: string = await marked.parse(content);
       this.renderedContent = this.sanitizer.bypassSecurityTrustHtml(html);
+      this.cdr.markForCheck();
     }
   }
 
   // Recursively filter articles by a search term
+  get filteredArticles(): WikiArticle[] {
+    if (!this.searchTerm) {
+      return this.wikiData.articles;
+    }
+    return this.filterArticles(this.wikiData.articles, this.searchTerm);
+  }
+  
   private filterArticles(articles: WikiArticle[], term: string): WikiArticle[] {
     return articles.reduce((result: WikiArticle[], article) => {
       const lowerTerm = term.toLowerCase();
-      const titleMatches = article.title.toLowerCase().includes(lowerTerm) || article.content.toLowerCase().includes(lowerTerm);
+      const titleMatches = article.title.toLowerCase().includes(lowerTerm) || 
+                           article.content.toLowerCase().includes(lowerTerm);
+      
       let filteredChildren: WikiArticle[] = [];
       if (article.children) {
         filteredChildren = this.filterArticles(article.children, term);
       }
+      
       if (titleMatches || filteredChildren.length > 0) {
         result.push({
           ...article,
@@ -246,18 +329,20 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     }, []);
   }
 
-  // Handler for wiki link events.
-  wikiLinkHandler = (event: CustomEvent) => {
-    this.handleWikiLink(event.detail);
-  };
-
+  // Handler for wiki link events
   handleWikiLink(title: string) {
-    // Searches the tree (flattened) for an article with the matching title.
+    // Searches the tree (flattened) for an article with the matching title
     const found = this.findArticleByTitle(this.wikiData.articles, title);
     if (found) {
       this.selectArticle(found);
     } else {
-      alert(`Article "${title}" not found.`);
+      this.errorMessage = `Article "${title}" not found.`;
+      this.cdr.markForCheck();
+      
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
@@ -276,12 +361,22 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     return null;
   }
 
+  // Track articles for better performance
+  trackByArticleId(index: number, article: WikiArticle): string {
+    return article.id;
+  }
+
   ngAfterViewInit() {
     window.addEventListener('wikiLink', this.wikiLinkHandler as EventListener);
   }
 
   ngOnDestroy() {
-    if (this.saveTimeout) clearTimeout(this.saveTimeout);
+    // Clean up event listener to prevent memory leaks
     window.removeEventListener('wikiLink', this.wikiLinkHandler as EventListener);
+    
+    // Cancel any pending debounced operations
+    if (this.debouncedSaveWiki.cancel) {
+      this.debouncedSaveWiki.cancel();
+    }
   }
 }

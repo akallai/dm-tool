@@ -12,8 +12,8 @@
     <mat-icon>add</mat-icon>
   </button>
   
-  <!-- Render all widget containers -->
-  <ng-container *ngFor="let widget of widgets">
+  <!-- Render all widget containers with trackBy for improved performance -->
+  <ng-container *ngFor="let widget of widgets; trackBy: trackByWidgetId">
     <app-widget-container
       [widgetData]="widget"
       (closeEvent)="removeWidget(widget.id)"

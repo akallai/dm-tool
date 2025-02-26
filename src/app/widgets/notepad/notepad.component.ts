@@ -1,8 +1,10 @@
-import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+// src/app/widgets/notepad/notepad.component.ts
+import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
+import { debounce } from 'lodash';
 
 @Component({
   selector: 'app-notepad',
@@ -24,6 +26,14 @@ import { marked } from 'marked';
                   placeholder="Write your notes here..."
                   class="notepad-textarea">
         </textarea>
+        
+        <!-- Loading/Error states -->
+        <div *ngIf="isSaving" class="save-indicator">
+          Saving...
+        </div>
+        <div *ngIf="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
       </ng-container>
       
       <ng-template #emptyState>
@@ -40,6 +50,7 @@ import { marked } from 'marked';
       height: 100%;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
     .empty-state {
       flex: 1;
@@ -81,6 +92,26 @@ import { marked } from 'marked';
     }
     .action-btn:hover {
       background: #1565c0;
+    }
+    .save-indicator {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .error-message {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: #f44336;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
     }
     /* Base markdown content styles */
     :host ::ng-deep {
@@ -165,19 +196,27 @@ import { marked } from 'marked';
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NotepadComponent implements OnInit, OnDestroy {
   @Input() settings: any;
   content = '';
   fileHandle: FileSystemFileHandle | null = null;
-  saveTimeout: any;
   isEditing = false;
   renderedContent: SafeHtml = '';
+  isSaving = false;
+  errorMessage = '';
 
   @ViewChild('textareaElement') textareaElement?: ElementRef;
 
-  constructor(private sanitizer: DomSanitizer) { }
+  // Create a debounced autoSave function to avoid excessive disk operations
+  private debouncedAutoSave = debounce(this.autoSave.bind(this), 1000);
+
+  constructor(
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     // Load any previously saved content from settings
@@ -199,15 +238,35 @@ export class NotepadComponent implements OnInit, OnDestroy {
         });
         this.fileHandle = handle;
         this.settings.title = handle.name;
+        
+        // Show loading indicator
+        this.isSaving = true;
+        this.cdr.markForCheck();
+        
         const file = await handle.getFile();
         this.content = await file.text();
         this.settings.content = this.content;
         this.updateRenderedContent();
+        
+        this.isSaving = false;
+        this.cdr.markForCheck();
       } else {
-        alert('File System Access API is not supported in this browser.');
+        this.errorMessage = 'File System Access API is not supported in this browser.';
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     } catch (error) {
       console.error('Error opening file:', error);
+      this.errorMessage = 'Failed to open file';
+      this.isSaving = false;
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
@@ -228,38 +287,50 @@ export class NotepadComponent implements OnInit, OnDestroy {
         this.updateRenderedContent();
         await this.autoSave();
       } else {
-        alert('File System Access API is not supported in this browser.');
+        this.errorMessage = 'File System Access API is not supported in this browser.';
+        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     } catch (error) {
       console.error('Error creating file:', error);
+      this.errorMessage = 'Failed to create file';
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
     }
   }
 
   onContentChange() {
-    // Update settings and schedule auto-save
+    // Update settings
     if (this.settings) {
       this.settings.content = this.content;
     }
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
-    }
-    this.saveTimeout = setTimeout(() => {
-      this.autoSave();
-    }, 1000);
+    
+    // Use debounced save to avoid excessive disk operations
+    this.debouncedAutoSave();
   }
 
   onBlur() {
     // When the textarea loses focus, update the rendered markdown
     this.isEditing = false;
     this.updateRenderedContent();
+    this.cdr.markForCheck();
   }
 
   onFocus() {
     this.isEditing = true;
+    this.cdr.markForCheck();
   }
 
   enableEditing() {
     this.isEditing = true;
+    this.cdr.markForCheck();
+    
     // Focus the textarea after it appears
     setTimeout(() => {
       this.textareaElement?.nativeElement.focus();
@@ -269,23 +340,39 @@ export class NotepadComponent implements OnInit, OnDestroy {
   async updateRenderedContent() {
     const html = await marked.parse(this.content || '');
     this.renderedContent = this.sanitizer.bypassSecurityTrustHtml(html);
+    this.cdr.markForCheck();
   }
 
   async autoSave() {
     if (this.fileHandle) {
       try {
+        this.isSaving = true;
+        this.cdr.markForCheck();
+        
         const writable = await this.fileHandle.createWritable();
         await writable.write(this.content);
         await writable.close();
+        
+        this.isSaving = false;
+        this.cdr.markForCheck();
       } catch (error) {
         console.error('Auto-save failed:', error);
+        this.errorMessage = 'Auto-save failed';
+        this.isSaving = false;
+        this.cdr.markForCheck();
+        
+        setTimeout(() => {
+          this.errorMessage = '';
+          this.cdr.markForCheck();
+        }, 3000);
       }
     }
   }
 
   ngOnDestroy() {
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
+    // Cancel any pending debounced operations
+    if (this.debouncedAutoSave.cancel) {
+      this.debouncedAutoSave.cancel();
     }
   }
 }

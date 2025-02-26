@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/workspace/workspace.component.ts
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
 import { WidgetStorageService } from '../services/widget-storage.service';
@@ -7,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
+import { WorkspaceService } from '../services/workspace.service';
 
 export interface WidgetInstance {
   id: string;
@@ -27,7 +29,8 @@ export interface WidgetInstance {
     MatIconModule,
     MatDialogModule,
     WidgetContainerComponent
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WorkspaceComponent implements OnInit {
   widgets: WidgetInstance[] = [];
@@ -47,13 +50,16 @@ export class WorkspaceComponent implements OnInit {
 
   constructor(
     private dialog: MatDialog,
-    private widgetStorage: WidgetStorageService
+    private widgetStorage: WidgetStorageService,
+    private workspaceService: WorkspaceService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     // Load saved widget state from localStorage
     this.widgets = this.widgetStorage.loadWidgets();
-    (window as any).workspace = this;
+    // Update the workspace service instead of global window object
+    this.workspaceService.updateWorkspace(this.widgets);
   }
 
   openWidgetSelector() {
@@ -65,6 +71,7 @@ export class WorkspaceComponent implements OnInit {
         } else if (result.action === 'reset') {
           this.resetWorkspace();
         }
+        this.cdr.markForCheck(); // Trigger change detection
       }
     });
   }
@@ -84,22 +91,32 @@ export class WorkspaceComponent implements OnInit {
   removeWidget(id: string) {
     this.widgets = this.widgets.filter(w => w.id !== id);
     this.saveWidgets();
+    this.cdr.markForCheck(); // Trigger change detection
   }
 
   resetWorkspace() {
     this.widgets = [];
     this.saveWidgets();
+    this.cdr.markForCheck(); // Trigger change detection
   }
 
   saveWidgets() {
     this.widgetStorage.saveWidgets(this.widgets);
+    this.workspaceService.updateWorkspace(this.widgets);
   }
 
   nextBackground() {
     this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgrounds.length;
+    this.cdr.markForCheck(); // Trigger change detection
   }
 
   previousBackground() {
     this.currentBackgroundIndex = (this.currentBackgroundIndex - 1 + this.backgrounds.length) % this.backgrounds.length;
+    this.cdr.markForCheck(); // Trigger change detection
+  }
+
+  // Track widgets by ID for better performance with ngFor
+  trackByWidgetId(index: number, widget: WidgetInstance): string {
+    return widget.id;
   }
 }
