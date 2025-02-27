@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, Input } from '@angular/core';
+import { Component, OnInit, Inject, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -564,7 +564,10 @@ export class CombatTrackerComponent implements OnInit {
   activeIndex: number = 0;
   currentRound: number = 1;
 
-  constructor(private dialog: MatDialog) {}
+  constructor(
+    private dialog: MatDialog, 
+    private cdr: ChangeDetectorRef
+  ) {}
 
   get sortedCombatants(): Combatant[] {
     if (this.settings?.autoSort) {
@@ -643,6 +646,8 @@ export class CombatTrackerComponent implements OnInit {
 
         this.combatants.push(newCombatant);
         this.saveState();
+        // Trigger change detection to update the view
+        this.cdr.detectChanges();
       }
     });
   }
@@ -653,6 +658,7 @@ export class CombatTrackerComponent implements OnInit {
       this.activeIndex = Math.max(0, this.combatants.length - 1);
     }
     this.saveState();
+    this.cdr.detectChanges();
   }
 
   nextTurn() {
@@ -664,6 +670,7 @@ export class CombatTrackerComponent implements OnInit {
       this.currentRound++;
     }
     this.saveState();
+    this.cdr.detectChanges();
   }
 
   reset() {
@@ -671,12 +678,14 @@ export class CombatTrackerComponent implements OnInit {
       this.activeIndex = 0;
       this.currentRound = 1;
       this.saveState();
+      this.cdr.detectChanges();
     }
   }
 
   sortByInitiative() {
     this.combatants.sort((a, b) => (b.initiative || 0) - (a.initiative || 0));
     this.saveState();
+    this.cdr.detectChanges();
   }
 
   drop(event: any) {
@@ -690,6 +699,7 @@ export class CombatTrackerComponent implements OnInit {
         this.activeIndex++;
       }
       this.saveState();
+      this.cdr.detectChanges();
     }
   }
 

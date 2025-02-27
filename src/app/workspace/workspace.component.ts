@@ -1,4 +1,3 @@
-// src/app/workspace/workspace.component.ts
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
@@ -7,8 +6,16 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { FormsModule } from '@angular/forms';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
 import { WorkspaceService } from '../services/workspace.service';
+
+export interface Tab {
+  id: string;
+  name: string;
+  widgets: WidgetInstance[];
+}
 
 export interface WidgetInstance {
   id: string;
@@ -25,15 +32,18 @@ export interface WidgetInstance {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
+    MatTooltipModule,
     WidgetContainerComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WorkspaceComponent implements OnInit {
-  widgets: WidgetInstance[] = [];
+  tabs: Tab[] = [];
+  activeTabId: string = '';
   backgrounds: string[] = [
     '/dm-tool/backgrounds/paper.webp',
     '/dm-tool/backgrounds/cyberpunk.webp',
@@ -43,6 +53,14 @@ export class WorkspaceComponent implements OnInit {
     '/dm-tool/backgrounds/postapocalyptic.webp'
   ];
   currentBackgroundIndex: number = 0;
+  editingTabId: string | null = null;
+  tempTabName: string = '';
+
+  // Helper getter to access the widgets of the active tab
+  get widgets(): WidgetInstance[] {
+    const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+    return activeTab?.widgets || [];
+  }
 
   get currentBackground(): string {
     return this.backgrounds[this.currentBackgroundIndex];
@@ -56,10 +74,13 @@ export class WorkspaceComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Load saved widget state from localStorage
-    this.widgets = this.widgetStorage.loadWidgets();
-    // Update the workspace service instead of global window object
-    this.workspaceService.updateWorkspace(this.widgets);
+    // Load tabs and active tab from storage
+    const { tabs, activeTabId } = this.widgetStorage.loadTabs();
+    this.tabs = tabs;
+    this.activeTabId = activeTabId;
+    
+    // Update the workspace service
+    this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
   }
 
   openWidgetSelector() {
@@ -77,6 +98,10 @@ export class WorkspaceComponent implements OnInit {
   }
 
   addWidget(type: WidgetType) {
+    // Find the active tab
+    const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+    if (!activeTab) return;
+    
     const newWidget: WidgetInstance = {
       id: Date.now().toString(),
       type,
@@ -84,25 +109,110 @@ export class WorkspaceComponent implements OnInit {
       size: { width: 300, height: 200 },
       settings: {}
     };
-    this.widgets.push(newWidget);
-    this.saveWidgets();
+    
+    activeTab.widgets.push(newWidget);
+    this.saveTabs();
   }
 
   removeWidget(id: string) {
-    this.widgets = this.widgets.filter(w => w.id !== id);
-    this.saveWidgets();
+    // Find the active tab
+    const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+    if (!activeTab) return;
+    
+    activeTab.widgets = activeTab.widgets.filter(w => w.id !== id);
+    this.saveTabs();
     this.cdr.markForCheck(); // Trigger change detection
   }
 
   resetWorkspace() {
-    this.widgets = [];
-    this.saveWidgets();
+    // Find the active tab
+    const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
+    if (!activeTab) return;
+    
+    activeTab.widgets = [];
+    this.saveTabs();
     this.cdr.markForCheck(); // Trigger change detection
   }
 
+  saveTabs() {
+    this.widgetStorage.saveTabs(this.tabs, this.activeTabId);
+    this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
+  }
+
   saveWidgets() {
-    this.widgetStorage.saveWidgets(this.widgets);
-    this.workspaceService.updateWorkspace(this.widgets);
+    this.saveTabs();
+  }
+
+  // Tab management methods
+  addTab() {
+    const newTab: Tab = {
+      id: Date.now().toString(),
+      name: `Tab ${this.tabs.length + 1}`,
+      widgets: []
+    };
+    
+    this.tabs.push(newTab);
+    this.activeTabId = newTab.id;
+    this.saveTabs();
+    this.cdr.markForCheck();
+  }
+
+  switchTab(tabId: string) {
+    this.activeTabId = tabId;
+    this.saveTabs();
+    this.cdr.markForCheck();
+  }
+
+  removeTab(tabId: string, event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Don't allow removing the last tab
+    if (this.tabs.length <= 1) {
+      return;
+    }
+    
+    this.tabs = this.tabs.filter(tab => tab.id !== tabId);
+    
+    // If we removed the active tab, switch to the first tab
+    if (this.activeTabId === tabId) {
+      this.activeTabId = this.tabs[0].id;
+    }
+    
+    this.saveTabs();
+    this.cdr.markForCheck();
+  }
+
+  startEditingTab(tabId: string, event: MouseEvent) {
+    event.stopPropagation();
+    const tab = this.tabs.find(t => t.id === tabId);
+    if (tab) {
+      this.editingTabId = tabId;
+      this.tempTabName = tab.name;
+      this.cdr.markForCheck();
+      
+      // Focus the input field after it's rendered
+      setTimeout(() => {
+        const inputElement = document.getElementById(`tab-name-input-${tabId}`);
+        if (inputElement) {
+          inputElement.focus();
+        }
+      }, 0);
+    }
+  }
+
+  finishEditingTab() {
+    if (this.editingTabId) {
+      const tab = this.tabs.find(t => t.id === this.editingTabId);
+      if (tab && this.tempTabName.trim()) {
+        tab.name = this.tempTabName.trim();
+        this.saveTabs();
+      }
+    }
+    
+    this.editingTabId = null;
+    this.cdr.markForCheck();
   }
 
   nextBackground() {
@@ -118,5 +228,10 @@ export class WorkspaceComponent implements OnInit {
   // Track widgets by ID for better performance with ngFor
   trackByWidgetId(index: number, widget: WidgetInstance): string {
     return widget.id;
+  }
+  
+  // Track tabs by ID for better performance with ngFor
+  trackByTabId(index: number, tab: Tab): string {
+    return tab.id;
   }
 }

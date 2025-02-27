@@ -1,24 +1,48 @@
-// src/app/services/workspace.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { WidgetInstance } from '../workspace/workspace.component';
+import { WidgetInstance, Tab } from '../workspace/workspace.component';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorkspaceService {
-  private workspaceSubject = new BehaviorSubject<{widgets: WidgetInstance[]}>({widgets: []});
+  private workspaceSubject = new BehaviorSubject<{
+    tabs: Tab[],
+    activeTabId: string,
+    widgets: WidgetInstance[]
+  }>({
+    tabs: [],
+    activeTabId: '',
+    widgets: []
+  });
+  
   workspace$ = this.workspaceSubject.asObservable();
 
-  updateWorkspace(widgets: WidgetInstance[]) {
-    this.workspaceSubject.next({widgets});
+  updateWorkspace(tabs: Tab[], activeTabId: string) {
+    // Find the active tab to get its widgets
+    const activeTab = tabs.find(tab => tab.id === activeTabId);
+    const widgets = activeTab?.widgets || [];
+    
+    this.workspaceSubject.next({
+      tabs,
+      activeTabId,
+      widgets
+    });
   }
   
   getWidget(type: string) {
-    return this.workspaceSubject.value.widgets.find(w => w.type === type);
+    const activeTab = this.workspaceSubject.value.tabs.find(
+      tab => tab.id === this.workspaceSubject.value.activeTabId
+    );
+    
+    return activeTab?.widgets.find(w => w.type === type);
   }
   
   getAllWidgets() {
-    return this.workspaceSubject.value.widgets;
+    const activeTab = this.workspaceSubject.value.tabs.find(
+      tab => tab.id === this.workspaceSubject.value.activeTabId
+    );
+    
+    return activeTab?.widgets || [];
   }
 }

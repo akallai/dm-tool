@@ -1,4 +1,29 @@
 <div class="workspace" [ngStyle]="{'background-image': 'url(' + currentBackground + ')'}">
+  <!-- Vertical tabs bar on the left -->
+  <div class="tabs-bar vertical">
+    <div class="tabs-container">
+      <div *ngFor="let tab of tabs; trackBy: trackByTabId" 
+           class="tab" 
+           [class.active]="tab.id === activeTabId"
+           (click)="switchTab(tab.id)"
+           [matTooltip]="tab.name">
+        <!-- No text, just a simple block -->
+        
+        <!-- Remove button (only shown on hover if there's more than one tab) -->
+        <button *ngIf="tabs.length > 1" 
+                class="tab-close-btn" 
+                (click)="removeTab(tab.id, $event)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Add new tab button -->
+    <button class="add-tab-btn" (click)="addTab()">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+  
   <!-- Background switch buttons -->
   <button class="bg-switch-btn left" (click)="previousBackground()">
     <mat-icon>chevron_left</mat-icon>
