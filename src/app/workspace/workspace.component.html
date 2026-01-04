@@ -39,14 +39,14 @@
       <button class="bg-selector-btn" (click)="openBackgroundSelector()" matTooltip="Change background">
         <mat-icon>palette</mat-icon>
       </button>
+
+      <!-- Add widget button -->
+      <button class="add-widget-btn" (click)="openWidgetSelector()" matTooltip="Add new widget">
+        <mat-icon>extension</mat-icon>
+      </button>
     </div>
   </div>
 
-  <!-- Floating "Add Widget" button in the top right -->
-  <button mat-fab color="primary" class="add-widget-btn" (click)="openWidgetSelector()">
-    <mat-icon>add</mat-icon>
-  </button>
-  
   <!-- Render all widget containers with trackBy for improved performance -->
   <ng-container *ngFor="let widget of widgets; trackBy: trackByWidgetId">
     <app-widget-container
