@@ -15,7 +15,9 @@ import {
   NumberFieldConfig,
   SelectFieldConfig,
   FileFieldConfig,
-  MappingFieldConfig
+  MappingFieldConfig,
+  ReadonlyTextFieldConfig,
+  FileButtonFieldConfig
 } from '../../types/settings.types';
 import { MusicFile } from '../../../widgets/music-widget/music-widget.component';
 
@@ -104,6 +106,24 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
             <mat-error *ngIf="fieldErrors[field.key]" class="field-error">
               {{ fieldErrors[field.key] }}
             </mat-error>
+          </div>
+
+          <!-- Readonly text -->
+          <div *ngIf="field.type === 'readonly-text'" class="readonly-field">
+            <label *ngIf="field.label">{{ field.label }}</label>
+            <div class="readonly-text">{{ settings[field.key] || '(No file selected)' }}</div>
+          </div>
+
+          <!-- File button -->
+          <div *ngIf="field.type === 'file-button'" class="file-button-field">
+            <button mat-button class="file-button" (click)="onFileButtonClick(field)">
+              <mat-icon>folder_open</mat-icon>
+              <span>{{ getFileButtonText(field) }}</span>
+            </button>
+            <input type="file"
+                   [accept]="getFileButtonAccept(field)"
+                   style="display: none;"
+                   #fileInput>
           </div>
 
           <!-- Mapping field -->
@@ -217,6 +237,43 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       font-size: 12px;
       color: var(--text-secondary);
       font-weight: 500;
+    }
+    .readonly-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      background: var(--input-bg);
+      border: var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+    }
+    .readonly-field label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .readonly-text {
+      padding: 8px;
+      color: var(--accent-color);
+      font-family: monospace;
+    }
+    .file-button-field {
+      padding: 8px;
+    }
+    .file-button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-start;
+      border: var(--glass-border);
+      background: var(--input-bg);
+      color: var(--text-primary);
+    }
+    .file-button:hover {
+      background: var(--header-bg);
+      border-color: var(--accent-color);
     }
     .mapping-field {
       border: var(--glass-border);
@@ -381,6 +438,14 @@ export class BaseSettingsDialogComponent {
 
   private isMappingFieldConfig(field: SettingsField): field is MappingFieldConfig {
     return field.type === 'mapping';
+  }
+
+  private isReadonlyTextFieldConfig(field: SettingsField): field is ReadonlyTextFieldConfig {
+    return field.type === 'readonly-text';
+  }
+
+  private isFileButtonFieldConfig(field: SettingsField): field is FileButtonFieldConfig {
+    return field.type === 'file-button';
   }
 
   // Helper methods for templates
@@ -554,5 +619,49 @@ export class BaseSettingsDialogComponent {
       return mapping.files.map((f: MusicFile) => f.fileName).join(', ');
     }
     return '';
+  }
+
+  getFileButtonText(field: SettingsField): string {
+    return this.isFileButtonFieldConfig(field) ? field.buttonText || 'Select File' : 'Select File';
+  }
+
+  getFileButtonAccept(field: SettingsField): string {
+    return this.isFileButtonFieldConfig(field) ? field.accept || '*' : '*';
+  }
+
+  onFileButtonClick(field: SettingsField) {
+    // For notepad file buttons, we don't need an actual file input
+    // Just signal the request based on the field key
+    if (field.key === 'openFileButton') {
+      this.settings._openFilePickerRequested = true;
+      this.dialogRef.close(this.settings);
+    } else if (field.key === 'createFileButton') {
+      this.settings._createFilePickerRequested = true;
+      this.dialogRef.close(this.settings);
+    } else {
+      // Find the file input element that's a sibling of the button
+      const fieldIndex = this.config.fields.indexOf(field);
+      const inputs = document.querySelectorAll('.file-button-field input[type="file"]');
+      const input = inputs[fieldIndex] as HTMLInputElement;
+      if (input) {
+        input.onchange = async (e: Event) => {
+          await this.onFileButtonSelected(e as Event, field);
+        };
+        input.click();
+      }
+    }
+  }
+
+  async onFileButtonSelected(event: Event, field: SettingsField) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      try {
+        // Store the file selection request - the widget will handle the actual file picker
+        this.settings._filePickerRequested = true;
+        this.dialogRef.close(this.settings);
+      } catch (error) {
+        console.error('Error selecting file:', error);
+      }
+    }
   }
 }

@@ -117,6 +117,20 @@ export class NotepadComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
 
+  /**
+   * Exposed method to trigger opening a new file from settings
+   */
+  async openNewFile() {
+    return this.openExistingFile();
+  }
+
+  /**
+   * Exposed method to trigger creating a new file from settings
+   */
+  async createNewFileFromSettings() {
+    return this.createNewFile();
+  }
+
   ngOnInit() {
     // Load any previously saved content from settings
     this.content = this.settings?.content || '';
@@ -136,6 +150,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
         });
         this.fileHandle = handle;
         this.settings.title = handle.name;
+        this.settings.fileName = handle.name;
 
         // Show loading indicator
         this.isSaving = true;
@@ -179,6 +194,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
         });
         this.fileHandle = handle;
         this.settings.title = handle.name;
+        this.settings.fileName = handle.name;
         this.content = '';
         this.settings.content = this.content;
         await this.autoSave();

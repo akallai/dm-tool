@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CdkDragEnd } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,6 +47,8 @@ export class WidgetContainerComponent {
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
 
+  @ViewChild('notepad') notepadComponent?: NotepadComponent;
+
   isMaximized = false;
   private previousPosition!: { x: number, y: number };
   private previousSize!: { width: number, height: number };
@@ -93,8 +95,22 @@ export class WidgetContainerComponent {
     const config = this.getWidgetSettingsConfig(this.widgetData.type);
     if (config) {
       this.settingsService.openSettings(config, this.widgetData.settings)
-        .subscribe(result => {
-          if (result) {
+        .subscribe(async result => {
+          if (result && this.notepadComponent) {
+            // Handle notepad file picker requests
+            if (result._openFilePickerRequested) {
+              delete result._openFilePickerRequested;
+              await this.notepadComponent.openNewFile();
+              result.fileName = this.widgetData.settings.fileName;
+            }
+            if (result._createFilePickerRequested) {
+              delete result._createFilePickerRequested;
+              await this.notepadComponent.createNewFileFromSettings();
+              result.fileName = this.widgetData.settings.fileName;
+            }
+            this.widgetData.settings = result;
+            this.update.emit();
+          } else if (result) {
             this.widgetData.settings = result;
             this.update.emit();
           }
@@ -122,6 +138,31 @@ export class WidgetContainerComponent {
               key: 'showCustomDiceInput',
               type: 'checkbox',
               label: 'Show Custom Dice Input'
+            }
+          ]
+        };
+      case 'NOTEPAD':
+        return {
+          title: 'Notepad Settings',
+          fields: [
+            {
+              key: 'fileName',
+              type: 'readonly-text',
+              label: 'Current File'
+            },
+            {
+              key: 'openFileButton',
+              type: 'file-button',
+              label: 'Open Different File',
+              buttonText: 'Open File',
+              accept: 'text/plain'
+            },
+            {
+              key: 'createFileButton',
+              type: 'file-button',
+              label: 'Create New File',
+              buttonText: 'Create New File',
+              accept: 'text/plain'
             }
           ]
         };

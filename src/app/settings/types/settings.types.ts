@@ -1,16 +1,18 @@
-export type SettingsFieldType = 
-  | 'text' 
-  | 'number' 
-  | 'checkbox' 
-  | 'select' 
-  | 'file' 
-  | 'textarea' 
-  | 'mapping';
+export type SettingsFieldType =
+  | 'text'
+  | 'number'
+  | 'checkbox'
+  | 'select'
+  | 'file'
+  | 'textarea'
+  | 'mapping'
+  | 'readonly-text'
+  | 'file-button';
 
 export interface BaseFieldConfig {
   key: string;
   type: SettingsFieldType;
-  label: string;
+  label?: string;
   required?: boolean;
   defaultValue?: any;
 }
@@ -59,14 +61,27 @@ export interface MappingFieldConfig extends BaseFieldConfig {
   };
 }
 
-export type SettingsField = 
-  | TextFieldConfig 
-  | NumberFieldConfig 
+export interface ReadonlyTextFieldConfig extends BaseFieldConfig {
+  type: 'readonly-text';
+}
+
+export interface FileButtonFieldConfig extends BaseFieldConfig {
+  type: 'file-button';
+  label: string;
+  buttonText?: string;
+  accept?: string;
+}
+
+export type SettingsField =
+  | TextFieldConfig
+  | NumberFieldConfig
   | CheckboxFieldConfig
-  | SelectFieldConfig 
-  | FileFieldConfig 
+  | SelectFieldConfig
+  | FileFieldConfig
   | TextareaFieldConfig
-  | MappingFieldConfig;
+  | MappingFieldConfig
+  | ReadonlyTextFieldConfig
+  | FileButtonFieldConfig;
 
 export interface SettingsConfig {
   title: string;
