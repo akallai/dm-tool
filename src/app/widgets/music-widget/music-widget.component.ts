@@ -1,9 +1,8 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSliderModule } from '@angular/material/slider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 export interface MusicFile {
@@ -41,17 +40,10 @@ interface PlaybackState {
       <!-- Master Channel Strip -->
       <div class="master-strip">
         <div class="channel-label">MASTER</div>
-        <div class="fader-well">
-          <div class="v-slider-container">
-            <mat-slider
-              [min]="0"
-              [max]="100"
-              discrete
-              class="v-slider master-fader"
-            >
-              <input matSliderThumb [(ngModel)]="masterVolume" (ngModelChange)="onMasterVolumeChange()">
-            </mat-slider>
-          </div>
+        <div class="fader-well"
+             (mousedown)="startMasterVolumeDrag($event)"
+             (touchstart)="startMasterVolumeDrag($event)">
+          <div class="volume-fill master-fill" [style.height.%]="masterVolume"></div>
         </div>
         <div class="channel-actions">
           <button
@@ -88,22 +80,16 @@ interface PlaybackState {
         >
           <div class="channel-label" [matTooltip]="mapping.key">{{ mapping.key }}</div>
 
-          <div class="fader-well">
+          <div class="fader-well"
+               [class.disabled]="!mapping.files || mapping.files.length === 0"
+               (mousedown)="startTrackVolumeDrag($event, mapping)"
+               (touchstart)="startTrackVolumeDrag($event, mapping)">
             <!-- VU Meter effect -->
             <div class="vu-meter" *ngIf="isPlaying(mapping)">
               <div class="vu-bar" [style.height.%]="getTrackVolume(mapping)"></div>
             </div>
 
-            <div class="v-slider-container">
-              <mat-slider
-                [min]="0"
-                [max]="100"
-                class="v-slider"
-                [disabled]="!mapping.files || mapping.files.length === 0"
-              >
-                <input matSliderThumb [(ngModel)]="mapping.volume" (ngModelChange)="onTrackVolumeChange(mapping)">
-              </mat-slider>
-            </div>
+            <div class="volume-fill" [style.height.%]="mapping.volume"></div>
           </div>
 
           <div class="channel-actions">
@@ -230,78 +216,48 @@ interface PlaybackState {
     /* Fader / Slider Area */
     .fader-well {
       flex: 1;
-      background: var(--panel-bg);
+      min-height: 60px;
+      background: rgba(0, 0, 0, 0.4);
       margin: 2px;
-      border-radius: 20px;
+      border-radius: 16px;
       position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
       overflow: hidden;
-      padding: 12px 0;
+      cursor: ns-resize;
+      user-select: none;
+      touch-action: none;
     }
 
-    .v-slider-container {
-      height: 100%;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
+    .fader-well.disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
     }
 
-    /* Modern Angular vertical slider rotation hack */
-    .v-slider {
-      width: calc(100% - 20px);
-      height: 26px;
-      transform: rotate(-90deg);
-      transform-origin: center center;
+    /* Volume Fill */
+    .volume-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.25) 100%
+      );
+      border-radius: 0 0 15px 15px;
+      transition: height 0.05s ease-out;
+      pointer-events: none;
     }
 
-    .v-slider ::ng-deep .mdc-slider {
-      width: 100% !important;
+    .master-fill {
+      background: linear-gradient(to top,
+        rgba(100, 255, 218, 0.2) 0%,
+        rgba(100, 255, 218, 0.4) 100%
+      );
     }
 
-    .v-slider ::ng-deep .mdc-slider__track {
-      height: 4px !important;
-    }
-
-    .v-slider ::ng-deep .mdc-slider__track--inactive {
-      background-color: rgba(255, 255, 255, 0.1) !important;
-      height: 4px !important;
-    }
-
-    .v-slider ::ng-deep .mdc-slider__track--active,
-    .v-slider ::ng-deep .mdc-slider__track--active_fill {
-      background-color: var(--text-secondary) !important;
-      height: 4px !important;
-      border-color: var(--text-secondary) !important;
-    }
-
-    .master-fader ::ng-deep .mdc-slider__track--active,
-    .master-fader ::ng-deep .mdc-slider__track--active_fill {
-      background-color: var(--accent-color) !important;
-      border-color: var(--accent-color) !important;
-    }
-
-    .v-slider ::ng-deep .mdc-slider__thumb-knob {
-      background: linear-gradient(180deg, #fff, #ccc) !important; /* Keep skeuomorphic knob for tactile feel */
-      border: none !important;
-      border-radius: 2px !important;
-      width: 24px !important;
-      height: 12px !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
-    }
-
-    .v-slider ::ng-deep .mdc-slider__thumb:hover .mdc-slider__thumb-knob {
-      background: #fff !important;
-    }
-
-    .v-slider ::ng-deep .mdc-slider__thumb {
-      width: 24px !important;
-      height: 24px !important;
+    .fader-well:active .volume-fill {
+      transition: none;
     }
 
     /* VU Meter LED effect */
@@ -443,7 +399,7 @@ interface PlaybackState {
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatSliderModule, MatTooltipModule]
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule]
 })
 export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   private _settings: any;
@@ -465,6 +421,14 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   fadeDuration: number = 0.5;
   private playbackStates: Map<string, PlaybackState> = new Map();
   private progressIntervals: Map<string, number> = new Map();
+
+  // Volume drag state
+  private isDragging = false;
+  private dragMapping: MusicMapping | null = null;
+  private dragType: 'master' | 'track' = 'track';
+  private dragElement: HTMLElement | null = null;
+
+  constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
 
   ngOnInit() {
     this.mappings = this.normalizeMappings(this.settings?.mappings || []);
@@ -529,6 +493,86 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
 
   getTrackVolume(mapping: MusicMapping): number {
     return mapping.volume ?? 100;
+  }
+
+  // Volume drag handlers
+  startMasterVolumeDrag(event: MouseEvent | TouchEvent): void {
+    event.preventDefault();
+    this.isDragging = true;
+    this.dragType = 'master';
+    this.dragElement = (event.target as HTMLElement).closest('.fader-well') as HTMLElement;
+    this.updateVolumeFromEvent(event);
+
+    document.addEventListener('mousemove', this.onVolumeDrag);
+    document.addEventListener('mouseup', this.onVolumeDragEnd);
+    document.addEventListener('touchmove', this.onVolumeDrag, { passive: false });
+    document.addEventListener('touchend', this.onVolumeDragEnd);
+  }
+
+  startTrackVolumeDrag(event: MouseEvent | TouchEvent, mapping: MusicMapping): void {
+    if (!mapping.files || mapping.files.length === 0) return;
+
+    event.preventDefault();
+    this.isDragging = true;
+    this.dragType = 'track';
+    this.dragMapping = mapping;
+    this.dragElement = (event.target as HTMLElement).closest('.fader-well') as HTMLElement;
+    this.updateVolumeFromEvent(event);
+
+    document.addEventListener('mousemove', this.onVolumeDrag);
+    document.addEventListener('mouseup', this.onVolumeDragEnd);
+    document.addEventListener('touchmove', this.onVolumeDrag, { passive: false });
+    document.addEventListener('touchend', this.onVolumeDragEnd);
+  }
+
+  private onVolumeDrag = (event: MouseEvent | TouchEvent): void => {
+    if (!this.isDragging) return;
+    event.preventDefault();
+    this.ngZone.run(() => {
+      this.updateVolumeFromEvent(event);
+    });
+  };
+
+  private onVolumeDragEnd = (): void => {
+    document.removeEventListener('mousemove', this.onVolumeDrag);
+    document.removeEventListener('mouseup', this.onVolumeDragEnd);
+    document.removeEventListener('touchmove', this.onVolumeDrag);
+    document.removeEventListener('touchend', this.onVolumeDragEnd);
+
+    this.ngZone.run(() => {
+      this.isDragging = false;
+      this.dragMapping = null;
+      this.dragElement = null;
+      this.saveSettings();
+    });
+  };
+
+  private updateVolumeFromEvent(event: MouseEvent | TouchEvent): void {
+    if (!this.dragElement) return;
+
+    const rect = this.dragElement.getBoundingClientRect();
+    const clientY = 'touches' in event && event.touches.length > 0
+      ? event.touches[0].clientY
+      : (event as MouseEvent).clientY;
+
+    // Calculate percentage (inverted because 0 is at bottom)
+    const relativeY = rect.bottom - clientY;
+    const percentage = Math.max(0, Math.min(100, (relativeY / rect.height) * 100));
+
+    if (this.dragType === 'master') {
+      this.masterVolume = Math.round(percentage);
+      this.masterMuted = this.masterVolume === 0;
+      this.updateAllVolumes();
+    } else if (this.dragMapping) {
+      this.dragMapping.volume = Math.round(percentage);
+      const state = this.playbackStates.get(this.getMappingId(this.dragMapping));
+      if (state && state.audio) {
+        this.applyVolume(state, this.dragMapping);
+      }
+    }
+
+    // Trigger change detection since we're updating from document events
+    this.cdr.detectChanges();
   }
 
   onMasterVolumeChange(): void {
