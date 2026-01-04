@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
+import { BackgroundSelectorDialogComponent } from '../dialogs/background-selector-dialog/background-selector-dialog.component';
 import { WidgetStorageService } from '../services/widget-storage.service';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -210,9 +211,22 @@ export class WorkspaceComponent implements OnInit {
         this.saveTabs();
       }
     }
-    
+
     this.editingTabId = null;
     this.cdr.markForCheck();
+  }
+
+  openBackgroundSelector() {
+    const dialogRef = this.dialog.open(BackgroundSelectorDialogComponent, {
+      data: this.currentBackgroundIndex,
+      panelClass: 'background-selector-dialog'
+    });
+    dialogRef.afterClosed().subscribe((index: number) => {
+      if (index !== undefined && index !== null) {
+        this.currentBackgroundIndex = index;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   nextBackground() {
@@ -233,5 +247,18 @@ export class WorkspaceComponent implements OnInit {
   // Track tabs by ID for better performance with ngFor
   trackByTabId(index: number, tab: Tab): string {
     return tab.id;
+  }
+
+  // Keyboard shortcuts for background cycling
+  @HostListener('window:keydown.alt.arrowleft', ['$event'])
+  cyclePrevious(event: KeyboardEvent) {
+    event.preventDefault();
+    this.previousBackground();
+  }
+
+  @HostListener('window:keydown.alt.arrowright', ['$event'])
+  cycleNext(event: KeyboardEvent) {
+    event.preventDefault();
+    this.nextBackground();
   }
 }

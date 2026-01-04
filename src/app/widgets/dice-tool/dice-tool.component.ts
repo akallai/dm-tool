@@ -17,21 +17,21 @@ interface DiceType {
   template: `
     <div class="dice-container">
       <div class="dice-grid">
-        <button 
-          mat-button 
-          *ngFor="let dice of availableDice" 
+        <button
+          mat-button
+          *ngFor="let dice of availableDice"
           (click)="roll(dice.sides)"
           class="dice-button"
         >
-          <img 
-            [src]="dice.image" 
+          <img
+            [src]="dice.image"
             [alt]="'d' + dice.sides"
             class="dice-image"
           />
         </button>
         <div class="custom-dice-cell" *ngIf="settings.showCustomDiceInput">
           <input matInput [(ngModel)]="customDiceInput" placeholder="3w6+2" class="custom-dice-input">
-          <button mat-icon-button color="primary" (click)="rollCustomDice()" class="custom-dice-btn">
+          <button mat-icon-button class="custom-dice-btn" (click)="rollCustomDice()">
             <mat-icon>casino</mat-icon>
           </button>
         </div>
@@ -47,8 +47,9 @@ interface DiceType {
       display: flex;
       flex-direction: column;
       box-sizing: border-box;
+      color: var(--text-primary);
     }
-    
+
     .dice-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, 52px);
@@ -57,26 +58,35 @@ interface DiceType {
       padding: 4px;
       box-sizing: border-box;
     }
-    
+
     .dice-button {
       padding: 1px;
       min-width: unset;
       height: 52px;
       width: 52px;
       line-height: 1;
-      border: 1px solid #ddd;
+      border: var(--glass-border);
       border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: rgba(255, 255, 255, 0.05); /* Slight glass fill */
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 10px rgba(64, 196, 255, 0.2);
+      }
     }
-    
+
     .dice-image {
       width: 48px;
       height: 48px;
       object-fit: contain;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); /* Add depth to dice images */
     }
-    
+
     .custom-dice-cell {
       display: flex;
       align-items: center;
@@ -84,34 +94,63 @@ interface DiceType {
       padding: 2px;
       grid-column: span 2;
       height: 52px;
+      background: var(--input-bg);
+      border: var(--glass-border);
+      border-radius: 4px;
     }
-    
+
     .custom-dice-input {
       width: 50px;
-      padding: 2px 4px;
-      font-size: 0.8em;
+      padding: 4px;
+      font-size: 0.9em;
       height: 24px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      text-align: center;
+
+      &:focus {
+        outline: none;
+      }
     }
-    
+
     .custom-dice-btn {
-      width: 24px;
-      height: 24px;
-      min-width: 24px;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
       padding: 0;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        background: rgba(64, 196, 255, 0.1);
+      }
     }
-    
+
     .result-container {
-      padding: 8px;
-      background: #f5f5f5;
+      padding: 12px;
+      background: var(--panel-bg);
+      border: var(--glass-border);
       border-radius: 4px;
       margin-top: auto;
       text-align: center;
+      backdrop-filter: var(--glass-backdrop);
     }
-    
+
     .result-text {
-      font-size: 0.9em;
+      font-size: 1em;
       margin: 0;
-      font-weight: bold;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
   `],
   standalone: true,

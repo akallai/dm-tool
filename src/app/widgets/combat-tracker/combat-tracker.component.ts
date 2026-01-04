@@ -68,7 +68,7 @@ interface CharacterTemplate {
 export class CharacterTemplateDialogComponent implements OnInit {
   selectedTemplate: string | CharacterTemplate = 'default';
   availableTemplates: CharacterTemplate[] = [];
-  
+
   private mutantYearZeroTemplates: CharacterTemplate[] = [
     {
       name: 'Vollstrecker',
@@ -182,14 +182,15 @@ export class CharacterTemplateDialogComponent implements OnInit {
           <span class="round-counter" *ngIf="settings?.showRoundCounter">Round {{ currentRound }}</span>
           <button mat-button color="primary" (click)="addCombatant()" class="add-btn">
             <mat-icon>add</mat-icon>
+            Add
           </button>
         </div>
       </div>
-    
+
       <!-- Combatant List Container -->
       <div class="list-container">
         <div class="combatant-list" cdkDropList (cdkDropListDropped)="drop($event)">
-          <div *ngFor="let combatant of sortedCombatants; let i = index" 
+          <div *ngFor="let combatant of sortedCombatants; let i = index"
                class="combatant-card"
                [class.active]="i === activeIndex"
                [class.defeated]="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0"
@@ -202,12 +203,12 @@ export class CharacterTemplateDialogComponent implements OnInit {
               <div class="defeated-icon" *ngIf="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0">
                 <mat-icon>close</mat-icon>
               </div>
-              
+
               <!-- Combatant Header -->
               <div class="combatant-header">
-                <span class="turn-marker">{{ i === activeIndex ? '>' : '□' }}</span>
-                <input [(ngModel)]="combatant.name" 
-                       class="name-input" 
+                <span class="turn-marker">{{ i === activeIndex ? '▶' : '' }}</span>
+                <input [(ngModel)]="combatant.name"
+                       class="name-input"
                        placeholder="Name">
                 <div class="init-group">
                   <label>Init</label>
@@ -220,7 +221,7 @@ export class CharacterTemplateDialogComponent implements OnInit {
                   <mat-icon>close</mat-icon>
                 </button>
               </div>
-    
+
               <!-- Mutant Year Zero Mode -->
               <div *ngIf="settings?.gameMode === 'mutant_year_zero'; else generalMode" class="mutant-mode">
                 <div class="mutant-row">
@@ -256,22 +257,22 @@ export class CharacterTemplateDialogComponent implements OnInit {
                   <input type="text" [(ngModel)]="combatant.notes" placeholder="Notes">
                 </div>
               </div>
-              
+
               <!-- General Mode -->
               <ng-template #generalMode>
                 <div class="general-mode">
                   <div class="health-section">
                     <label>HP</label>
-                    <input type="number" 
-                           [(ngModel)]="combatant.health" 
+                    <input type="number"
+                           [(ngModel)]="combatant.health"
                            class="health-input"
                            [class.health-zero]="combatant.health !== undefined && combatant.health <= 0"
                            placeholder="0">
                   </div>
                   <div class="notes-section">
                     <label>Notes</label>
-                    <input [(ngModel)]="combatant.notes" 
-                           class="notes-input" 
+                    <input [(ngModel)]="combatant.notes"
+                           class="notes-input"
                            placeholder="Notes">
                   </div>
                 </div>
@@ -280,27 +281,24 @@ export class CharacterTemplateDialogComponent implements OnInit {
           </div>
         </div>
       </div>
-    
+
       <!-- Controls -->
       <div class="tracker-controls">
-        <button mat-button color="primary" 
+        <button mat-button class="control-btn"
                 (click)="nextTurn()"
-                [disabled]="combatants.length === 0"
-                class="control-btn">
-          Next
+                [disabled]="combatants.length === 0">
+          Next Turn
         </button>
-        <button mat-button color="warn" 
-                (click)="reset()"
-                [disabled]="combatants.length === 0"
-                class="control-btn">
-          Reset
-        </button>
-        <button mat-button color="accent"
+        <button mat-button class="control-btn"
                 *ngIf="!settings?.autoSort"
                 (click)="sortByInitiative()"
-                [disabled]="combatants.length === 0"
-                class="control-btn">
+                [disabled]="combatants.length === 0">
           Sort
+        </button>
+        <button mat-button color="warn" class="control-btn reset-btn"
+                (click)="reset()"
+                [disabled]="combatants.length === 0">
+          Reset
         </button>
       </div>
     </div>
@@ -313,48 +311,63 @@ export class CharacterTemplateDialogComponent implements OnInit {
       width: 100%;
       box-sizing: border-box;
       font-size: 0.9em;
+      color: var(--text-primary);
     }
-    
+
     .tracker-header {
       flex: 0 0 auto;
-      padding: 2px;
-      border-bottom: 1px solid #eee;
+      padding: 8px;
+      border-bottom: var(--glass-border);
+      background: var(--header-bg);
     }
-    
+
     .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    
+
+    .round-counter {
+      font-weight: 500;
+      color: var(--accent-color);
+      font-size: 1.1em;
+    }
+
     .list-container {
       flex: 1 1 auto;
       overflow-y: auto;
       overflow-x: hidden;
       min-height: 0;
+      padding: 8px;
     }
-    
+
     .combatant-list {
-      padding: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    
+
     .combatant-card {
-      background: #f5f5f5;
+      background: var(--panel-bg);
+      border: var(--glass-border);
       border-radius: 4px;
-      margin-bottom: 2px;
       position: relative;
       width: 100%;
       box-sizing: border-box;
       transition: all 0.3s ease;
-      padding: 4px;
+      padding: 8px;
+      backdrop-filter: var(--glass-backdrop);
 
       &.active {
-        background: #e3f2fd;
+        background: rgba(64, 196, 255, 0.15); /* Accent color with low opacity */
+        border-color: var(--accent-color);
+        box-shadow: 0 0 10px rgba(64, 196, 255, 0.2);
       }
 
       &.defeated {
-        opacity: 0.6;
-        background: #ffebee;
+        opacity: 0.7;
+        background: rgba(0, 0, 0, 0.4);
+        border-color: var(--danger-color);
       }
     }
 
@@ -365,89 +378,120 @@ export class CharacterTemplateDialogComponent implements OnInit {
 
     .drag-handle {
       position: absolute;
-      left: 0;
-      top: 0;
+      left: -4px;
+      top: 50%;
+      transform: translateY(-50%);
       cursor: move;
-      color: #999;
+      color: var(--text-secondary);
       font-size: 18px;
+      opacity: 0.5;
+
+      &:hover {
+        opacity: 1;
+        color: var(--text-primary);
+      }
+    }
+
+    .defeated-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--danger-color);
+      pointer-events: none;
+      opacity: 0.8;
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+      }
     }
 
     .combatant-header {
       display: flex;
       align-items: center;
-      gap: 4px;
-      margin-bottom: 4px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
 
     .turn-marker {
-      width: 20px;
+      width: 16px;
       text-align: center;
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+
+    .name-input, input {
+      background: var(--input-bg);
+      border: var(--input-border);
+      color: var(--text-primary);
+      border-radius: 4px;
+      padding: 4px 8px;
+
+      &:focus {
+        outline: none;
+        border-color: var(--accent-color);
+      }
     }
 
     .name-input {
       flex: 1;
       min-width: 0;
-      border: 1px solid #ddd;
-      border-radius: 2px;
-      padding: 2px 4px;
+      font-weight: 500;
     }
 
     .init-group {
       display: flex;
       align-items: center;
       gap: 4px;
-      
+
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
       }
     }
 
     .initiative-input {
       width: 40px;
       text-align: center;
-      border: 1px solid #ddd;
-      border-radius: 2px;
-      padding: 2px;
     }
 
     .mutant-mode {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
     }
 
     .mutant-row {
       display: flex;
       gap: 8px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .role-group {
       flex: 1;
-      min-width: 0;
+      min-width: 120px;
       display: flex;
       align-items: center;
       gap: 4px;
 
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
         white-space: nowrap;
       }
 
       input {
         flex: 1;
         min-width: 0;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        padding: 2px 4px;
       }
     }
 
     .attributes-group {
       display: flex;
-      gap: 4px;
+      gap: 6px;
     }
 
     .attr-input {
@@ -457,15 +501,12 @@ export class CharacterTemplateDialogComponent implements OnInit {
 
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
       }
 
       input {
-        width: 30px;
+        width: 40px; /* Slightly wider for better touch */
         text-align: center;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        padding: 2px;
       }
     }
 
@@ -476,23 +517,20 @@ export class CharacterTemplateDialogComponent implements OnInit {
 
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
         white-space: nowrap;
       }
 
       input {
         flex: 1;
         min-width: 0;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        padding: 2px 4px;
       }
     }
 
     .general-mode {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
     }
 
     .health-section {
@@ -502,19 +540,17 @@ export class CharacterTemplateDialogComponent implements OnInit {
 
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
       }
 
       input {
         width: 60px;
         text-align: center;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        padding: 2px;
 
         &.health-zero {
-          color: red;
+          color: var(--danger-color);
           font-weight: bold;
+          border-color: var(--danger-color);
         }
       }
     }
@@ -526,23 +562,43 @@ export class CharacterTemplateDialogComponent implements OnInit {
 
       label {
         font-size: 0.8em;
-        color: #666;
+        color: var(--text-secondary);
       }
 
       input {
         flex: 1;
         min-width: 0;
-        border: 1px solid #ddd;
-        border-radius: 2px;
-        padding: 2px 4px;
       }
     }
 
     .tracker-controls {
       display: flex;
-      gap: 4px;
-      padding: 4px;
-      border-top: 1px solid #eee;
+      gap: 8px;
+      padding: 8px;
+      border-top: var(--glass-border);
+      background: var(--header-bg);
+      justify-content: flex-end;
+    }
+
+    .control-btn {
+      color: var(--text-primary);
+      border: 1px solid rgba(255,255,255,0.2);
+
+      &:hover:not([disabled]) {
+        background: var(--accent-color);
+        color: white;
+      }
+
+      &.reset-btn:hover:not([disabled]) {
+        background: var(--danger-color);
+      }
+    }
+
+    .remove-btn mat-icon {
+      color: var(--text-secondary);
+      &:hover {
+        color: var(--danger-color);
+      }
     }
   `],
   standalone: true,
@@ -559,13 +615,13 @@ export class CharacterTemplateDialogComponent implements OnInit {
 })
 export class CombatTrackerComponent implements OnInit {
   @Input() settings: any;
-  
+
   combatants: Combatant[] = [];
   activeIndex: number = 0;
   currentRound: number = 1;
 
   constructor(
-    private dialog: MatDialog, 
+    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -663,7 +719,7 @@ export class CombatTrackerComponent implements OnInit {
 
   nextTurn() {
     if (this.combatants.length === 0) return;
-    
+
     this.activeIndex++;
     if (this.activeIndex >= this.combatants.length) {
       this.activeIndex = 0;

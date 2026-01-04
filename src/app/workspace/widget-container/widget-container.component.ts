@@ -52,6 +52,7 @@ export class WidgetContainerComponent {
   private previousSize!: { width: number, height: number };
   private viewportWidth: number = window.innerWidth;
   private viewportHeight: number = window.innerHeight;
+  private readonly TAB_BAR_HEIGHT = 52;
 
   constructor(
     private settingsService: SettingsService,
@@ -134,63 +135,57 @@ export class WidgetContainerComponent {
               label: 'Allow multiple simultaneous playback'
             },
             {
-              key: 'loopEnabled',
-              type: 'checkbox',
-              label: 'Loop audio files'
-            },
-            {
-              key: 'randomOrder',
-              type: 'checkbox',
-              label: 'Play files in random order'
+              key: 'fadeDuration',
+              type: 'number',
+              label: 'Fade duration (seconds)',
+              defaultValue: 0.5
             },
             {
               key: 'mappings',
               type: 'mapping',
-              label: 'Sound Mappings',
+              label: 'Sound Tracks',
               mappingConfig: {
                 keyLabel: 'Label',
                 valueType: 'file',
                 valueLabel: 'Audio Files',
                 fileAccept: 'audio/*',
-                multiple: true,
-                directory: true
+                multiple: true
               }
             }
           ]
         };
-        // In widget-container.component.ts, update the RANDOM_GENERATOR case:
-case 'RANDOM_GENERATOR':
-  return {
-    title: 'Random Generator Settings',
-    fields: [
-      {
-        key: 'useWeightedSelection',
-        type: 'checkbox',
-        label: 'Use weighted selection and hide number prefixes',
-        defaultValue: true
-      },
-      {
-        key: 'mappings',
-        type: 'mapping',
-        label: 'Random Lists',
-        mappingConfig: {
-          keyLabel: 'List Name',
-          valueType: 'textarea',
-          valueLabel: 'Items (one per line)'
-        }
-      },
-      {
-        key: 'mappingCategories',
-        type: 'mapping',
-        label: 'Categorize Lists (Optional)',
-        mappingConfig: {
-          keyLabel: 'List Name (must match above)',
-          valueType: 'text',
-          valueLabel: 'Category (leave empty for no category)'
-        }
-      }
-    ]
-  };
+      case 'RANDOM_GENERATOR':
+        return {
+          title: 'Random Generator Settings',
+          fields: [
+            {
+              key: 'useWeightedSelection',
+              type: 'checkbox',
+              label: 'Use weighted selection and hide number prefixes',
+              defaultValue: true
+            },
+            {
+              key: 'mappings',
+              type: 'mapping',
+              label: 'Random Lists',
+              mappingConfig: {
+                keyLabel: 'List Name',
+                valueType: 'textarea',
+                valueLabel: 'Items (one per line)'
+              }
+            },
+            {
+              key: 'mappingCategories',
+              type: 'mapping',
+              label: 'Categorize Lists (Optional)',
+              mappingConfig: {
+                keyLabel: 'List Name (must match above)',
+                valueType: 'text',
+                valueLabel: 'Category (leave empty for no category)'
+              }
+            }
+          ]
+        };
       case 'COMBAT_TRACKER':
         return {
           title: 'Combat Tracker Settings',
@@ -301,29 +296,32 @@ case 'RANDOM_GENERATOR':
 
   onDragEnd(event: CdkDragEnd) {
     const dragDistance = event.distance;
-    
+
     // Calculate new position
     const newX = this.widgetData.position.x + dragDistance.x;
     const newY = this.widgetData.position.y + dragDistance.y;
-    
+
     // Get widget dimensions
     const widgetWidth = this.widgetData.size.width;
     const widgetHeight = this.widgetData.size.height;
-    
+
     // Ensure the widget stays completely within bounds
     // Left boundary: Can't be less than 0
     // Right boundary: Can't be greater than viewport width - widget width
-    // Top boundary: Can't be less than 0
+    // Top boundary: Can't be less than tab bar height (52px)
     // Bottom boundary: Can't be greater than viewport height - widget height
     const boundedX = Math.max(0, Math.min(newX, this.viewportWidth - widgetWidth));
-    const boundedY = Math.max(0, Math.min(newY, this.viewportHeight - widgetHeight));
-    
+    const boundedY = Math.max(
+      this.TAB_BAR_HEIGHT,
+      Math.min(newY, this.viewportHeight - widgetHeight)
+    );
+
     // Update widget position with the bounded coordinates
     this.widgetData.position = {
       x: boundedX,
       y: boundedY
     };
-    
+
     this.update.emit();
   }
 
@@ -342,20 +340,20 @@ case 'RANDOM_GENERATOR':
     const widgetHeight = this.widgetData.size.height;
     const currentX = this.widgetData.position.x;
     const currentY = this.widgetData.position.y;
-    
+
     // Ensure widget is completely within viewport
     // Handle case where widget is larger than viewport - resize it to fit
     let newWidth = widgetWidth;
     let newHeight = widgetHeight;
-    
+
     if (widgetWidth > this.viewportWidth) {
       newWidth = this.viewportWidth;
     }
-    
-    if (widgetHeight > this.viewportHeight) {
-      newHeight = this.viewportHeight;
+
+    if (widgetHeight > this.viewportHeight - this.TAB_BAR_HEIGHT) {
+      newHeight = this.viewportHeight - this.TAB_BAR_HEIGHT;
     }
-    
+
     // If dimensions changed, update them
     if (newWidth !== widgetWidth || newHeight !== widgetHeight) {
       this.widgetData.size = {
@@ -363,11 +361,14 @@ case 'RANDOM_GENERATOR':
         height: newHeight
       };
     }
-    
-    // Calculate bounded position
+
+    // Calculate bounded position (respecting tab bar at top)
     const boundedX = Math.max(0, Math.min(currentX, this.viewportWidth - newWidth));
-    const boundedY = Math.max(0, Math.min(currentY, this.viewportHeight - newHeight));
-    
+    const boundedY = Math.max(
+      this.TAB_BAR_HEIGHT,
+      Math.min(currentY, this.viewportHeight - newHeight)
+    );
+
     // Only update if position needs adjustment
     if (boundedX !== currentX || boundedY !== currentY) {
       this.widgetData.position = {
@@ -375,7 +376,7 @@ case 'RANDOM_GENERATOR':
         y: boundedY
       };
     }
-    
+
     this.update.emit();
   }
 
@@ -384,8 +385,9 @@ case 'RANDOM_GENERATOR':
     if (!this.isMaximized) {
       this.previousPosition = { ...this.widgetData.position };
       this.previousSize = { ...this.widgetData.size };
-      this.widgetData.position = { x: 0, y: 0 };
-      this.widgetData.size = { width: this.viewportWidth, height: this.viewportHeight };
+      // Maximize below the tab bar
+      this.widgetData.position = { x: 0, y: this.TAB_BAR_HEIGHT };
+      this.widgetData.size = { width: this.viewportWidth, height: this.viewportHeight - this.TAB_BAR_HEIGHT };
     } else {
       this.widgetData.position = { ...this.previousPosition };
       this.widgetData.size = { ...this.previousSize };

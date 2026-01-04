@@ -1,36 +1,46 @@
 <div class="workspace" [ngStyle]="{'background-image': 'url(' + currentBackground + ')'}">
-  <!-- Vertical tabs bar on the left -->
+  <!-- Tabs bar at the top -->
   <div class="tabs-bar vertical">
     <div class="tabs-container">
-      <div *ngFor="let tab of tabs; trackBy: trackByTabId" 
-           class="tab" 
+      <div *ngFor="let tab of tabs; trackBy: trackByTabId"
+           class="tab"
            [class.active]="tab.id === activeTabId"
+           [class.editing]="editingTabId === tab.id"
            (click)="switchTab(tab.id)"
-           [matTooltip]="tab.name">
-        <!-- No text, just a simple block -->
-        
-        <!-- Remove button (only shown on hover if there's more than one tab) -->
-        <button *ngIf="tabs.length > 1" 
-                class="tab-close-btn" 
-                (click)="removeTab(tab.id, $event)">
+           (dblclick)="startEditingTab(tab.id, $event)">
+        <!-- Tab name display -->
+        <span *ngIf="editingTabId !== tab.id" class="tab-name">{{ tab.name }}</span>
+
+        <!-- Tab name input when editing -->
+        <input *ngIf="editingTabId === tab.id"
+               [id]="'tab-name-input-' + tab.id"
+               class="tab-name-input"
+               [(ngModel)]="tempTabName"
+               (blur)="finishEditingTab()"
+               (keydown.enter)="finishEditingTab()"
+               (keydown.escape)="editingTabId = null"
+               (click)="$event.stopPropagation()">
+
+        <!-- Close button on hover (only shown if more than one tab) -->
+        <button *ngIf="tabs.length > 1 && editingTabId !== tab.id"
+                class="tab-close-btn"
+                (click)="removeTab(tab.id, $event)"
+                matTooltip="Close tab">
           <mat-icon>close</mat-icon>
         </button>
       </div>
+
+      <!-- Add new tab button -->
+      <button class="add-tab-btn" (click)="addTab()" matTooltip="Add new tab">
+        <mat-icon>add</mat-icon>
+      </button>
+
+      <!-- Background selector button -->
+      <button class="bg-selector-btn" (click)="openBackgroundSelector()" matTooltip="Change background">
+        <mat-icon>palette</mat-icon>
+      </button>
     </div>
-    
-    <!-- Add new tab button -->
-    <button class="add-tab-btn" (click)="addTab()">
-      <mat-icon>add</mat-icon>
-    </button>
   </div>
-  
-  <!-- Background switch buttons -->
-  <button class="bg-switch-btn left" (click)="previousBackground()">
-    <mat-icon>chevron_left</mat-icon>
-  </button>
-  <button class="bg-switch-btn right" (click)="nextBackground()">
-    <mat-icon>chevron_right</mat-icon>
-  </button>
 
   <!-- Floating "Add Widget" button in the top right -->
   <button mat-fab color="primary" class="add-widget-btn" (click)="openWidgetSelector()">

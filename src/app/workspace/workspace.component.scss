@@ -5,157 +5,236 @@
   background-size: cover;
   background-position: center;
   overflow: hidden;
+  color: var(--text-primary);
 }
 
 .add-widget-btn {
   position: absolute;
-  top: 16px;
+  top: 64px;
   right: 16px;
   z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  /* Override Material button colors */
+  background-color: var(--accent-color) !important;
+  color: #fff !important;
+
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    background-color: var(--accent-hover) !important;
+  }
 }
 
-.bg-switch-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.3);
-  border: none;
-  color: white;
-  cursor: pointer;
-  z-index: 1;
-  padding: 8px;
+/* Background selector button in tabs bar */
+.bg-selector-btn {
+  width: 40px;
+  height: 40px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  margin-left: 6px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+
+  &:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: #a855f7;
+    border-style: solid;
+    color: var(--text-primary);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  .mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+  }
 }
 
-.bg-switch-btn.left {
-  left: 40px; /* Move this button to the right to avoid overlap with tabs */
-}
-
-.bg-switch-btn.right {
-  right: 16px;
-}
-
-/* Vertical tabs styling */
+/* Horizontal tabs bar at the top */
 .tabs-bar.vertical {
   position: absolute;
   top: 0;
   left: 0;
-  bottom: 0;
-  width: 30px;
-  background: transparent;
+  right: 0;
+  height: 52px;
+  /* Updated to glass theme variables */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
   display: flex;
-  flex-direction: column;
-  padding: 8px 0;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 8px;
   z-index: 100;
-  overflow: hidden; /* Prevent any overflow */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .tabs-bar.vertical .tabs-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
-  scrollbar-width: thin;
-  width: 100%; /* Ensure it takes full width of parent */
-  
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 0;
+
   &::-webkit-scrollbar {
-    width: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
+    display: none;
   }
 }
 
 .tabs-bar.vertical .tab {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 24px; /* Base width for inactive tabs */
-  height: 24px;
-  background: rgba(25, 118, 210, 0.7); /* Blue background */
-  border: 1px solid rgba(255, 255, 255, 0.8); /* Thin white border */
-  margin: 2px auto;
-  border-radius: 4px;
+  min-width: 100px;
+  max-width: 180px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   position: relative;
-  box-sizing: border-box; /* Ensure border is included in width/height calculation */
-  max-width: 100%; /* Ensure tab doesn't exceed container width */
-  
-  &.active {
-    width: 28.8px; /* 20% wider than inactive tabs (24px * 1.2 = 28.8px) */
-    background: rgba(25, 118, 210, 0.9); /* More vibrant blue for active tab */
-    border: 1px solid white; /* Solid white border for active tab */
-  }
-  
+  padding: 0 12px 0 14px;
+  user-select: none;
+  color: var(--text-secondary);
+
   &:hover {
-    background: rgba(25, 118, 210, 0.8); /* Hover state is in between inactive and active */
-    border: 1px solid white;
-    
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+
     .tab-close-btn {
       opacity: 1;
     }
   }
-  
+
+  &.active {
+    background: rgba(64, 196, 255, 0.15); /* Accent tint */
+    border: 1px solid var(--accent-color);
+    box-shadow: 0 2px 8px rgba(64, 196, 255, 0.2);
+    color: var(--text-primary);
+  }
+
+  &.editing {
+    background: var(--input-bg);
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .tab-name {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-name-input {
+    width: 100%;
+    height: 100%;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    padding: 0;
+    margin: 0;
+  }
+
   .tab-close-btn {
     position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 12px;
-    height: 12px;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid white;
-    color: white;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: rgba(255, 82, 82, 0.2);
+    border: 1px solid rgba(255, 82, 82, 0.4);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     padding: 0;
-    border-radius: 50%;
     opacity: 0;
-    transition: opacity 0.2s;
-    
+    transition: all 0.2s;
+    backdrop-filter: blur(4px);
+
     &:hover {
-      background: rgba(0, 0, 0, 0.9);
+      background: var(--danger-color);
+      border-color: var(--danger-color);
+      transform: scale(1.1);
     }
-    
+
     .mat-icon {
-      width: 8px;
-      height: 8px;
-      font-size: 8px;
-      line-height: 8px;
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+      line-height: 12px;
+      color: var(--text-primary);
     }
+  }
+
+  &.active .tab-close-btn {
+    opacity: 0; /* Keep hidden until hover even on active */
+  }
+
+  &.active:hover .tab-close-btn {
+    opacity: 1;
   }
 }
 
 .tabs-bar.vertical .add-tab-btn {
-  width: 24px;
-  height: 24px;
-  color: white;
-  background: rgba(25, 118, 210, 0.5); /* Light blue for add button */
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 4px;
-  margin: 4px auto 0;
+  width: 40px;
+  height: 40px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  margin-left: 6px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-sizing: border-box;
-  
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+
   &:hover {
-    background: rgba(25, 118, 210, 0.8);
-    border: 1px solid white;
+    background: rgba(105, 240, 174, 0.2);
+    border-color: var(--success-color);
+    border-style: solid;
+    color: var(--text-primary);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(105, 240, 174, 0.2);
   }
-  
+
+  &:active {
+    transform: scale(0.95);
+  }
+
   .mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
   }
 }

@@ -19,14 +19,14 @@ import { debounce } from 'lodash';
         </div>
         <textarea *ngIf="isEditing"
                   #textareaElement
-                  [(ngModel)]="content" 
+                  [(ngModel)]="content"
                   (ngModelChange)="onContentChange()"
                   (blur)="onBlur()"
                   (focus)="onFocus()"
                   placeholder="Write your notes here..."
                   class="notepad-textarea">
         </textarea>
-        
+
         <!-- Loading/Error states -->
         <div *ngIf="isSaving" class="save-indicator">
           Saving...
@@ -35,7 +35,7 @@ import { debounce } from 'lodash';
           {{ errorMessage }}
         </div>
       </ng-container>
-      
+
       <ng-template #emptyState>
         <div class="empty-state">
           <button class="action-btn" (click)="openExistingFile()">Open File</button>
@@ -51,6 +51,7 @@ import { debounce } from 'lodash';
       display: flex;
       flex-direction: column;
       position: relative;
+      color: var(--text-primary);
     }
     .empty-state {
       flex: 1;
@@ -64,40 +65,45 @@ import { debounce } from 'lodash';
       width: 100%;
       resize: none;
       border: none;
-      padding: 8px;
+      padding: 12px;
       box-sizing: border-box;
       font-family: inherit;
       font-size: 14px;
       line-height: 1.6;
       outline: none;
+      background: transparent;
+      color: var(--text-primary);
     }
     .markdown-display {
       flex: 1;
       width: 100%;
-      padding: 8px;
+      padding: 12px;
       box-sizing: border-box;
       overflow-y: auto;
       cursor: text;
       font-size: 14px;
       line-height: 1.6;
+      color: var(--text-primary);
     }
     .action-btn {
       padding: 8px 16px;
-      border: none;
+      border: var(--glass-border);
       border-radius: 4px;
-      background: #1976d2;
-      color: white;
+      background: rgba(255,255,255,0.05); /* Slight glass fill */
+      color: var(--text-primary);
       cursor: pointer;
       font-size: 14px;
+      transition: all 0.2s;
     }
     .action-btn:hover {
-      background: #1565c0;
+      background: rgba(255,255,255,0.15);
+      border-color: var(--accent-color);
     }
     .save-indicator {
       position: absolute;
       bottom: 8px;
       right: 8px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--accent-color);
       color: white;
       padding: 4px 8px;
       border-radius: 4px;
@@ -107,7 +113,7 @@ import { debounce } from 'lodash';
       position: absolute;
       bottom: 8px;
       right: 8px;
-      background: #f44336;
+      background: var(--danger-color);
       color: white;
       padding: 4px 8px;
       border-radius: 4px;
@@ -115,83 +121,92 @@ import { debounce } from 'lodash';
     }
     /* Base markdown content styles */
     :host ::ng-deep {
-      h1 { font-size: 1.5em; margin: 0.5em 0; }
+      h1 { font-size: 1.5em; margin: 0.5em 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.2em; }
       h2 { font-size: 1.3em; margin: 0.4em 0; }
       h3 { font-size: 1.2em; margin: 0.3em 0; }
       h4 { font-size: 1.1em; margin: 0.2em 0; }
       h5, h6 { font-size: 1em; margin: 0.1em 0; }
-      
+
       p { margin: 0.5em 0; }
-      
+
       ul, ol {
         margin: 0.5em 0;
         padding-left: 1.5em;
       }
-      
+
       li {
         margin: 0.2em 0;
       }
-      
+
       blockquote {
         margin: 0.5em 0;
         padding-left: 1em;
-        border-left: 3px solid #ccc;
-        color: #666;
+        border-left: 3px solid var(--accent-color);
+        color: var(--text-secondary);
       }
-      
+
       code {
         font-size: 0.9em;
         padding: 0.1em 0.3em;
-        background: #f5f5f5;
+        background: rgba(255,255,255,0.1);
         border-radius: 3px;
+        color: var(--text-primary);
       }
-      
+
       pre {
         margin: 0.5em 0;
         padding: 0.5em;
-        background: #f5f5f5;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 3px;
         font-size: 0.9em;
         overflow-x: auto;
       }
-      
+
       pre code {
         padding: 0;
         background: none;
       }
-      
+
       /* Image responsiveness styles */
       img {
         max-width: 100%;
         height: auto;
         display: block;
         margin: 0.5em 0;
+        border-radius: 4px;
       }
-      
+
       table {
         border-collapse: collapse;
         margin: 0.5em 0;
         width: 100%;
         font-size: 0.9em;
       }
-      
+
       th, td {
-        border: 1px solid #ddd;
+        border: 1px solid rgba(255,255,255,0.1);
         padding: 4px 6px;
         text-align: left;
       }
-      
+
       th {
-        background-color: #f5f5f5;
+        background-color: rgba(255,255,255,0.05);
         font-weight: bold;
       }
-      
+
       tr:nth-child(even) {
-        background-color: #fafafa;
+        background-color: rgba(255,255,255,0.02);
       }
-      
+
       tr:hover {
-        background-color: #f0f0f0;
+        background-color: rgba(255,255,255,0.05);
+      }
+
+      a {
+        color: var(--accent-color);
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
       }
     }
   `],
@@ -238,16 +253,16 @@ export class NotepadComponent implements OnInit, OnDestroy {
         });
         this.fileHandle = handle;
         this.settings.title = handle.name;
-        
+
         // Show loading indicator
         this.isSaving = true;
         this.cdr.markForCheck();
-        
+
         const file = await handle.getFile();
         this.content = await file.text();
         this.settings.content = this.content;
         this.updateRenderedContent();
-        
+
         this.isSaving = false;
         this.cdr.markForCheck();
       } else {
@@ -310,7 +325,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
     if (this.settings) {
       this.settings.content = this.content;
     }
-    
+
     // Use debounced save to avoid excessive disk operations
     this.debouncedAutoSave();
   }
@@ -330,7 +345,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
   enableEditing() {
     this.isEditing = true;
     this.cdr.markForCheck();
-    
+
     // Focus the textarea after it appears
     setTimeout(() => {
       this.textareaElement?.nativeElement.focus();
@@ -348,11 +363,11 @@ export class NotepadComponent implements OnInit, OnDestroy {
       try {
         this.isSaving = true;
         this.cdr.markForCheck();
-        
+
         const writable = await this.fileHandle.createWritable();
         await writable.write(this.content);
         await writable.close();
-        
+
         this.isSaving = false;
         this.cdr.markForCheck();
       } catch (error) {
@@ -360,7 +375,7 @@ export class NotepadComponent implements OnInit, OnDestroy {
         this.errorMessage = 'Auto-save failed';
         this.isSaving = false;
         this.cdr.markForCheck();
-        
+
         setTimeout(() => {
           this.errorMessage = '';
           this.cdr.markForCheck();
