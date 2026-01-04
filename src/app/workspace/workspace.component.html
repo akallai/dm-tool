@@ -34,16 +34,13 @@
       <button class="add-tab-btn" (click)="addTab()" matTooltip="Add new tab">
         <mat-icon>add</mat-icon>
       </button>
+
+      <!-- Background selector button -->
+      <button class="bg-selector-btn" (click)="openBackgroundSelector()" matTooltip="Change background">
+        <mat-icon>palette</mat-icon>
+      </button>
     </div>
   </div>
-  
-  <!-- Background switch buttons -->
-  <button class="bg-switch-btn left" (click)="previousBackground()">
-    <mat-icon>chevron_left</mat-icon>
-  </button>
-  <button class="bg-switch-btn right" (click)="nextBackground()">
-    <mat-icon>chevron_right</mat-icon>
-  </button>
 
   <!-- Floating "Add Widget" button in the top right -->
   <button mat-fab color="primary" class="add-widget-btn" (click)="openWidgetSelector()">
