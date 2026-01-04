@@ -129,11 +129,22 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                       Select folder
                     </mat-checkbox>
                   </div>
+                  <button mat-button class="file-input-button" (click)="triggerFileInput(field.key, i)">
+                    <mat-icon>upload_file</mat-icon>
+                    <span>Select Files</span>
+                  </button>
                   <input type="file"
                          [accept]="getMappingFileAccept(field)"
                          [multiple]="getMappingFileMultiple(field) || mapping.useFolderMode"
                          [attr.webkitdirectory]="mapping.useFolderMode ? '' : null"
-                         (change)="onMappingFileSelected($event, field.key, i)">
+                         (change)="onMappingFileSelected($event, field.key, i)"
+                         [attr.data-field-key]="field.key"
+                         [attr.data-mapping-index]="i"
+                         style="display: none;">
+                  <div *ngIf="mapping.files && mapping.files.length > 0" class="file-names-display">
+                    <mat-icon class="file-icon">music_note</mat-icon>
+                    <span>{{ getFileNames(mapping) }}</span>
+                  </div>
                 </div>
 
                 <mat-checkbox *ngSwitchCase="'checkbox'"
@@ -230,7 +241,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       align-items: flex-start;
       margin-bottom: 12px;
       padding: 12px;
-      background: rgba(0, 0, 0, 0.2);
+      background: var(--panel-bg);
       border-radius: 6px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
@@ -256,6 +267,40 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
     }
     .folder-toggle {
       font-size: 12px;
+    }
+    .file-names-display {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      background: rgba(100, 255, 218, 0.1);
+      border-radius: 4px;
+      border: 1px solid rgba(100, 255, 218, 0.2);
+      font-size: 12px;
+      color: var(--accent-color);
+    }
+    .file-icon {
+      font-size: 14px;
+      height: 14px;
+      width: 14px;
+      opacity: 0.8;
+    }
+    .file-input-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--header-bg);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+      font-size: 12px;
+      padding: 6px 12px;
+      width: 100%;
+      justify-content: center;
+    }
+    .file-input-button mat-icon {
+      font-size: 16px;
+      height: 16px;
+      width: 16px;
     }
     .field-error {
       color: var(--danger-color);
@@ -485,6 +530,14 @@ export class BaseSettingsDialogComponent {
     if (mapping && mapping.useFolderMode === false) {
       // Switching to folder mode - clear files
       mapping.files = [];
+    }
+  }
+
+  triggerFileInput(fieldKey: string, index: number) {
+    const selector = `input[data-field-key="${fieldKey}"][data-mapping-index="${index}"]`;
+    const input = document.querySelector(selector) as HTMLInputElement;
+    if (input) {
+      input.click();
     }
   }
 

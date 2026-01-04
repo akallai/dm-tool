@@ -13,6 +13,7 @@ export interface MusicFile {
 
 export interface MusicMapping {
   key: string;
+  id?: string;
   files?: MusicFile[];
   volume?: number;
   loop?: boolean;
@@ -161,7 +162,7 @@ interface PlaybackState {
   styles: [`
     .music-widget {
       display: flex;
-      background: rgba(0, 0, 0, 0.4); /* Dark glass */
+      background: var(--panel-bg);
       backdrop-filter: var(--glass-backdrop);
       border: var(--glass-border);
       border-radius: 4px;
@@ -188,7 +189,7 @@ interface PlaybackState {
       width: 50px;
       min-width: 50px;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--header-bg);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       padding: 4px 2px;
@@ -201,7 +202,7 @@ interface PlaybackState {
     .channel-strip.playing {
       background: rgba(100, 255, 218, 0.05);
       border-color: var(--accent-color);
-      box-shadow: 0 0 10px rgba(64, 196, 255, 0.2);
+      box-shadow: 0 0 10px var(--accent-hover);
     }
 
     .channel-strip.paused {
@@ -229,7 +230,7 @@ interface PlaybackState {
     /* Fader / Slider Area */
     .fader-well {
       flex: 1;
-      background: rgba(0, 0, 0, 0.3);
+      background: var(--panel-bg);
       margin: 2px;
       border-radius: 20px;
       position: relative;
@@ -317,7 +318,7 @@ interface PlaybackState {
       width: 100%;
       position: absolute;
       bottom: 0;
-      background: linear-gradient(to top, var(--accent-color) 60%, #ffeb3b 80%, #f44336 95%);
+      background: linear-gradient(to top, var(--accent-color) 60%, var(--yellow-color) 80%, var(--danger-color) 95%);
       box-shadow: 0 0 8px var(--accent-color);
     }
 
@@ -335,7 +336,7 @@ interface PlaybackState {
       height: 24px !important;
       line-height: 24px !important;
       padding: 0 !important;
-      background: rgba(255, 255, 255, 0.05) !important;
+      background: var(--header-bg) !important;
       border: 1px solid rgba(255, 255, 255, 0.1) !important;
       border-radius: 4px !important;
       transition: all 0.2s ease !important;
@@ -349,35 +350,35 @@ interface PlaybackState {
     }
 
     .action-btn:hover:not([disabled]) {
-      background: rgba(255, 255, 255, 0.1) !important;
+      background: var(--item-hover) !important;
       border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
     /* Active States */
     .active {
       background: rgba(244, 67, 54, 0.2) !important;
-      border-color: #f44336 !important;
+      border-color: var(--danger-color) !important;
     }
-    .active mat-icon { color: #f44336 !important; }
+    .active mat-icon { color: var(--danger-color) !important; }
 
     .active-play {
       background: rgba(100, 255, 218, 0.1) !important;
       border-color: var(--accent-color) !important;
-      box-shadow: 0 0 8px rgba(100, 255, 218, 0.2);
+      box-shadow: 0 0 8px var(--accent-hover);
     }
     .active-play mat-icon { color: var(--accent-color) !important; }
 
     .active-pause {
       background: rgba(255, 152, 0, 0.1) !important;
-      border-color: #ff9800 !important;
+      border-color: var(--warning-color) !important;
     }
-    .active-pause mat-icon { color: #ff9800 !important; }
+    .active-pause mat-icon { color: var(--warning-color) !important; }
 
     .active-loop {
       background: rgba(33, 150, 243, 0.1) !important;
-      border-color: #2196f3 !important;
+      border-color: var(--info-color) !important;
     }
-    .active-loop mat-icon { color: #2196f3 !important; }
+    .active-loop mat-icon { color: var(--info-color) !important; }
 
     /* Channel Value Display */
     .channel-value {
@@ -406,7 +407,7 @@ interface PlaybackState {
       top: 20px;
       bottom: 20px;
       width: 2px;
-      background: rgba(255,255,255,0.1);
+      background: var(--item-hover);
     }
 
     .mini-progress-bar {
@@ -484,30 +485,39 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   private normalizeMappings(mappings: MusicMapping[]): MusicMapping[] {
     return mappings.map(m => ({
       ...m,
+      id: m.id || this.generateUniqueId(),
       volume: m.volume ?? 100,
       loop: m.loop ?? false,
       randomOrder: m.randomOrder ?? false
     }));
   }
 
+  private generateUniqueId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private getMappingId(mapping: MusicMapping): string {
+    return mapping.id || mapping.key;
+  }
+
   isPlaying(mapping: MusicMapping): boolean {
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     return state?.isPlaying ?? false;
   }
 
   isPaused(mapping: MusicMapping): boolean {
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     return state?.isPaused ?? false;
   }
 
   getProgress(mapping: MusicMapping): number {
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     if (!state || !state.duration) return 0;
     return (state.elapsed / state.duration) * 100;
   }
 
   getTimeDisplay(mapping: MusicMapping): string {
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     if (!state) return '--:--';
     const formatTime = (seconds: number): string => {
       const mins = Math.floor(seconds / 60);
@@ -541,9 +551,9 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   private savedMasterVolume: number = 100;
 
   updateAllVolumes(): void {
-    this.playbackStates.forEach((state, key) => {
+    this.playbackStates.forEach((state, id) => {
       if (state && state.audio) {
-        const mapping = this.mappings.find(m => m.key === key);
+        const mapping = this.mappings.find(m => this.getMappingId(m) === id);
         if (mapping) {
           this.applyVolume(state, mapping);
         }
@@ -552,7 +562,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   onTrackVolumeChange(mapping: MusicMapping): void {
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     if (state && state.audio) {
       this.applyVolume(state, mapping);
     }
@@ -568,7 +578,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
 
   toggleLoop(mapping: MusicMapping): void {
     mapping.loop = !mapping.loop;
-    const state = this.playbackStates.get(mapping.key);
+    const state = this.playbackStates.get(this.getMappingId(mapping));
     if (state && state.audio) {
       state.audio.loop = mapping.loop;
     }
@@ -586,14 +596,16 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   stopTrack(mapping: MusicMapping): void {
-    const state = this.playbackStates.get(mapping.key);
+    const id = this.getMappingId(mapping);
+    const state = this.playbackStates.get(id);
     if (state) {
-      this.cleanupPlayback(state, mapping.key);
+      this.cleanupPlayback(state, id);
     }
   }
 
   pauseTrack(mapping: MusicMapping): void {
-    const state = this.playbackStates.get(mapping.key);
+    const id = this.getMappingId(mapping);
+    const state = this.playbackStates.get(id);
     if (!state || !state.audio) return;
 
     if (this.fadeDuration > 0) {
@@ -601,25 +613,26 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
         state.audio!.pause();
         state.isPlaying = false;
         state.isPaused = true;
-        this.stopProgressTracking(mapping.key);
+        this.stopProgressTracking(id);
       });
     } else {
       state.audio.pause();
       state.isPlaying = false;
       state.isPaused = true;
-      this.stopProgressTracking(mapping.key);
+      this.stopProgressTracking(id);
     }
   }
 
   resumeTrack(mapping: MusicMapping): void {
-    const state = this.playbackStates.get(mapping.key);
+    const id = this.getMappingId(mapping);
+    const state = this.playbackStates.get(id);
     if (!state || !state.audio) return;
 
     this.applyVolume(state, mapping);
     state.audio.play();
     state.isPlaying = true;
     state.isPaused = false;
-    this.startProgressTracking(mapping.key, state);
+    this.startProgressTracking(id, state);
   }
 
   playTrack(mapping: MusicMapping): void {
@@ -629,15 +642,16 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.stopAllSounds();
     }
 
-    const existingState = this.playbackStates.get(mapping.key);
+    const id = this.getMappingId(mapping);
+    const existingState = this.playbackStates.get(id);
     if (existingState) {
-      this.cleanupPlayback(existingState, mapping.key);
+      this.cleanupPlayback(existingState, id);
     }
 
     const state = this.setupPlaylist(mapping);
     state.isPlaying = true;
     state.isPaused = false;
-    this.playbackStates.set(mapping.key, state);
+    this.playbackStates.set(id, state);
     this.playNext(mapping, state);
   }
 
@@ -719,7 +733,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
           state.isPlaying = false;
           state.isPaused = false;
           state.elapsed = 0;
-          this.cleanupPlayback(state, mapping.key);
+          this.cleanupPlayback(state, this.getMappingId(mapping));
         }
       } else {
         this.playNext(mapping, state);
@@ -736,7 +750,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
         this.fadeAudio(state, trackVolume * masterVol);
       }
 
-      this.startProgressTracking(mapping.key, state);
+      this.startProgressTracking(this.getMappingId(mapping), state);
     };
 
     startPlayback();
