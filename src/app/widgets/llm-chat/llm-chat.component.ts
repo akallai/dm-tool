@@ -288,7 +288,12 @@ export class LlmChatComponent implements OnInit, OnDestroy {
 
     try {
       const response = await this.openAIService
-        .chat(this.settings.apiKey, messages, this.settings.model)
+        .chat(
+          this.settings.apiKey,
+          messages,
+          this.settings.model,
+          this.settings.temperature
+        )
         .toPromise();
 
       if (response?.choices?.[0]?.message) {

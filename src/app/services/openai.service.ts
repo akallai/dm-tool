@@ -22,16 +22,20 @@ export class OpenAIService {
 
   constructor(private http: HttpClient) {}
 
-  chat(apiKey: string, messages: ChatMessage[], model: string): Observable<any> {
+  chat(apiKey: string, messages: ChatMessage[], model: string, temperature?: number): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
       .set('Authorization', `Bearer ${apiKey}`);
 
     const body: ChatCompletionRequest = {
       model,
-      messages,
-      temperature: 0.7
+      messages
     };
+
+    // Only include temperature if explicitly provided
+    if (temperature !== undefined && temperature !== null) {
+      body.temperature = temperature;
+    }
 
     return this.http.post(this.apiUrl, body, { headers }).pipe(
       catchError(error => {

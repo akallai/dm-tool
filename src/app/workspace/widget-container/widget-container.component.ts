@@ -277,7 +277,15 @@ export class WidgetContainerComponent {
               label: 'Model',
               placeholder: 'Enter the model name',
               required: true,
-              defaultValue: 'gpt-4o-mini'
+              defaultValue: 'gpt-5-mini-2025-08-07'
+            },
+            {
+              key: 'temperature',
+              type: 'number',
+              label: 'Temperature (leave empty for default)',
+              required: false,
+              min: 0,
+              max: 2
             },
             {
               key: 'prompt',
