@@ -85,7 +85,7 @@ export class WorkspaceComponent implements OnInit {
   }
 
   openWidgetSelector() {
-    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, { width: '300px' });
+    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, { width: '680px' });
     dialogRef.afterClosed().subscribe((result: { action: string, type?: WidgetType }) => {
       if (result) {
         if (result.action === 'add' && result.type) {
