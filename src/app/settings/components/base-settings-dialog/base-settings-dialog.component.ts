@@ -122,10 +122,17 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                 </mat-form-field>
 
                 <div *ngSwitchCase="'file'" class="mapping-file">
-                  <input type="file" 
+                  <div class="file-selection-toggle">
+                    <mat-checkbox [(ngModel)]="mapping.useFolderMode"
+                                  (ngModelChange)="toggleFolderMode(field, i)"
+                                  class="folder-toggle">
+                      Select folder
+                    </mat-checkbox>
+                  </div>
+                  <input type="file"
                          [accept]="getMappingFileAccept(field)"
-                         [multiple]="getMappingFileMultiple(field)"
-                         [attr.webkitdirectory]="getMappingDirectory(field) ? '' : null"
+                         [multiple]="getMappingFileMultiple(field) || mapping.useFolderMode"
+                         [attr.webkitdirectory]="mapping.useFolderMode ? '' : null"
                          (change)="onMappingFileSelected($event, field.key, i)">
                 </div>
 
@@ -203,6 +210,14 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       display: flex;
       flex-direction: column;
       gap: 4px;
+    }
+    .file-selection-toggle {
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .folder-toggle {
+      font-size: 12px;
     }
     .field-error {
       color: #f44336;
@@ -389,7 +404,7 @@ export class BaseSettingsDialogComponent {
     if (!Array.isArray(this.settings[key])) {
       this.settings[key] = [];
     }
-    this.settings[key].push({ key: '', value: '' });
+    this.settings[key].push({ key: '', value: '', useFolderMode: false });
     const field = this.config.fields.find(f => f.key === key);
     if (field) this.validateField(field);
   }
@@ -398,6 +413,15 @@ export class BaseSettingsDialogComponent {
     this.settings[key].splice(index, 1);
     const field = this.config.fields.find(f => f.key === key);
     if (field) this.validateField(field);
+  }
+
+  toggleFolderMode(field: SettingsField, index: number) {
+    // When toggling folder mode, clear existing files to force re-selection
+    const mapping = this.settings[field.key][index];
+    if (mapping && mapping.useFolderMode === false) {
+      // Switching to folder mode - clear files
+      mapping.files = [];
+    }
   }
 
   save() {

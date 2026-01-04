@@ -135,63 +135,57 @@ export class WidgetContainerComponent {
               label: 'Allow multiple simultaneous playback'
             },
             {
-              key: 'loopEnabled',
-              type: 'checkbox',
-              label: 'Loop audio files'
-            },
-            {
-              key: 'randomOrder',
-              type: 'checkbox',
-              label: 'Play files in random order'
+              key: 'fadeDuration',
+              type: 'number',
+              label: 'Fade duration (seconds)',
+              defaultValue: 0.5
             },
             {
               key: 'mappings',
               type: 'mapping',
-              label: 'Sound Mappings',
+              label: 'Sound Tracks',
               mappingConfig: {
                 keyLabel: 'Label',
                 valueType: 'file',
                 valueLabel: 'Audio Files',
                 fileAccept: 'audio/*',
-                multiple: true,
-                directory: true
+                multiple: true
               }
             }
           ]
         };
-        // In widget-container.component.ts, update the RANDOM_GENERATOR case:
-case 'RANDOM_GENERATOR':
-  return {
-    title: 'Random Generator Settings',
-    fields: [
-      {
-        key: 'useWeightedSelection',
-        type: 'checkbox',
-        label: 'Use weighted selection and hide number prefixes',
-        defaultValue: true
-      },
-      {
-        key: 'mappings',
-        type: 'mapping',
-        label: 'Random Lists',
-        mappingConfig: {
-          keyLabel: 'List Name',
-          valueType: 'textarea',
-          valueLabel: 'Items (one per line)'
-        }
-      },
-      {
-        key: 'mappingCategories',
-        type: 'mapping',
-        label: 'Categorize Lists (Optional)',
-        mappingConfig: {
-          keyLabel: 'List Name (must match above)',
-          valueType: 'text',
-          valueLabel: 'Category (leave empty for no category)'
-        }
-      }
-    ]
-  };
+      case 'RANDOM_GENERATOR':
+        return {
+          title: 'Random Generator Settings',
+          fields: [
+            {
+              key: 'useWeightedSelection',
+              type: 'checkbox',
+              label: 'Use weighted selection and hide number prefixes',
+              defaultValue: true
+            },
+            {
+              key: 'mappings',
+              type: 'mapping',
+              label: 'Random Lists',
+              mappingConfig: {
+                keyLabel: 'List Name',
+                valueType: 'textarea',
+                valueLabel: 'Items (one per line)'
+              }
+            },
+            {
+              key: 'mappingCategories',
+              type: 'mapping',
+              label: 'Categorize Lists (Optional)',
+              mappingConfig: {
+                keyLabel: 'List Name (must match above)',
+                valueType: 'text',
+                valueLabel: 'Category (leave empty for no category)'
+              }
+            }
+          ]
+        };
       case 'COMBAT_TRACKER':
         return {
           title: 'Combat Tracker Settings',
