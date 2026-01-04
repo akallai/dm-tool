@@ -37,114 +37,127 @@ import { MatIconModule } from '@angular/material/icon';
   `,
   styles: [`
   .daytime-tracker {
-  padding: 4px;
-  border-radius: 4px;
-  background: white;
-}
-
-.main-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-}
-
-.slider-container {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.time-periods {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 0;
-  right: 0;
-  height: 8px;
-  display: flex;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.period {
-  height: 100%;
-}
-
-.period.night {
-  background: #000000;
-}
-
-.period.dawn {
-  background: linear-gradient(90deg, #000000 0%, #FFD700 100%);
-}
-
-.period.day {
-  background: #FFD700;
-}
-
-.period.dusk {
-  background: linear-gradient(90deg, #FFD700 0%, #000000 100%);
-}
-
-.time-slider {
-  flex: 1;
-  width: 100%;
-  z-index: 1;
-}
-
-.time-icon {
-  color: #666;
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-  line-height: 18px;
-}
-
-.current-time {
-  font-weight: 500;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.9em;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  min-width: 52px;
-  text-align: center;
-}
-
-/* Override MDC slider CSS variables */
-:host {
-  --mdc-slider-track-active-color: transparent;
-  --mdc-slider-active-track-color: transparent;
-}
-
-/* Deep overrides to adjust slider appearance */
-:host ::ng-deep {
-  /* Ensure thumb container stays centered */
-  .mat-mdc-slider-thumb-container,
-  .mdc-slider__thumb-container {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    padding: 8px;
+    border-radius: 4px;
+    background: transparent; /* Rely on container background */
+    color: var(--text-primary);
   }
-  
-  /* Ensure track container is centered */
-  .mat-mdc-slider-track-container,
-  .mdc-slider__track-container {
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-  }
-  
-  /* Hide the active (blue) track fill entirely */
-  .mat-mdc-slider-track-active,
-  .mdc-slider__track--active {
-    display: none !important;
-    background: none !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-  }
-}
 
+  .main-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 32px;
+  }
+
+  .slider-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .time-periods {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    right: 0;
+    height: 10px;
+    display: flex;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 5px;
+    overflow: hidden;
+    opacity: 0.8; /* Slight transparency for blending */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  .period {
+    height: 100%;
+  }
+
+  .period.night {
+    background: #0d1117; /* Dark blue-black instead of pure black */
+  }
+
+  .period.dawn {
+    background: linear-gradient(90deg, #0d1117 0%, #FFD700 100%);
+  }
+
+  .period.day {
+    background: #FFD700;
+  }
+
+  .period.dusk {
+    background: linear-gradient(90deg, #FFD700 0%, #0d1117 100%);
+  }
+
+  .time-slider {
+    flex: 1;
+    width: 100%;
+    z-index: 1;
+  }
+
+  .time-icon {
+    color: var(--text-primary);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    opacity: 0.8;
+  }
+
+  .current-time {
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-width: 52px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* Override MDC slider CSS variables */
+  :host {
+    --mdc-slider-track-active-color: transparent;
+    --mdc-slider-active-track-color: transparent;
+    --mdc-slider-handle-color: var(--text-primary);
+    --mdc-slider-focus-handle-color: var(--accent-color);
+    --mdc-slider-hover-handle-color: var(--text-primary);
+  }
+
+  /* Deep overrides to adjust slider appearance */
+  :host ::ng-deep {
+    /* Ensure thumb container stays centered */
+    .mat-mdc-slider-thumb-container,
+    .mdc-slider__thumb-container {
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+    }
+
+    /* Ensure track container is centered */
+    .mat-mdc-slider-track-container,
+    .mdc-slider__track-container {
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+    }
+
+    /* Hide the active (blue) track fill entirely */
+    .mat-mdc-slider-track-active,
+    .mdc-slider__track--active {
+      display: none !important;
+      background: none !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    /* Thumb Styling */
+    .mdc-slider__thumb-knn {
+      background-color: var(--text-primary) !important;
+      border: 2px solid var(--glass-bg) !important;
+    }
+  }
   `],
   standalone: true,
   imports: [
@@ -159,7 +172,7 @@ export class DaytimeTrackerComponent {
 
   currentHour: number = 12;
   readonly DAY_COLOR = '#FFD700';
-  readonly NIGHT_COLOR = '#000000';
+  readonly NIGHT_COLOR = '#0d1117'; // Updated to match CSS
 
   ngOnInit() {
     if (this.settings?.hour !== undefined) {

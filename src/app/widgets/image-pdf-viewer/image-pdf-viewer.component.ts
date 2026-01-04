@@ -49,8 +49,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: #f5f5f5;
+      background: transparent; /* Updated to transparent for glass theme */
       position: relative;
+      color: var(--text-primary);
     }
     .empty-state {
       flex: 1;
@@ -64,14 +65,18 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       height: 100%;
       object-fit: contain;
       border: none;
+      /* Ensure PDFs/Images have a background if they are transparent */
+      background: rgba(255, 255, 255, 0.05);
     }
     .file-controls {
       position: absolute;
       top: 8px;
       right: 8px;
-      background: rgba(255, 255, 255, 0.8);
+      background: var(--panel-bg);
+      border: var(--glass-border);
       border-radius: 4px;
       padding: 4px;
+      backdrop-filter: var(--glass-backdrop);
     }
   `],
   standalone: true,
@@ -110,7 +115,7 @@ export class ImagePdfViewerComponent implements OnInit {
       const file = input.files[0];
       this.currentFile = file;
       this.isImage = file.type.startsWith('image/');
-      
+
       // Use FileReader to create a data URL (works for both images and PDFs)
       const reader = new FileReader();
       reader.onload = () => {

@@ -4,51 +4,166 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  color: var(--text-primary); /* Default to light text globally */
 }
 
 body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
+  color-scheme: dark; /* Force browser to render controls in dark mode */
 }
 
-.resize-handle {
-  background: rgba(0,0,0,0.2);
+/* Glass Theme Configuration */
+:root {
+  /* ... existing vars ... */
+  /* Glass Base - Darker for better contrast */
+  --glass-bg: rgba(20, 25, 40, 0.65);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  --glass-backdrop: blur(12px);
+
+  /* Headers & Accents */
+  --header-bg: rgba(255, 255, 255, 0.05); /* Very subtle header fill */
+  --accent-color: #40c4ff; /* Bright Cyan - High visibility on dark */
+  --accent-hover: #80d8ff;
+  --danger-color: #ff5252;
+  --success-color: #69f0ae;
+
+  /* Typography - High Contrast */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+
+  /* Interactive Elements */
+  --panel-bg: rgba(0, 0, 0, 0.3);
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --input-placeholder: rgba(255, 255, 255, 0.4);
+  --input-border: 1px solid rgba(255, 255, 255, 0.2);
+  --item-hover: rgba(255, 255, 255, 0.1);
 }
 
-/* app.component.scss */
-:host {
-  display: block;
-  width: 100%;
-  height: 100%;
+/* Scrollbar Customization for Glass Theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
 }
 
-/* workspace.component.scss */
-:host {
-  display: block;
-  width: 100%;
-  height: 100%;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 
-.workspace {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: #f0f0f0;
-  overflow: hidden;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-.add-widget-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 1000;
+/* Global Material Overrides for Dark Theme */
+/* Buttons */
+.mat-mdc-button, .mat-mdc-outlined-button, .mat-mdc-icon-button {
+  color: var(--text-primary) !important;
 }
+
+.mat-mdc-button[disabled], .mat-mdc-outlined-button[disabled], .mat-mdc-icon-button[disabled] {
+  color: var(--text-muted) !important;
+}
+
+/* Inputs - Aggressive Global Override */
+.mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: var(--input-bg);
+  --mdc-filled-text-field-focus-active-indicator-color: var(--accent-color);
+  --mdc-filled-text-field-label-text-color: var(--text-secondary);
+  --mdc-filled-text-field-input-text-color: var(--text-primary);
+  --mdc-filled-text-field-caret-color: var(--accent-color);
+  --mdc-filled-text-field-active-indicator-color: var(--accent-color);
+
+  /* Select specific */
+  --mat-select-trigger-text-color: var(--text-primary);
+  --mat-select-enabled-trigger-text-color: var(--text-primary);
+}
+
+.mat-mdc-text-field-wrapper {
+  background-color: var(--input-bg) !important;
+}
+
+.mat-mdc-form-field-label,
+.mat-mdc-floating-label {
+  color: var(--text-secondary) !important;
+}
+
+.mat-mdc-input-element,
+.mat-mdc-form-field-input-control {
+   color: var(--text-primary) !important;
+   -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+/* Ensure raw inputs are matched */
+input, textarea, select {
+  color: var(--text-primary) !important;
+  caret-color: var(--accent-color) !important;
+  background: transparent; /* Ensure no white background bleeds */
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 1 !important;
+}
+
+/* Menus & Select Panels */
+.mat-mdc-menu-panel, .mat-mdc-select-panel {
+  background-color: rgba(21, 26, 38, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-menu-item, .mat-mdc-option {
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-menu-item:hover, .mat-mdc-option:hover, .mat-mdc-option.mdc-list-item--selected {
+  background-color: var(--item-hover) !important;
+}
+
+.mat-pseudo-checkbox {
+  color: var(--text-secondary) !important;
+}
+
+.mat-pseudo-checkbox-checked {
+  background: var(--accent-color) !important;
+  color: #fff !important;
+}
+
+/* Global Dialog Overrides for Glass Theme */
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-color: transparent !important;
+  --mdc-dialog-subhead-color: var(--text-primary) !important;
+  --mdc-dialog-supporting-text-color: var(--text-secondary) !important;
+}
+
+.mat-mdc-dialog-surface {
+  background: rgba(21, 26, 38, 0.85) !important; /* Deep opaque dark for dialogs */
+  backdrop-filter: var(--glass-backdrop) !important;
+  border: var(--glass-border) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+}
+
+/* Force text colors in lists/content within dialogs */
+.mat-mdc-list-item-title,
+.mat-mdc-list-item-line {
+  color: var(--text-primary) !important;
+}
+
+/* Resize Handles (Global) */
 .resize-handle {
   background: transparent;
   position: absolute;
   transition: background-color 0.2s;
-  
+  z-index: 100; /* Ensure visibility */
+
   &:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.3); /* Lighter on hover for visibility on dark glass */
   }
 }
 

@@ -8,8 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { 
-  SettingsConfig, 
+import {
+  SettingsConfig,
   SettingsField,
   TextFieldConfig,
   NumberFieldConfig,
@@ -29,7 +29,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           <!-- Text input -->
           <mat-form-field *ngIf="field.type === 'text'" class="full-width" appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
-            <input matInput 
+            <input matInput
                    [(ngModel)]="settings[field.key]"
                    [placeholder]="getTextFieldPlaceholder(field)"
                    [required]="field.required || false"
@@ -42,8 +42,8 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           <!-- Number input -->
           <mat-form-field *ngIf="field.type === 'number'" class="full-width" appearance="outline">
             <mat-label>{{ field.label }}</mat-label>
-            <input matInput 
-                   type="number" 
+            <input matInput
+                   type="number"
                    [(ngModel)]="settings[field.key]"
                    [min]="getNumberFieldMin(field)"
                    [max]="getNumberFieldMax(field)"
@@ -96,7 +96,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           <!-- File input -->
           <div *ngIf="field.type === 'file'" class="file-field">
             <label>{{ field.label }}</label>
-            <input type="file" 
+            <input type="file"
                    [accept]="getFileAccept(field)"
                    [multiple]="getFileMultiple(field)"
                    (change)="onFileSelected($event, field.key)"
@@ -107,7 +107,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
           </div>
 
           <!-- Mapping field -->
-          <div *ngIf="field.type === 'mapping'" class="mapping-field">
+          <div *ngIf="field.type === 'mapping'" class="mapping-field glass-panel">
             <h3>{{ field.label }}</h3>
             <div *ngFor="let mapping of getMappingArray(field.key); let i = index" class="mapping-item">
               <mat-form-field class="mapping-key" appearance="outline">
@@ -145,8 +145,8 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
 
                 <mat-form-field *ngSwitchCase="'textarea'" class="mapping-value" appearance="outline">
                   <mat-label>{{ getMappingValueLabel(field) }}</mat-label>
-                  <textarea matInput 
-                           [(ngModel)]="mapping.itemsText" 
+                  <textarea matInput
+                           [(ngModel)]="mapping.itemsText"
                            rows="3"
                            (ngModelChange)="validateField(field)">
                   </textarea>
@@ -157,15 +157,17 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
-            <button mat-button (click)="addMapping(field.key)">Add Item</button>
+            <button mat-button (click)="addMapping(field.key)">
+              <mat-icon>add</mat-icon> Add Item
+            </button>
           </div>
         </ng-container>
       </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
-      <button mat-button 
-              color="primary" 
+      <button mat-button
+              color="primary"
               (click)="save()"
               [disabled]="!isValid()">
         Save
@@ -173,12 +175,19 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
     </mat-dialog-actions>
   `,
   styles: [`
+    h2[mat-dialog-title] {
+      color: var(--text-primary);
+      margin: 0 0 16px 0;
+      font-size: 20px;
+    }
+
     .settings-form {
       display: flex;
       flex-direction: column;
       gap: 16px;
       padding: 16px 0;
       min-width: 300px;
+      color: var(--text-primary);
     }
     .full-width {
       width: 100%;
@@ -187,17 +196,46 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       display: flex;
       flex-direction: column;
       gap: 8px;
+      padding: 8px;
+      background: var(--input-bg);
+      border: var(--glass-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+    }
+    .file-field label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
     }
     .mapping-field {
-      border: 1px solid #ddd;
+      border: var(--glass-border);
       padding: 16px;
-      border-radius: 4px;
+      border-radius: 8px;
+      background: var(--panel-bg);
+      margin-top: 8px;
+    }
+    .mapping-field h3 {
+      margin-top: 0;
+      color: var(--accent-color);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
     }
     .mapping-item {
       display: flex;
       gap: 8px;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .mapping-item:last-child {
+      margin-bottom: 0;
     }
     .mapping-key {
       width: 30%;
@@ -209,7 +247,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
     }
     .file-selection-toggle {
       display: flex;
@@ -220,9 +258,35 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       font-size: 12px;
     }
     .field-error {
-      color: #f44336;
+      color: var(--danger-color);
       font-size: 12px;
       margin-top: 4px;
+    }
+
+    /* CRITICAL OPTIMIZATIONS FOR GLASS THEME */
+    ::ng-deep .mat-mdc-form-field {
+      /* Force transparency but inherit text colors from theme */
+      --mdc-filled-text-field-container-color: var(--input-bg);
+      --mdc-filled-text-field-focus-active-indicator-color: var(--accent-color);
+      --mdc-filled-text-field-active-indicator-color: var(--accent-color);
+      --mdc-filled-text-field-caret-color: var(--accent-color);
+    }
+
+    /* Ensure transparency on wrappers */
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      background-color: var(--input-bg) !important;
+    }
+
+    /* Global overrides for bare inputs */
+    input, textarea, select {
+       caret-color: var(--accent-color) !important;
+    }
+
+    /* Placeholder opacity fix (often needed even in dark themes) */
+    ::ng-deep input::placeholder,
+    ::ng-deep textarea::placeholder {
+       color: var(--text-muted) !important;
+       opacity: 1 !important;
     }
   `],
   standalone: true,

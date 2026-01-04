@@ -161,24 +161,24 @@ interface PlaybackState {
   styles: [`
     .music-widget {
       display: flex;
-      background: #121212;
-      border: 1px solid #333;
+      background: rgba(0, 0, 0, 0.4); /* Dark glass */
+      backdrop-filter: var(--glass-backdrop);
+      border: var(--glass-border);
       border-radius: 4px;
       padding: 6px;
       box-sizing: border-box;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
     }
 
     .divider {
-      width: 2px;
-      background: #333;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.1);
       margin: 0 8px;
       align-self: stretch;
       flex-shrink: 0;
-      box-shadow: 1px 0 0 rgba(255,255,255,0.05);
     }
 
     /* Channel Strip Base */
@@ -188,29 +188,31 @@ interface PlaybackState {
       width: 50px;
       min-width: 50px;
       flex-shrink: 0;
-      background: #222;
-      border: 1px solid #000;
-      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
       padding: 4px 2px;
       box-sizing: border-box;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       position: relative;
+      transition: all 0.2s ease;
     }
 
     .channel-strip.playing {
-      background: #2a2a2a;
-      border-color: #4caf50;
+      background: rgba(100, 255, 218, 0.05);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px rgba(64, 196, 255, 0.2);
     }
 
     .channel-strip.paused {
-      background: #2a2a2a;
-      border-color: #ff9800;
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
     .channel-label {
       font-size: 9px;
       font-weight: bold;
-      color: #aaa;
+      color: var(--text-secondary);
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
@@ -221,21 +223,21 @@ interface PlaybackState {
     }
 
     .master-strip .channel-label {
-      color: #4fc3f7;
+      color: var(--accent-color);
     }
 
     /* Fader / Slider Area */
     .fader-well {
       flex: 1;
-      background: #111;
+      background: rgba(0, 0, 0, 0.3);
       margin: 2px;
       border-radius: 20px;
       position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 1px solid #333;
-      box-shadow: inset 0 0 5px #000;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
       overflow: hidden;
       padding: 12px 0;
     }
@@ -262,43 +264,43 @@ interface PlaybackState {
     }
 
     .v-slider ::ng-deep .mdc-slider__track {
-      height: 6px !important;
+      height: 4px !important;
     }
 
     .v-slider ::ng-deep .mdc-slider__track--inactive {
-      background-color: rgba(255,255,255,0.15) !important;
-      height: 6px !important;
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      height: 4px !important;
     }
 
     .v-slider ::ng-deep .mdc-slider__track--active,
     .v-slider ::ng-deep .mdc-slider__track--active_fill {
-      background-color: #666 !important;
-      height: 6px !important;
-      border-color: #666 !important;
+      background-color: var(--text-secondary) !important;
+      height: 4px !important;
+      border-color: var(--text-secondary) !important;
     }
 
     .master-fader ::ng-deep .mdc-slider__track--active,
     .master-fader ::ng-deep .mdc-slider__track--active_fill {
-      background-color: #888 !important;
-      border-color: #888 !important;
+      background-color: var(--accent-color) !important;
+      border-color: var(--accent-color) !important;
     }
 
     .v-slider ::ng-deep .mdc-slider__thumb-knob {
-      background: linear-gradient(180deg, #f5f5f5, #ccc) !important;
-      border: 2px solid #222 !important;
-      border-radius: 3px !important;
-      width: 26px !important;
-      height: 14px !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.6) !important;
+      background: linear-gradient(180deg, #fff, #ccc) !important; /* Keep skeuomorphic knob for tactile feel */
+      border: none !important;
+      border-radius: 2px !important;
+      width: 24px !important;
+      height: 12px !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
     }
 
     .v-slider ::ng-deep .mdc-slider__thumb:hover .mdc-slider__thumb-knob {
-      background: linear-gradient(180deg, #fff, #ddd) !important;
+      background: #fff !important;
     }
 
     .v-slider ::ng-deep .mdc-slider__thumb {
-      width: 26px !important;
-      height: 26px !important;
+      width: 24px !important;
+      height: 24px !important;
     }
 
     /* VU Meter LED effect */
@@ -315,8 +317,8 @@ interface PlaybackState {
       width: 100%;
       position: absolute;
       bottom: 0;
-      background: linear-gradient(to top, #4caf50 60%, #ffeb3b 80%, #f44336 95%);
-      box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+      background: linear-gradient(to top, var(--accent-color) 60%, #ffeb3b 80%, #f44336 95%);
+      box-shadow: 0 0 8px var(--accent-color);
     }
 
     /* Actions */
@@ -324,7 +326,7 @@ interface PlaybackState {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
       margin-top: 4px;
     }
 
@@ -333,43 +335,57 @@ interface PlaybackState {
       height: 24px !important;
       line-height: 24px !important;
       padding: 0 !important;
-      background: #333 !important;
-      border: 1px solid #000 !important;
-      border-radius: 2px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 4px !important;
+      transition: all 0.2s ease !important;
     }
 
     .action-btn mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
-      color: #888;
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      color: var(--text-secondary);
     }
 
-    /* LED Glow Effects */
-    .active { background: #d32f2f !important; }
-    .active mat-icon { color: #fff !important; }
-
-    .active-play { background: #2e7d32 !important; border-color: #4caf50 !important; animation: led-pulse-green 1.5s infinite; }
-    .active-play mat-icon { color: #fff !important; }
-
-    .active-pause { background: #ef6c00 !important; border-color: #ff9800 !important; }
-    .active-pause mat-icon { color: #fff !important; }
-
-    .active-loop { background: #1565c0 !important; border-color: #2196f3 !important; }
-    .active-loop mat-icon { color: #fff !important; }
-
-    @keyframes led-pulse-green {
-      0% { box-shadow: 0 0 2px #4caf50; }
-      50% { box-shadow: 0 0 8px #4caf50; }
-      100% { box-shadow: 0 0 2px #4caf50; }
+    .action-btn:hover:not([disabled]) {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
+    /* Active States */
+    .active {
+      background: rgba(244, 67, 54, 0.2) !important;
+      border-color: #f44336 !important;
+    }
+    .active mat-icon { color: #f44336 !important; }
+
+    .active-play {
+      background: rgba(100, 255, 218, 0.1) !important;
+      border-color: var(--accent-color) !important;
+      box-shadow: 0 0 8px rgba(100, 255, 218, 0.2);
+    }
+    .active-play mat-icon { color: var(--accent-color) !important; }
+
+    .active-pause {
+      background: rgba(255, 152, 0, 0.1) !important;
+      border-color: #ff9800 !important;
+    }
+    .active-pause mat-icon { color: #ff9800 !important; }
+
+    .active-loop {
+      background: rgba(33, 150, 243, 0.1) !important;
+      border-color: #2196f3 !important;
+    }
+    .active-loop mat-icon { color: #2196f3 !important; }
+
+    /* Channel Value Display */
     .channel-value {
       font-size: 9px;
       font-family: monospace;
-      color: #777;
+      color: var(--text-muted);
       text-align: center;
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     /* Scrollable Container */
@@ -383,15 +399,6 @@ interface PlaybackState {
       min-height: 0;
     }
 
-    .channels-container::-webkit-scrollbar {
-      height: 4px;
-    }
-
-    .channels-container::-webkit-scrollbar-thumb {
-      background: #333;
-      border-radius: 2px;
-    }
-
     /* Mini Progress Strip */
     .mini-progress-well {
       position: absolute;
@@ -399,7 +406,7 @@ interface PlaybackState {
       top: 20px;
       bottom: 20px;
       width: 2px;
-      background: rgba(0,0,0,0.3);
+      background: rgba(255,255,255,0.1);
     }
 
     .mini-progress-bar {
@@ -412,7 +419,8 @@ interface PlaybackState {
       position: absolute;
       top: 0;
       width: 100%;
-      background: #4fc3f7;
+      background: var(--accent-color);
+      box-shadow: 0 0 4px var(--accent-color);
     }
 
     .empty-channels {
@@ -421,7 +429,7 @@ interface PlaybackState {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #444;
+      color: var(--text-muted);
       font-size: 11px;
       gap: 4px;
     }
@@ -430,6 +438,7 @@ interface PlaybackState {
       font-size: 24px;
       height: 24px;
       width: 24px;
+      opacity: 0.5;
     }
   `],
   standalone: true,

@@ -19,8 +19,8 @@ interface WikiArticle {
   template: `
     <div class="llm-chat">
       <div class="chat-history" #chatHistory>
-        <div *ngFor="let msg of conversation" 
-             [ngClass]="{'user-message': msg.role === 'user', 'assistant-message': msg.role === 'assistant'}"
+        <div *ngFor="let msg of conversation"
+             [ngClass]="{'user-message': msg.role === 'user', 'assistant-message': msg.role === 'assistant', 'system-message': msg.role === 'system'}"
              class="message">
           <strong>{{ msg.role === 'user' ? 'You' : 'Assistant' }}:</strong>
           <span [innerHTML]="formatMessage(msg.content)"></span>
@@ -30,31 +30,30 @@ interface WikiArticle {
           <span>Thinking...</span>
         </div>
       </div>
-      
+
       <div class="error-message" *ngIf="errorMessage">
         {{ errorMessage }}
       </div>
-      
+
       <div class="chat-controls">
-        <button mat-icon-button 
-                (click)="clearChat()" 
+        <button mat-icon-button
+                (click)="clearChat()"
                 [disabled]="isLoading || conversation.length === 0"
                 matTooltip="Clear chat">
           <mat-icon>delete</mat-icon>
         </button>
-        <mat-form-field appearance="outline" class="input-field">
-          <textarea 
-            matInput 
-            placeholder="Type your message..." 
-            [(ngModel)]="newMessage" 
+        <div class="input-container">
+          <textarea
+            placeholder="Type your message..."
+            [(ngModel)]="newMessage"
             (keydown)="handleKeyDown($event)"
             rows="1"
             #messageInput>
           </textarea>
-        </mat-form-field>
-        <button mat-icon-button 
-                color="primary" 
-                (click)="sendMessage()" 
+        </div>
+        <button mat-icon-button
+                color="primary"
+                (click)="sendMessage()"
                 [disabled]="isLoading || !newMessage.trim()">
           <mat-icon>send</mat-icon>
         </button>
@@ -66,56 +65,92 @@ interface WikiArticle {
       display: flex;
       flex-direction: column;
       height: 100%;
+      color: var(--text-primary);
     }
     .chat-history {
       flex: 1;
       overflow-y: auto;
       padding: 8px;
-      background: #f5f5f5;
-      border: 1px solid #ddd;
       margin-bottom: 8px;
       font-size: 14px;
     }
     .message {
       margin: 8px 0;
-      padding: 8px;
-      border-radius: 4px;
+      padding: 8px 12px;
+      border-radius: 8px;
       white-space: pre-wrap;
+      line-height: 1.5;
+      backdrop-filter: var(--glass-backdrop);
+      border: var(--glass-border);
     }
     .user-message {
-      background: #e3f2fd;
-      margin-left: 20%;
+      background: rgba(64, 196, 255, 0.15); /* Accent color variant */
+      border-color: var(--accent-color);
+      margin-left: 15%;
+      border-bottom-right-radius: 2px;
     }
     .assistant-message {
-      background: #fff;
-      margin-right: 20%;
+      background: var(--panel-bg);
+      margin-right: 15%;
+      border-bottom-left-radius: 2px;
+    }
+    .system-message {
+      background: rgba(255, 255, 255, 0.05);
+      font-style: italic;
+      text-align: center;
+      margin: 8px 15%;
+      font-size: 0.9em;
+      color: var(--text-secondary);
     }
     .loading-message {
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 8px;
-      color: #666;
+      color: var(--text-secondary);
+      font-style: italic;
     }
     .chat-controls {
       display: flex;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 8px;
       padding: 0 8px 8px 8px;
     }
-    .input-field {
+    .input-container {
       flex: 1;
-      margin: 0;
+      background: var(--input-bg);
+      border: var(--input-border);
+      border-radius: 20px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+
+      textarea {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+        resize: none;
+        outline: none;
+        max-height: 100px;
+        line-height: 1.4;
+      }
     }
     .error-message {
-      color: #f44336;
+      color: white;
       padding: 8px;
       margin: 8px;
-      background: #ffebee;
+      background: var(--danger-color);
       border-radius: 4px;
+      font-size: 0.9em;
     }
-    :host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-      display: none;
+
+    /* Override spinner color */
+    ::ng-deep .mat-mdc-progress-spinner circle,
+    ::ng-deep .mat-spinner circle {
+        stroke: var(--accent-color) !important;
     }
   `],
   standalone: true,
@@ -139,7 +174,7 @@ export class LlmChatComponent implements OnInit, OnDestroy {
   wikiContext: string = '';
   isLoading: boolean = false;
   errorMessage: string = '';
-  
+
   private refreshInterval: any;
 
   constructor(private openAIService: OpenAIService) {}
@@ -221,7 +256,7 @@ export class LlmChatComponent implements OnInit, OnDestroy {
 
   async sendMessage() {
     if (!this.newMessage.trim() || this.isLoading) return;
-    
+
     if (!this.settings?.apiKey || !this.settings?.model) {
       this.errorMessage = 'Please configure API key and model in settings';
       return;
@@ -236,8 +271,8 @@ export class LlmChatComponent implements OnInit, OnDestroy {
 
     // Add wiki context if available
     if (this.wikiContext) {
-      messages.push({ 
-        role: 'system', 
+      messages.push({
+        role: 'system',
         content: `Here is the wiki context to consider in your responses:\n\n${this.wikiContext}`
       });
     }
@@ -245,7 +280,7 @@ export class LlmChatComponent implements OnInit, OnDestroy {
     messages.push(...this.conversation);
     messages.push({ role: 'user', content: this.newMessage });
     this.conversation.push({ role: 'user', content: this.newMessage });
-    
+
 
     const sentMessage = this.newMessage;
     this.newMessage = '';
@@ -262,7 +297,7 @@ export class LlmChatComponent implements OnInit, OnDestroy {
           role: 'assistant',
           content: assistantMessage.content
         });
-        
+
         setTimeout(() => {
           if (this.chatHistory) {
             this.chatHistory.nativeElement.scrollTop = this.chatHistory.nativeElement.scrollHeight;

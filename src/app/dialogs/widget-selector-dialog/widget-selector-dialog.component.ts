@@ -34,16 +34,50 @@ export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TO
     </mat-dialog-content>
   `,
   styles: [`
+    h2 {
+      margin: 0 0 16px 0;
+      font-size: 20px;
+      color: var(--text-primary);
+    }
+
+    /* List styling */
+    mat-list {
+      padding-top: 0;
+    }
+
+    mat-list-item {
+      margin-bottom: 4px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    mat-list-item:hover {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      transform: translateX(4px);
+    }
+
+    /* Reset section */
     .reset-section {
       display: flex;
       justify-content: center;
       padding: 8px 0;
     }
+
     .reset-button {
       width: 100%;
+      border-color: var(--danger-color) !important;
+      color: var(--danger-color) !important;
+      background: rgba(255, 82, 82, 0.1) !important;
     }
+
+    .reset-button:hover {
+      background: rgba(255, 82, 82, 0.2) !important;
+    }
+
     .my-4 {
       margin: 16px 0;
+      border-color: rgba(255, 255, 255, 0.1);
     }
   `],
   standalone: true,

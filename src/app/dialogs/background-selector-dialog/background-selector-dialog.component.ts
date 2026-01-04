@@ -34,6 +34,7 @@ export interface BackgroundOption {
     h2 {
       margin: 0 0 16px 0;
       font-size: 20px;
+      color: var(--text-primary);
     }
 
     .backgrounds-grid {
@@ -52,14 +53,16 @@ export interface BackgroundOption {
       padding: 12px;
       transition: all 0.2s ease;
       border: 2px solid transparent;
+      background: rgba(255, 255, 255, 0.03);
 
       &:hover {
-        background: rgba(59, 130, 246, 0.1);
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
       }
 
       &.selected {
-        border-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.15);
+        border-color: var(--accent-color);
+        background: rgba(64, 196, 255, 0.15);
       }
     }
 
@@ -69,14 +72,16 @@ export interface BackgroundOption {
       background-size: cover;
       background-position: center;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .label {
       margin-top: 8px;
       font-size: 13px;
-      color: rgba(0, 0, 0, 0.87);
+      color: var(--text-primary);
       text-align: center;
+      font-weight: 500;
     }
 
     mat-dialog-actions {
