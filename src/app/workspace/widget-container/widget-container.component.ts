@@ -125,19 +125,61 @@ export class WidgetContainerComponent {
           title: 'Dice Tool Settings',
           fields: [
             {
-              key: 'enabledDice',
+              key: 'enableD4',
+              type: 'checkbox',
+              label: 'Enable d4',
+              defaultValue: true
+            },
+            {
+              key: 'enableD6',
+              type: 'checkbox',
+              label: 'Enable d6',
+              defaultValue: true
+            },
+            {
+              key: 'enableD8',
+              type: 'checkbox',
+              label: 'Enable d8',
+              defaultValue: true
+            },
+            {
+              key: 'enableD10',
+              type: 'checkbox',
+              label: 'Enable d10',
+              defaultValue: true
+            },
+            {
+              key: 'enableD12',
+              type: 'checkbox',
+              label: 'Enable d12',
+              defaultValue: true
+            },
+            {
+              key: 'enableD20',
+              type: 'checkbox',
+              label: 'Enable d20',
+              defaultValue: true
+            },
+            {
+              key: 'enableD100',
+              type: 'checkbox',
+              label: 'Enable d100',
+              defaultValue: true
+            },
+            {
+              key: 'customButtons',
               type: 'mapping',
-              label: 'Enabled Dice',
+              label: 'Custom Dice Buttons',
               mappingConfig: {
-                keyLabel: 'Sides',
-                valueType: 'checkbox',
-                valueLabel: 'Enabled'
+                keyLabel: 'Button Label (e.g. "Fireball", "Attack")',
+                valueType: 'text',
+                valueLabel: 'Formula (e.g. "8d6", "1d20+5")'
               }
             },
             {
               key: 'showCustomDiceInput',
               type: 'checkbox',
-              label: 'Show Custom Dice Input'
+              label: 'Show Manual Input Field'
             }
           ]
         };
