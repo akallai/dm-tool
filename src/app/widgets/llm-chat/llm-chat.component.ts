@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,7 +22,7 @@ interface WikiArticle {
         <div *ngFor="let msg of conversation"
              [ngClass]="{'user-message': msg.role === 'user', 'assistant-message': msg.role === 'assistant', 'system-message': msg.role === 'system'}"
              class="message">
-          <strong>{{ msg.role === 'user' ? 'You' : 'Assistant' }}:</strong>
+          <strong>{{ msg.role === 'user' ? 'You' : 'Assistant' }}:</strong>&nbsp;
           <span [innerHTML]="formatMessage(msg.content)"></span>
         </div>
         <div *ngIf="isLoading" class="loading-message">
@@ -177,10 +177,24 @@ export class LlmChatComponent implements OnInit, OnDestroy {
 
   private refreshInterval: any;
 
-  constructor(private openAIService: OpenAIService) {}
+  constructor(
+    private openAIService: OpenAIService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.refreshWikiContext();
+
+    // Load conversation from settings
+    if (this.settings?.conversation) {
+      this.conversation = this.settings.conversation;
+      setTimeout(() => {
+        if (this.chatHistory) {
+          this.chatHistory.nativeElement.scrollTop = this.chatHistory.nativeElement.scrollHeight;
+        }
+      });
+    }
+
     // Automatically refresh wiki context every 5 seconds
     this.refreshInterval = setInterval(() => {
       this.refreshWikiContext();
@@ -252,6 +266,9 @@ export class LlmChatComponent implements OnInit, OnDestroy {
   clearChat() {
     this.conversation = [];
     this.errorMessage = '';
+    if (this.settings) {
+      this.settings.conversation = this.conversation;
+    }
   }
 
   async sendMessage() {
@@ -281,6 +298,11 @@ export class LlmChatComponent implements OnInit, OnDestroy {
     messages.push({ role: 'user', content: this.newMessage });
     this.conversation.push({ role: 'user', content: this.newMessage });
 
+    // Save to settings
+    if (this.settings) {
+      this.settings.conversation = this.conversation;
+    }
+
 
     const sentMessage = this.newMessage;
     this.newMessage = '';
@@ -303,6 +325,13 @@ export class LlmChatComponent implements OnInit, OnDestroy {
           content: assistantMessage.content
         });
 
+        // Save to settings
+        if (this.settings) {
+          this.settings.conversation = this.conversation;
+        }
+
+        this.cdr.markForCheck(); // Trigger change detection
+
         setTimeout(() => {
           if (this.chatHistory) {
             this.chatHistory.nativeElement.scrollTop = this.chatHistory.nativeElement.scrollHeight;
@@ -312,8 +341,14 @@ export class LlmChatComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       this.errorMessage = error.message || 'Failed to get response';
       this.conversation = this.conversation.filter(msg => msg.content !== sentMessage);
+      // Update settings after rolling back
+      if (this.settings) {
+        this.settings.conversation = this.conversation;
+      }
+      this.cdr.markForCheck(); // Trigger change detection
     } finally {
       this.isLoading = false;
+      this.cdr.markForCheck(); // Trigger change detection
     }
   }
 }
