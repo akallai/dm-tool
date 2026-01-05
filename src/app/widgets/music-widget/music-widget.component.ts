@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AudioStorageService } from '../../services/audio-storage.service';
+import { MusicPlaybackService } from '../../services/music-playback.service';
+import { Subscription } from 'rxjs';
 
 export interface MusicFile {
   fileName: string;
@@ -17,19 +20,6 @@ export interface MusicMapping {
   volume?: number;
   loop?: boolean;
   randomOrder?: boolean;
-}
-
-interface PlaybackState {
-  currentIndex: number;
-  audio: HTMLAudioElement | null;
-  isPlaying: boolean;
-  isPaused: boolean;
-  playlist: MusicFile[];
-  playOrder: number[];
-  progress: number;
-  duration: number;
-  elapsed: number;
-  fadeTimeout?: number;
 }
 
 @Component({
@@ -402,25 +392,15 @@ interface PlaybackState {
   imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule]
 })
 export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
-  private _settings: any;
-  @Input() set settings(value: any) {
-    this._settings = value;
-    this.mappings = this.normalizeMappings(this._settings?.mappings || []);
-    this.masterVolume = this._settings?.masterVolume ?? 100;
-    this.masterMuted = this._settings?.masterMuted ?? false;
-    this.fadeDuration = this._settings?.fadeDuration ?? 0.5;
-  }
-  get settings() {
-    return this._settings;
-  }
-  @Output() settingsChange = new EventEmitter<any>();
+  @Input() settings: any = {};
+  @Input() widgetId: string = '';
+  @Output() settingsChange = new EventEmitter<void>();
 
   mappings: MusicMapping[] = [];
+  private audioLoaded = false;
   masterVolume: number = 100;
   masterMuted: boolean = false;
   fadeDuration: number = 0.5;
-  private playbackStates: Map<string, PlaybackState> = new Map();
-  private progressIntervals: Map<string, number> = new Map();
 
   // Volume drag state
   private isDragging = false;
@@ -428,21 +408,147 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   private dragType: 'master' | 'track' = 'track';
   private dragElement: HTMLElement | null = null;
 
-  constructor(private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
+  // Subscription to playback service state changes
+  private stateSubscription: Subscription | null = null;
 
-  ngOnInit() {
-    this.mappings = this.normalizeMappings(this.settings?.mappings || []);
-    this.masterVolume = this.settings?.masterVolume ?? 100;
-    this.masterMuted = this.settings?.masterMuted ?? false;
-    this.fadeDuration = this.settings?.fadeDuration ?? 0.5;
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
+    private audioStorage: AudioStorageService,
+    private playbackService: MusicPlaybackService
+  ) {}
+
+  async ngOnInit() {
+    // Ensure settings object exists
+    if (!this.settings) {
+      this.settings = {};
+    }
+
+    // Initialize mappings if not already set
+    if (!Array.isArray(this.settings.mappings)) {
+      this.settings.mappings = [];
+    }
+
+    // Normalize mappings in place (add missing ids, volumes, etc.)
+    this.settings.mappings = this.normalizeMappings(this.settings.mappings);
+    this.mappings = this.settings.mappings;
+
+    // Initialize other settings
+    this.masterVolume = this.settings.masterVolume ?? 100;
+    this.masterMuted = this.settings.masterMuted ?? false;
+    this.fadeDuration = this.settings.fadeDuration ?? 0.5;
+
+    // Sync master state with playback service
+    if (this.widgetId) {
+      const masterState = this.playbackService.getMasterState(this.widgetId);
+      // If this is a fresh widget, set the service state from settings
+      // Otherwise, use the service state (persists across tab switches)
+      if (masterState.volume === 100 && !masterState.muted) {
+        // Service has default values, use our settings
+        this.playbackService.setMasterVolume(this.widgetId, this.masterVolume);
+        if (this.masterMuted) {
+          this.playbackService.toggleMasterMute(this.widgetId);
+        }
+      } else {
+        // Service has existing values (from another tab switch), use those
+        this.masterVolume = masterState.volume;
+        this.masterMuted = masterState.muted;
+      }
+      this.playbackService.setFadeDuration(this.fadeDuration);
+    }
+
+    // Subscribe to playback state changes to update UI
+    this.stateSubscription = this.playbackService.stateChanges.subscribe(() => {
+      this.cdr.markForCheck();
+    });
+
+    // Load audio files from IndexedDB
+    await this.loadAudioFromIndexedDB();
+  }
+
+  private async loadAudioFromIndexedDB() {
+    if (!this.widgetId || this.audioLoaded) return;
+
+    try {
+      const filesByMapping = await this.audioStorage.getAudioFilesForWidget(this.widgetId);
+
+      for (const mapping of this.mappings) {
+        const mappingId = this.getMappingId(mapping);
+        const files = filesByMapping.get(mappingId);
+
+        if (files && files.length > 0) {
+          // Restore the file data URLs from IndexedDB
+          mapping.files = files.map(f => ({
+            fileName: f.fileName,
+            fileDataUrl: f.fileDataUrl
+          }));
+        }
+      }
+
+      this.audioLoaded = true;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error loading audio files from IndexedDB:', error);
+    }
+  }
+
+  private async saveAudioToIndexedDB(mapping: MusicMapping) {
+    if (!this.widgetId) return;
+
+    const mappingId = this.getMappingId(mapping);
+
+    try {
+      if (mapping.files && mapping.files.length > 0) {
+        // Only save files that have data URLs
+        const filesToSave = mapping.files.filter(f => f.fileDataUrl);
+        if (filesToSave.length > 0) {
+          await this.audioStorage.saveAudioFiles(this.widgetId, mappingId, filesToSave);
+        }
+      } else {
+        // Delete files for this mapping if none exist
+        await this.audioStorage.deleteAudioFilesForMapping(mappingId);
+      }
+    } catch (error) {
+      console.error('Error saving audio files to IndexedDB:', error);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['settings']) {
-      this.mappings = this.normalizeMappings(this.settings?.mappings || []);
-      this.masterVolume = this.settings?.masterVolume ?? 100;
-      this.masterMuted = this.settings?.masterMuted ?? false;
-      this.fadeDuration = this.settings?.fadeDuration ?? 0.5;
+    if (changes['settings'] && this.settings) {
+      if (!Array.isArray(this.settings.mappings)) {
+        this.settings.mappings = [];
+      }
+
+      // Check if any mappings need IDs generated
+      const needsIdGeneration = this.settings.mappings.some((m: MusicMapping) => !m.id);
+
+      this.settings.mappings = this.normalizeMappings(this.settings.mappings);
+      this.mappings = this.settings.mappings;
+      this.masterVolume = this.settings.masterVolume ?? 100;
+      this.masterMuted = this.settings.masterMuted ?? false;
+      this.fadeDuration = this.settings.fadeDuration ?? 0.5;
+
+      // Save any audio files that have data URLs to IndexedDB
+      // This handles when files are added via the settings dialog
+      this.saveAllAudioToIndexedDB();
+
+      // If we generated new IDs, emit settingsChange to save them to localStorage
+      // This ensures the IDs persist across page reloads
+      if (needsIdGeneration) {
+        // Use setTimeout to avoid emitting during change detection
+        setTimeout(() => this.settingsChange.emit(), 0);
+      }
+    }
+  }
+
+  private async saveAllAudioToIndexedDB() {
+    if (!this.widgetId) return;
+
+    for (const mapping of this.mappings) {
+      // Only save if mapping has files with data URLs
+      if (mapping.files?.some(f => f.fileDataUrl)) {
+        await this.saveAudioToIndexedDB(mapping);
+      }
     }
   }
 
@@ -461,34 +567,38 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private getMappingId(mapping: MusicMapping): string {
-    return mapping.id || mapping.key;
+    // Ensure mapping always has an id - generate one if missing
+    if (!mapping.id) {
+      mapping.id = this.generateUniqueId();
+    }
+    return mapping.id;
   }
 
   isPlaying(mapping: MusicMapping): boolean {
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    return state?.isPlaying ?? false;
+    if (!this.widgetId) return false;
+    return this.playbackService.isPlaying(this.widgetId, this.getMappingId(mapping));
   }
 
   isPaused(mapping: MusicMapping): boolean {
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    return state?.isPaused ?? false;
+    if (!this.widgetId) return false;
+    return this.playbackService.isPaused(this.widgetId, this.getMappingId(mapping));
   }
 
   getProgress(mapping: MusicMapping): number {
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    if (!state || !state.duration) return 0;
-    return (state.elapsed / state.duration) * 100;
+    if (!this.widgetId) return 0;
+    return this.playbackService.getProgress(this.widgetId, this.getMappingId(mapping));
   }
 
   getTimeDisplay(mapping: MusicMapping): string {
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    if (!state) return '--:--';
+    if (!this.widgetId) return '--:--';
+    const elapsed = this.playbackService.getElapsed(this.widgetId, this.getMappingId(mapping));
+    const duration = this.playbackService.getDuration(this.widgetId, this.getMappingId(mapping));
     const formatTime = (seconds: number): string => {
       const mins = Math.floor(seconds / 60);
       const secs = Math.floor(seconds % 60);
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
-    return `${formatTime(state.elapsed)}/${formatTime(state.duration)}`;
+    return `${formatTime(elapsed)}/${formatTime(duration)}`;
   }
 
   getTrackVolume(mapping: MusicMapping): number {
@@ -562,12 +672,13 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
     if (this.dragType === 'master') {
       this.masterVolume = Math.round(percentage);
       this.masterMuted = this.masterVolume === 0;
-      this.updateAllVolumes();
+      if (this.widgetId) {
+        this.playbackService.setMasterVolume(this.widgetId, this.masterVolume);
+      }
     } else if (this.dragMapping) {
       this.dragMapping.volume = Math.round(percentage);
-      const state = this.playbackStates.get(this.getMappingId(this.dragMapping));
-      if (state && state.audio) {
-        this.applyVolume(state, this.dragMapping);
+      if (this.widgetId) {
+        this.playbackService.setTrackVolume(this.widgetId, this.getMappingId(this.dragMapping), this.dragMapping.volume);
       }
     }
 
@@ -577,7 +688,9 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
 
   onMasterVolumeChange(): void {
     this.masterMuted = this.masterVolume === 0;
-    this.updateAllVolumes();
+    if (this.widgetId) {
+      this.playbackService.setMasterVolume(this.widgetId, this.masterVolume);
+    }
     this.saveSettings();
   }
 
@@ -589,314 +702,81 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
     } else {
       this.masterVolume = this.savedMasterVolume ?? 100;
     }
-    this.updateAllVolumes();
+    if (this.widgetId) {
+      this.playbackService.setMasterVolume(this.widgetId, this.masterVolume);
+    }
     this.saveSettings();
   }
   private savedMasterVolume: number = 100;
 
-  updateAllVolumes(): void {
-    this.playbackStates.forEach((state, id) => {
-      if (state && state.audio) {
-        const mapping = this.mappings.find(m => this.getMappingId(m) === id);
-        if (mapping) {
-          this.applyVolume(state, mapping);
-        }
-      }
-    });
-  }
-
   onTrackVolumeChange(mapping: MusicMapping): void {
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    if (state && state.audio) {
-      this.applyVolume(state, mapping);
+    if (this.widgetId) {
+      this.playbackService.setTrackVolume(this.widgetId, this.getMappingId(mapping), mapping.volume ?? 100);
     }
     this.saveSettings();
   }
 
-  private applyVolume(state: PlaybackState, mapping: MusicMapping): void {
-    if (!state || !state.audio) return;
-    const trackVolume = (mapping.volume ?? 100) / 100;
-    const masterVol = this.masterMuted ? 0 : this.masterVolume / 100;
-    state.audio.volume = trackVolume * masterVol;
-  }
-
   toggleLoop(mapping: MusicMapping): void {
     mapping.loop = !mapping.loop;
-    const state = this.playbackStates.get(this.getMappingId(mapping));
-    if (state && state.audio) {
-      state.audio.loop = mapping.loop;
+    if (this.widgetId) {
+      this.playbackService.toggleLoop(this.widgetId, this.getMappingId(mapping));
     }
     this.saveSettings();
   }
 
   togglePlay(mapping: MusicMapping): void {
+    if (!this.widgetId) return;
+
     if (this.isPaused(mapping)) {
-      this.resumeTrack(mapping);
+      this.playbackService.resume(this.widgetId, this.getMappingId(mapping));
     } else if (this.isPlaying(mapping)) {
-      this.pauseTrack(mapping);
+      this.playbackService.pause(this.widgetId, this.getMappingId(mapping));
     } else {
       this.playTrack(mapping);
     }
   }
 
   stopTrack(mapping: MusicMapping): void {
-    const id = this.getMappingId(mapping);
-    const state = this.playbackStates.get(id);
-    if (state) {
-      this.cleanupPlayback(state, id);
-    }
-  }
-
-  pauseTrack(mapping: MusicMapping): void {
-    const id = this.getMappingId(mapping);
-    const state = this.playbackStates.get(id);
-    if (!state || !state.audio) return;
-
-    if (this.fadeDuration > 0) {
-      this.fadeAudio(state, 0, () => {
-        state.audio!.pause();
-        state.isPlaying = false;
-        state.isPaused = true;
-        this.stopProgressTracking(id);
-      });
-    } else {
-      state.audio.pause();
-      state.isPlaying = false;
-      state.isPaused = true;
-      this.stopProgressTracking(id);
-    }
-  }
-
-  resumeTrack(mapping: MusicMapping): void {
-    const id = this.getMappingId(mapping);
-    const state = this.playbackStates.get(id);
-    if (!state || !state.audio) return;
-
-    this.applyVolume(state, mapping);
-    state.audio.play();
-    state.isPlaying = true;
-    state.isPaused = false;
-    this.startProgressTracking(id, state);
+    if (!this.widgetId) return;
+    this.playbackService.stop(this.widgetId, this.getMappingId(mapping));
   }
 
   playTrack(mapping: MusicMapping): void {
-    if (!mapping.files || mapping.files.length === 0) return;
+    if (!mapping.files || mapping.files.length === 0 || !this.widgetId) return;
 
-    if (!this.settings?.allowMultiple) {
-      this.stopAllSounds();
-    }
-
-    const id = this.getMappingId(mapping);
-    const existingState = this.playbackStates.get(id);
-    if (existingState) {
-      this.cleanupPlayback(existingState, id);
-    }
-
-    const state = this.setupPlaylist(mapping);
-    state.isPlaying = true;
-    state.isPaused = false;
-    this.playbackStates.set(id, state);
-    this.playNext(mapping, state);
-  }
-
-  private getShuffledPlayOrder(length: number): number[] {
-    const order = Array.from({ length }, (_, i) => i);
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    return order;
-  }
-
-  private setupPlaylist(mapping: MusicMapping): PlaybackState {
-    if (!mapping.files || mapping.files.length === 0) {
-      return {
-        currentIndex: 0,
-        audio: null,
-        isPlaying: false,
-        isPaused: false,
-        playlist: [],
-        playOrder: [],
-        progress: 0,
-        duration: 0,
-        elapsed: 0
-      };
-    }
-
-    const playlist = [...mapping.files];
-    const playOrder = mapping.randomOrder
-      ? this.getShuffledPlayOrder(playlist.length)
-      : Array.from({ length: playlist.length }, (_, i) => i);
-
-    return {
-      currentIndex: 0,
-      audio: null,
-      isPlaying: false,
-      isPaused: false,
-      playlist,
-      playOrder,
-      progress: 0,
-      duration: 0,
-      elapsed: 0
-    };
-  }
-
-  private playNext(mapping: MusicMapping, state: PlaybackState) {
-    if (!state.playlist.length) return;
-
-    const currentFile = state.playlist[state.playOrder[state.currentIndex]];
-
-    const audio = new Audio(currentFile.fileDataUrl);
-    audio.loop = mapping.loop ?? false;
-
-    const trackVolume = (mapping.volume ?? 100) / 100;
-    const masterVol = this.masterMuted ? 0 : this.masterVolume / 100;
-
-    if (this.fadeDuration > 0) {
-      audio.volume = 0;
-    } else {
-      audio.volume = trackVolume * masterVol;
-    }
-
-    audio.addEventListener('loadedmetadata', () => {
-      state.duration = audio.duration || 0;
-      state.elapsed = 0;
-    });
-
-    audio.addEventListener('ended', () => {
-      state.currentIndex++;
-
-      if (state.currentIndex >= state.playlist.length) {
-        if (mapping.loop) {
-          state.currentIndex = 0;
-          if (mapping.randomOrder) {
-            state.playOrder = this.getShuffledPlayOrder(state.playlist.length);
-          }
-          this.playNext(mapping, state);
-        } else {
-          state.isPlaying = false;
-          state.isPaused = false;
-          state.elapsed = 0;
-          this.cleanupPlayback(state, this.getMappingId(mapping));
-        }
-      } else {
-        this.playNext(mapping, state);
-      }
-    });
-
-    const startPlayback = () => {
-      audio.play();
-      state.audio = audio;
-      state.isPlaying = true;
-      state.isPaused = false;
-
-      if (this.fadeDuration > 0) {
-        this.fadeAudio(state, trackVolume * masterVol);
-      }
-
-      this.startProgressTracking(this.getMappingId(mapping), state);
-    };
-
-    startPlayback();
-  }
-
-  private fadeAudio(state: PlaybackState, targetVolume: number, callback?: () => void): void {
-    if (state.fadeTimeout) {
-      clearTimeout(state.fadeTimeout);
-    }
-
-    if (!state.audio || this.fadeDuration <= 0) {
-      if (state.audio) {
-        state.audio.volume = targetVolume;
-      }
-      callback?.();
-      return;
-    }
-
-    const startVolume = state.audio.volume;
-    const volumeDiff = targetVolume - startVolume;
-    const steps = 15;
-    const stepDuration = (this.fadeDuration * 1000) / steps;
-    const stepVolume = volumeDiff / steps;
-
-    let step = 0;
-
-    const fadeStep = () => {
-      step++;
-      if (state.audio) {
-        state.audio.volume = startVolume + (stepVolume * step);
-      }
-
-      if (step < steps) {
-        state.fadeTimeout = window.setTimeout(fadeStep, stepDuration);
-      } else {
-        if (state.audio) {
-          state.audio.volume = targetVolume;
-        }
-        callback?.();
-      }
-    };
-
-    fadeStep();
-  }
-
-  private startProgressTracking(key: string, state: PlaybackState): void {
-    this.stopProgressTracking(key);
-
-    const intervalId = window.setInterval(() => {
-      if (state.audio && !state.audio.paused && state.isPlaying) {
-        state.elapsed = state.audio.currentTime;
-      }
-    }, 100);
-
-    this.progressIntervals.set(key, intervalId);
-  }
-
-  private stopProgressTracking(key: string): void {
-    const intervalId = this.progressIntervals.get(key);
-    if (intervalId) {
-      clearInterval(intervalId);
-      this.progressIntervals.delete(key);
-    }
+    this.playbackService.play(
+      this.widgetId,
+      this.getMappingId(mapping),
+      mapping.files,
+      mapping.volume ?? 100,
+      mapping.loop ?? false,
+      mapping.randomOrder ?? false,
+      this.settings?.allowMultiple ?? false
+    );
   }
 
   stopAllSounds() {
-    this.playbackStates.forEach((state, key) => {
-      this.cleanupPlayback(state, key);
-    });
-    this.playbackStates.clear();
-  }
-
-  private cleanupPlayback(state: PlaybackState, key: string): void {
-    if (state.fadeTimeout) {
-      clearTimeout(state.fadeTimeout);
-    }
-
-    this.stopProgressTracking(key);
-
-    if (state.audio) {
-      state.audio.pause();
-      state.audio.currentTime = 0;
-      state.audio = null;
-    }
-
-    state.isPlaying = false;
-    state.isPaused = false;
-    state.elapsed = 0;
-
-    this.playbackStates.delete(key);
+    if (!this.widgetId) return;
+    this.playbackService.stopAllForWidget(this.widgetId);
   }
 
   private saveSettings(): void {
-    this.settingsChange.emit({
-      ...this.settings,
-      mappings: this.mappings,
-      masterVolume: this.masterVolume,
-      masterMuted: this.masterMuted
-    });
+    // Update settings in place to maintain parent reference
+    this.settings.mappings = this.mappings;
+    this.settings.masterVolume = this.masterVolume;
+    this.settings.masterMuted = this.masterMuted;
+    this.settings.fadeDuration = this.fadeDuration;
+
+    // Emit to trigger save to localStorage
+    this.settingsChange.emit();
   }
 
   ngOnDestroy() {
-    this.stopAllSounds();
+    // Unsubscribe from state changes to prevent memory leaks
+    if (this.stateSubscription) {
+      this.stateSubscription.unsubscribe();
+    }
+    // Note: We intentionally do NOT stop sounds here
+    // This allows audio to continue playing when switching tabs
   }
 }

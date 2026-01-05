@@ -22,8 +22,31 @@ export class WidgetStorageService {
 
   // New methods for tab support
   saveTabs(tabs: Tab[], activeTabId: string) {
-    localStorage.setItem(this.tabsKey, JSON.stringify(tabs));
-    localStorage.setItem(this.activeTabKey, activeTabId);
+    try {
+      // Clone tabs to avoid modifying the original
+      const tabsToSave = JSON.parse(JSON.stringify(tabs));
+
+      // Strip out large file data URLs from music widget mappings
+      // Audio file data is stored separately in IndexedDB via AudioStorageService
+      for (const tab of tabsToSave) {
+        for (const widget of tab.widgets) {
+          if (widget.type === 'MUSIC_WIDGET' && widget.settings?.mappings) {
+            widget.settings.mappings = widget.settings.mappings.map((mapping: any) => ({
+              ...mapping,
+              files: mapping.files?.map((file: any) => ({
+                fileName: file.fileName
+                // fileDataUrl is stored in IndexedDB, not localStorage
+              }))
+            }));
+          }
+        }
+      }
+
+      localStorage.setItem(this.tabsKey, JSON.stringify(tabsToSave));
+      localStorage.setItem(this.activeTabKey, activeTabId);
+    } catch (error) {
+      console.error('Error saving tabs to localStorage:', error);
+    }
   }
 
   loadTabs(): { tabs: Tab[], activeTabId: string } {
