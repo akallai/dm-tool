@@ -301,28 +301,6 @@ export class WidgetContainerComponent {
             }
           ]
         };
-      case 'DAYTIME_TRACKER':
-        return {
-          title: 'Daytime Tracker Settings',
-          fields: [
-            {
-              key: 'format24h',
-              type: 'checkbox',
-              label: 'Use 24-hour format'
-            },
-            {
-              key: 'timeScale',
-              type: 'select',
-              label: 'Time Scale',
-              options: [
-                { value: 1, label: 'Real time' },
-                { value: 2, label: '2x speed' },
-                { value: 5, label: '5x speed' },
-                { value: 10, label: '10x speed' }
-              ]
-            }
-          ]
-        };
       case 'WIKI_WIDGET':
         return {
           title: 'Wiki Settings',
