@@ -73,8 +73,8 @@
 
 <!-- Recursive template for hierarchical display -->
 <ng-template #recursiveList let-article="article" let-level="level">
-  <li [style.paddingLeft.px]="level * 16" [class.active]="article.id === currentArticle?.id">
-    <span (click)="selectArticle(article)">{{ article.title }}</span>
+  <li [style.paddingLeft.px]="level * 16" [class.active]="article.id === currentArticle?.id" (click)="selectArticle(article)">
+    <span>{{ article.title }}</span>
     <button mat-icon-button color="warn" (click)="deleteArticle(article, $event)">
       <mat-icon>delete</mat-icon>
     </button>

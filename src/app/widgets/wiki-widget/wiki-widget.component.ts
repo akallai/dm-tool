@@ -289,8 +289,8 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentArticle = article;
     this.isEditing = false;
     this.saveUIState();
+    // Trigger rendering of the article content
     this.updateRenderedContent();
-    this.cdr.markForCheck();
   }
 
   updateArticle() {
