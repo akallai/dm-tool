@@ -1,5 +1,5 @@
 // src/app/widgets/wiki-widget/wiki-widget.component.ts
-import { Component, Input, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -18,6 +18,9 @@ export interface WikiArticle {
 
 export interface WikiData {
   articles: WikiArticle[];
+  currentArticleId?: string;
+  isEditing?: boolean;
+  sidebarCollapsed?: boolean;
 }
 
 @Component({
@@ -36,6 +39,7 @@ export interface WikiData {
 })
 export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() settings: any;
+  @Output() settingsChange = new EventEmitter<void>();
   wikiData: WikiData = { articles: [] };
   currentArticle: WikiArticle | null = null;
   isEditing: boolean = false;
@@ -64,11 +68,39 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     if (this.settings && this.settings.wikiData) {
       this.wikiData = this.settings.wikiData;
-      if (this.wikiData.articles.length > 0) {
+
+      // Restore UI state from wikiData
+      this.sidebarCollapsed = this.wikiData.sidebarCollapsed ?? false;
+      this.isEditing = this.wikiData.isEditing ?? false;
+
+      // Restore the currently open article by ID
+      if (this.wikiData.currentArticleId) {
+        const found = this.findArticleById(this.wikiData.articles, this.wikiData.currentArticleId);
+        if (found) {
+          this.currentArticle = found;
+        } else if (this.wikiData.articles.length > 0) {
+          this.currentArticle = this.wikiData.articles[0];
+        }
+      } else if (this.wikiData.articles.length > 0) {
         this.currentArticle = this.wikiData.articles[0];
       }
     }
     this.updateRenderedContent();
+  }
+
+  private findArticleById(articles: WikiArticle[], id: string): WikiArticle | null {
+    for (const article of articles) {
+      if (article.id === id) {
+        return article;
+      }
+      if (article.children) {
+        const found = this.findArticleById(article.children, id);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
   }
 
   async openExistingWiki() {
@@ -204,7 +236,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     this.wikiData.articles.push(newArticle);
     this.currentArticle = newArticle;
     this.isEditing = true;
-    this.updateSettings();
+    this.saveUIState();
     this.cdr.markForCheck();
   }
 
@@ -223,7 +255,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     parent.children.push(newArticle);
     this.currentArticle = newArticle;
     this.isEditing = true;
-    this.updateSettings();
+    this.saveUIState();
     this.cdr.markForCheck();
   }
 
@@ -236,7 +268,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.currentArticle?.id === article.id) {
       this.currentArticle = this.wikiData.articles.length ? this.wikiData.articles[0] : null;
     }
-    this.updateSettings();
+    this.saveUIState();
     this.updateRenderedContent();
     this.cdr.markForCheck();
   }
@@ -256,6 +288,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   selectArticle(article: WikiArticle) {
     this.currentArticle = article;
     this.isEditing = false;
+    this.saveUIState();
     this.updateRenderedContent();
     this.cdr.markForCheck();
   }
@@ -271,11 +304,13 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
   updateSettings() {
     if (this.settings) {
       this.settings.wikiData = this.wikiData;
+      this.settingsChange.emit();
     }
   }
 
   toggleEditing() {
     this.isEditing = !this.isEditing;
+    this.saveUIState();
     if (!this.isEditing) {
       this.updateRenderedContent();
     }
@@ -284,7 +319,16 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, OnDestroy {
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.saveUIState();
     this.cdr.markForCheck();
+  }
+
+  // Save UI state (current article, editing mode, sidebar state) to settings
+  private saveUIState() {
+    this.wikiData.currentArticleId = this.currentArticle?.id;
+    this.wikiData.isEditing = this.isEditing;
+    this.wikiData.sidebarCollapsed = this.sidebarCollapsed;
+    this.updateSettings();
   }
 
   // Convert article content to HTML with wiki links
