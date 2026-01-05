@@ -72,6 +72,10 @@ export class WidgetContainerComponent {
     }
   }
 
+  get hasSettings(): boolean {
+    return !!this.getWidgetSettingsConfig(this.widgetData.type);
+  }
+
   getTitle(type: WidgetType): string {
     if (this.widgetData.settings?.title) {
       return this.widgetData.settings.title;

@@ -16,7 +16,7 @@
       <button mat-icon-button (click)="toggleMaximize($event)">
         <mat-icon>{{ isMaximized ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
-      <button mat-icon-button (click)="openSettings($event)">
+      <button mat-icon-button (click)="openSettings($event)" *ngIf="hasSettings">
         <mat-icon>settings</mat-icon>
       </button>
       <button mat-icon-button (click)="close($event)">
