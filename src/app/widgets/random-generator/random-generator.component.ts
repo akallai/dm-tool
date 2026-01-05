@@ -18,55 +18,59 @@ interface RandomMapping {
   imports: [CommonModule, MatButtonModule, MatIconModule, MatExpansionModule]
 })
 export class RandomGeneratorComponent implements OnInit, OnChanges {
-  // Use a private settings object so that we can update it in place.
-  private _settings: any = {};
-  
-  @Input() set settings(value: any) {
-    if (value && typeof value === 'object') {
-      // If _settings is empty, initialize it with the new value.
-      if (!this._settings || Object.keys(this._settings).length === 0) {
-        this._settings = value;
-      } else {
-        Object.assign(this._settings, value);
-      }
-    } else {
-      this._settings = {};
-    }
-    // Ensure that _settings has a mappings array.
-    if (!Array.isArray(this._settings.mappings)) {
-      this._settings.mappings = [];
-    }
-    this.mappings = this._settings.mappings;
+  // Keep the original settings reference from parent to update directly
+  @Input() settings: any = {};
 
-    // Trigger auto-save whenever settings are updated (e.g. when a new mapping is added)
-    this.scheduleAutoSave();
-  }
-  get settings() {
-    return this._settings;
-  }
-  
   // Emit updated settings so the parent can update its reference.
-  @Output() settingsChange = new EventEmitter<any>();
+  @Output() settingsChange = new EventEmitter<void>();
 
   mappings: RandomMapping[] = [];
   lastResult: string = '';
   lastKey: string = '';
+
+  // Flag to prevent emitting during initialization
+  private initialized: boolean = false;
 
   // File handle for the JSON file (the file name isn't displayed).
   fileHandle: FileSystemFileHandle | null = null;
 
   saveTimeout: any;
 
+  // Check if data has been loaded (either from file or localStorage)
+  get hasLoadedData(): boolean {
+    return this.mappings && this.mappings.length > 0;
+  }
+
   ngOnInit() {
-    this.mappings = this.settings?.mappings || [];
-    
+    // Ensure settings object exists
+    if (!this.settings) {
+      this.settings = {};
+    }
+
+    // Ensure mappings array exists
+    if (!Array.isArray(this.settings.mappings)) {
+      this.settings.mappings = [];
+    }
+    this.mappings = this.settings.mappings;
+
     // Initialize useWeightedSelection if not already set
     if (this.settings.useWeightedSelection === undefined) {
       this.settings.useWeightedSelection = true; // Enable by default
     }
-    
+
+    // Restore last result and key from settings
+    if (this.settings.lastResult) {
+      this.lastResult = this.settings.lastResult;
+    }
+    if (this.settings.lastKey) {
+      this.lastKey = this.settings.lastKey;
+    }
+
     // Apply categories from mappingCategories if available
     this.applyCategoriesFromSettings();
+
+    // Mark as initialized to enable auto-save emissions
+    this.initialized = true;
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -176,13 +180,17 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
       }
       
       this.lastKey = mapping.key;
-      
+
+      // Save to settings for persistence
+      this.settings.lastResult = this.lastResult;
+      this.settings.lastKey = this.lastKey;
+
       // Trigger an auto-save after changes
       this.scheduleAutoSave();
     }
   }
 
-  // Opens an existing JSON file and updates _settings in place.
+  // Opens an existing JSON file and updates settings in place.
   async openExistingFile() {
     try {
       if (window.showOpenFilePicker) {
@@ -196,16 +204,19 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
         const file = await handle.getFile();
         const text = await file.text();
         const data = JSON.parse(text);
-        // Update _settings in place so that parent's reference isn't replaced.
-        Object.assign(this._settings, data);
-        if (!Array.isArray(this._settings.mappings)) {
-          this._settings.mappings = [];
+
+        // Update settings in place so parent's reference is updated
+        Object.assign(this.settings, data);
+        if (!Array.isArray(this.settings.mappings)) {
+          this.settings.mappings = [];
         }
-        this.mappings = this._settings.mappings;
+        this.mappings = this.settings.mappings;
+
         // Apply categories if they exist
         this.applyCategoriesFromSettings();
-        // Emit the updated settings so the parent can update its widgetData.settings.
-        this.settingsChange.emit(this._settings);
+
+        // Emit to trigger save to localStorage
+        this.settingsChange.emit();
       } else {
         alert('File System Access API is not supported in this browser.');
       }
@@ -226,15 +237,18 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
           }]
         });
         this.fileHandle = handle;
-        // Initialize default settings.
-        this._settings = { 
+
+        // Clear and initialize settings in place (keeping parent reference)
+        Object.keys(this.settings).forEach(key => delete this.settings[key]);
+        Object.assign(this.settings, {
           mappings: [],
           mappingCategories: [],
-          useWeightedSelection: true // Enable by default for new files
-        };
-        this.mappings = this._settings.mappings;
-        // Emit new settings.
-        this.settingsChange.emit(this._settings);
+          useWeightedSelection: true
+        });
+        this.mappings = this.settings.mappings;
+
+        // Emit to trigger save to localStorage
+        this.settingsChange.emit();
         this.scheduleAutoSave();
       } else {
         alert('File System Access API is not supported in this browser.');
@@ -250,41 +264,41 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
       try {
         // Make sure we save the categories
         this.saveCategoriesInSettings();
-        
+
         const writable = await this.fileHandle.createWritable();
-        await writable.write(JSON.stringify(this._settings, null, 2));
+        await writable.write(JSON.stringify(this.settings, null, 2));
         await writable.close();
       } catch (error) {
         console.error('Error saving file:', error);
       }
     }
   }
-  
+
   // Save the categories from mappings to the mappingCategories array in settings
   private saveCategoriesInSettings() {
-    if (!this._settings.mappingCategories) {
-      this._settings.mappingCategories = [];
+    if (!this.settings.mappingCategories) {
+      this.settings.mappingCategories = [];
     }
-    
+
     // Update or add categories based on mapping.category
     this.mappings.forEach(mapping => {
-      const existingCategoryIndex = this._settings.mappingCategories.findIndex(
+      const existingCategoryIndex = this.settings.mappingCategories.findIndex(
         (c: any) => c.key === mapping.key
       );
-      
+
       if (mapping.category) {
         // If category exists, add or update it
         if (existingCategoryIndex >= 0) {
-          this._settings.mappingCategories[existingCategoryIndex].value = mapping.category;
+          this.settings.mappingCategories[existingCategoryIndex].value = mapping.category;
         } else {
-          this._settings.mappingCategories.push({
+          this.settings.mappingCategories.push({
             key: mapping.key,
             value: mapping.category
           });
         }
       } else if (existingCategoryIndex >= 0) {
         // If mapping has no category but there's an entry in mappingCategories, remove it
-        this._settings.mappingCategories.splice(existingCategoryIndex, 1);
+        this.settings.mappingCategories.splice(existingCategoryIndex, 1);
       }
     });
   }
@@ -296,6 +310,10 @@ export class RandomGeneratorComponent implements OnInit, OnChanges {
     }
     this.saveTimeout = setTimeout(() => {
       this.saveFile();
+      // Emit settings change to persist to localStorage (only after init)
+      if (this.initialized) {
+        this.settingsChange.emit();
+      }
     }, 1000);
   }
 }

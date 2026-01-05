@@ -1,5 +1,5 @@
 <div class="random-generator">
-  <ng-container *ngIf="!fileHandle; else loadedState">
+  <ng-container *ngIf="!hasLoadedData; else loadedState">
     <div class="empty-state">
       <button mat-stroked-button color="primary" (click)="openExistingFile()">
         Open Random Generator File
