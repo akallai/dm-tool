@@ -74,10 +74,6 @@ export interface MusicMapping {
                [class.disabled]="!mapping.files || mapping.files.length === 0"
                (mousedown)="startTrackVolumeDrag($event, mapping)"
                (touchstart)="startTrackVolumeDrag($event, mapping)">
-            <!-- VU Meter effect -->
-            <div class="vu-meter" *ngIf="isPlaying(mapping)">
-              <div class="vu-bar" [style.height.%]="getTrackVolume(mapping)"></div>
-            </div>
 
             <div class="volume-fill" [style.height.%]="mapping.volume"></div>
           </div>
@@ -115,6 +111,40 @@ export interface MusicMapping {
               matTooltip="Stop"
             >
               <mat-icon>stop_circle</mat-icon>
+            </button>
+
+            <!-- Shuffle button -->
+            <button
+              mat-icon-button
+              (click)="toggleShuffle(mapping)"
+              [disabled]="!mapping.files || mapping.files.length <= 1"
+              class="action-btn shuffle-btn"
+              [class.active-shuffle]="mapping.randomOrder"
+              matTooltip="Shuffle"
+            >
+              <mat-icon>shuffle</mat-icon>
+            </button>
+
+            <!-- Previous button -->
+            <button
+              mat-icon-button
+              (click)="previousTrack(mapping)"
+              [disabled]="!mapping.files || mapping.files.length <= 1"
+              class="action-btn"
+              matTooltip="Previous"
+            >
+              <mat-icon>skip_previous</mat-icon>
+            </button>
+
+            <!-- Next button -->
+            <button
+              mat-icon-button
+              (click)="nextTrack(mapping)"
+              [disabled]="!mapping.files || mapping.files.length <= 1"
+              class="action-btn"
+              matTooltip="Next"
+            >
+              <mat-icon>skip_next</mat-icon>
             </button>
           </div>
 
@@ -250,23 +280,6 @@ export interface MusicMapping {
       transition: none;
     }
 
-    /* VU Meter LED effect */
-    .vu-meter {
-      position: absolute;
-      left: 2px;
-      bottom: 0;
-      width: 3px;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-    }
-
-    .vu-bar {
-      width: 100%;
-      position: absolute;
-      bottom: 0;
-      background: linear-gradient(to top, var(--accent-color) 60%, var(--yellow-color) 80%, var(--danger-color) 95%);
-      box-shadow: 0 0 8px var(--accent-color);
-    }
 
     /* Actions */
     .channel-actions {
@@ -300,6 +313,15 @@ export interface MusicMapping {
       border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
+    .action-btn:disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+    }
+
+    .action-btn:disabled mat-icon {
+      color: var(--text-muted) !important;
+    }
+
     /* Active States */
     .active {
       background: rgba(244, 67, 54, 0.2) !important;
@@ -325,6 +347,12 @@ export interface MusicMapping {
       border-color: var(--info-color) !important;
     }
     .active-loop mat-icon { color: var(--info-color) !important; }
+
+    .active-shuffle {
+      background: rgba(156, 39, 176, 0.1) !important;
+      border-color: #9c27b0 !important;
+    }
+    .active-shuffle mat-icon { color: #9c27b0 !important; }
 
     /* Channel Value Display */
     .channel-value {
@@ -722,6 +750,24 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.playbackService.toggleLoop(this.widgetId, this.getMappingId(mapping));
     }
     this.saveSettings();
+  }
+
+  toggleShuffle(mapping: MusicMapping): void {
+    mapping.randomOrder = !mapping.randomOrder;
+    if (this.widgetId) {
+      this.playbackService.toggleShuffle(this.widgetId, this.getMappingId(mapping));
+    }
+    this.saveSettings();
+  }
+
+  nextTrack(mapping: MusicMapping): void {
+    if (!this.widgetId) return;
+    this.playbackService.next(this.widgetId, this.getMappingId(mapping));
+  }
+
+  previousTrack(mapping: MusicMapping): void {
+    if (!this.widgetId) return;
+    this.playbackService.previous(this.widgetId, this.getMappingId(mapping));
   }
 
   togglePlay(mapping: MusicMapping): void {

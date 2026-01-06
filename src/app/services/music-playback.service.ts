@@ -236,6 +236,79 @@ export class MusicPlaybackService {
     }
   }
 
+  toggleShuffle(widgetId: string, mappingId: string): void {
+    const key = this.getKey(widgetId, mappingId);
+    const state = this.playbackStates.get(key);
+    if (state) {
+      state.randomOrder = !state.randomOrder;
+      // Regenerate play order if shuffling
+      if (state.randomOrder) {
+        state.playOrder = this.getShuffledPlayOrder(state.playlist.length);
+      } else {
+        state.playOrder = Array.from({ length: state.playlist.length }, (_, i) => i);
+      }
+      this.notifyChange();
+    }
+  }
+
+  next(widgetId: string, mappingId: string): void {
+    const key = this.getKey(widgetId, mappingId);
+    const state = this.playbackStates.get(key);
+    if (!state || state.playlist.length <= 1) return;
+
+    // Stop current audio
+    if (state.audio) {
+      state.audio.pause();
+      state.audio.currentTime = 0;
+    }
+
+    // Move to next track
+    state.currentIndex++;
+    if (state.currentIndex >= state.playlist.length) {
+      state.currentIndex = 0;
+      // Reshuffle if at end and random order is enabled
+      if (state.randomOrder) {
+        state.playOrder = this.getShuffledPlayOrder(state.playlist.length);
+      }
+    }
+
+    // Play next track if currently playing or paused
+    if (state.isPlaying || state.isPaused) {
+      this.playNext(state);
+    }
+  }
+
+  previous(widgetId: string, mappingId: string): void {
+    const key = this.getKey(widgetId, mappingId);
+    const state = this.playbackStates.get(key);
+    if (!state || state.playlist.length <= 1) return;
+
+    // If more than 3 seconds into the track, restart it instead of going to previous
+    if (state.audio && state.audio.currentTime > 3) {
+      state.audio.currentTime = 0;
+      state.elapsed = 0;
+      this.notifyChange();
+      return;
+    }
+
+    // Stop current audio
+    if (state.audio) {
+      state.audio.pause();
+      state.audio.currentTime = 0;
+    }
+
+    // Move to previous track
+    state.currentIndex--;
+    if (state.currentIndex < 0) {
+      state.currentIndex = state.playlist.length - 1;
+    }
+
+    // Play previous track if currently playing or paused
+    if (state.isPlaying || state.isPaused) {
+      this.playNext(state);
+    }
+  }
+
   private updateAllVolumesForWidget(widgetId: string): void {
     this.playbackStates.forEach((state) => {
       if (state.widgetId === widgetId && state.audio) {
