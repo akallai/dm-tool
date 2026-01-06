@@ -46,12 +46,9 @@ export class WorkspaceComponent implements OnInit {
   tabs: Tab[] = [];
   activeTabId: string = '';
   backgrounds: string[] = [
-    '/dm-tool/backgrounds/paper.webp',
-    '/dm-tool/backgrounds/cyberpunk.webp',
-    '/dm-tool/backgrounds/dragon_battle.webp',
-    '/dm-tool/backgrounds/peaceful_valley.webp',
-    '/dm-tool/backgrounds/space.webp',
-    '/dm-tool/backgrounds/postapocalyptic.webp'
+    '/dm-tool/backgrounds/glass.png',
+    '/dm-tool/backgrounds/glass_dragon.png',
+    '/dm-tool/backgrounds/glass_zombie.png'
   ];
   currentBackgroundIndex: number = 0;
   editingTabId: string | null = null;

@@ -97,12 +97,9 @@ export interface BackgroundOption {
 })
 export class BackgroundSelectorDialogComponent {
   backgrounds: BackgroundOption[] = [
-    { name: 'Paper', path: '/dm-tool/backgrounds/paper.webp' },
-    { name: 'Cyberpunk', path: '/dm-tool/backgrounds/cyberpunk.webp' },
-    { name: 'Dragon Battle', path: '/dm-tool/backgrounds/dragon_battle.webp' },
-    { name: 'Peaceful Valley', path: '/dm-tool/backgrounds/peaceful_valley.webp' },
-    { name: 'Space', path: '/dm-tool/backgrounds/space.webp' },
-    { name: 'Post-Apocalyptic', path: '/dm-tool/backgrounds/postapocalyptic.webp' }
+    { name: 'Glass', path: '/dm-tool/backgrounds/glass.png' },
+    { name: 'Glass Dragon', path: '/dm-tool/backgrounds/glass_dragon.png' },
+    { name: 'Glass Zombie', path: '/dm-tool/backgrounds/glass_zombie.png' }
   ];
 
   selectedIndex: number = 0;
