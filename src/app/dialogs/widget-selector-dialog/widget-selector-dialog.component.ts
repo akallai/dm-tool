@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT';
+export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP';
 
 interface WidgetOption {
   type: WidgetType;
@@ -255,7 +255,8 @@ export class WidgetSelectorDialogComponent {
     { type: 'WIKI_WIDGET', label: 'Wiki', icon: 'wiki.png', description: 'Knowledge base' },
     { type: 'COMBAT_TRACKER', label: 'Combat Tracker', icon: 'combat.png', description: 'Battle manager' },
     { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'moon.png', description: 'Time of day' },
-    { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI assistant' }
+    { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI assistant' },
+    { type: 'HEX_MAP', label: 'Hex Map', icon: 'hex.svg', description: 'Hex grid map' }
   ];
 
 

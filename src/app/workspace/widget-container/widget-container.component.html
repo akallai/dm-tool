@@ -37,6 +37,7 @@
       <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
       <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings"></app-daytime-tracker>
       <app-llm-chat *ngSwitchCase="'LLM_CHAT'" [settings]="widgetData.settings"></app-llm-chat>
+      <app-hex-map *ngSwitchCase="'HEX_MAP'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-hex-map>
     </ng-container>
   </div>
 </div>

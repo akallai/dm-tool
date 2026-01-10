@@ -18,6 +18,7 @@ import { ResizableDirective } from './resizable.directive';
 import { SettingsService } from '../../settings/services/settings.service';
 import { SettingsConfig } from '../../settings/types/settings.types';
 import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
+import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
 
 
 @Component({
@@ -39,7 +40,8 @@ import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
     CombatTrackerComponent,
     DaytimeTrackerComponent,
     ResizableDirective,
-    LlmChatComponent
+    LlmChatComponent,
+    HexMapComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -89,7 +91,8 @@ export class WidgetContainerComponent {
       'WIKI_WIDGET': 'Wiki',
       'COMBAT_TRACKER': 'Combat Tracker',
       'DAYTIME_TRACKER': 'Daytime Tracker',
-      'LLM_CHAT': 'LLM Chat'
+      'LLM_CHAT': 'LLM Chat',
+      'HEX_MAP': 'Hex Map'
     };
     return titles[type] || 'Widget';
   }
@@ -359,6 +362,42 @@ export class WidgetContainerComponent {
               placeholder: 'Enter your prompt here',
               required: true,
               defaultValue: 'You are an very experience DM. I\'m running a mutant year zero campaign. My current campaign notes include details about people, locations, scenes and more. I\'m looking for fresh ideas to enhance the story. Please help me the during my dm session, which I am currently holding, with questions where i might need inspiration or have other questions.'
+            }
+          ]
+        };
+      case 'HEX_MAP':
+        return {
+          title: 'Hex Map Settings',
+          fields: [
+            {
+              key: 'gridWidth',
+              type: 'number',
+              label: 'Grid Width (columns)',
+              defaultValue: 10
+            },
+            {
+              key: 'gridHeight',
+              type: 'number',
+              label: 'Grid Height (rows)',
+              defaultValue: 8
+            },
+            {
+              key: 'hexSize',
+              type: 'number',
+              label: 'Hex Size (pixels)',
+              defaultValue: 30
+            },
+            {
+              key: 'defaultColor',
+              type: 'text',
+              label: 'Default Hex Color',
+              placeholder: '#374151',
+              defaultValue: '#374151'
+            },
+            {
+              key: 'showCoordinates',
+              type: 'checkbox',
+              label: 'Show coordinates in empty hexes'
             }
           ]
         };
