@@ -38,6 +38,7 @@
       <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings"></app-daytime-tracker>
       <app-llm-chat *ngSwitchCase="'LLM_CHAT'" [settings]="widgetData.settings"></app-llm-chat>
       <app-hex-map *ngSwitchCase="'HEX_MAP'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-hex-map>
+      <app-name-generator *ngSwitchCase="'NAME_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-name-generator>
     </ng-container>
   </div>
 </div>

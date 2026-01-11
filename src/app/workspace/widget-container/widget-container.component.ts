@@ -19,6 +19,7 @@ import { SettingsService } from '../../settings/services/settings.service';
 import { SettingsConfig } from '../../settings/types/settings.types';
 import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
 import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
+import { NameGeneratorComponent } from '../../widgets/name-generator/name-generator.component';
 
 
 @Component({
@@ -41,7 +42,8 @@ import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
     DaytimeTrackerComponent,
     ResizableDirective,
     LlmChatComponent,
-    HexMapComponent
+    HexMapComponent,
+    NameGeneratorComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -92,7 +94,8 @@ export class WidgetContainerComponent {
       'COMBAT_TRACKER': 'Combat Tracker',
       'DAYTIME_TRACKER': 'Daytime Tracker',
       'LLM_CHAT': 'LLM Chat',
-      'HEX_MAP': 'Hex Map'
+      'HEX_MAP': 'Hex Map',
+      'NAME_GENERATOR': 'Name Generator'
     };
     return titles[type] || 'Widget';
   }

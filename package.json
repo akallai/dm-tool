@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^19.1.0",
     "@angular/platform-browser-dynamic": "^19.1.0",
     "@angular/router": "^19.1.0",
+    "@xaroth8088/random-names": "^1.1.2",
     "honeycomb-grid": "^4.1.5",
     "marked": "^15.0.7",
     "pdfjs-dist": "^5.4.530",
