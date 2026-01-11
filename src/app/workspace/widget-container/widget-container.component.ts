@@ -20,6 +20,7 @@ import { SettingsConfig } from '../../settings/types/settings.types';
 import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
 import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
 import { NameGeneratorComponent } from '../../widgets/name-generator/name-generator.component';
+import { MusicPlaybackService } from '../../services/music-playback.service';
 
 
 @Component({
@@ -62,7 +63,8 @@ export class WidgetContainerComponent {
 
   constructor(
     private settingsService: SettingsService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private musicPlaybackService: MusicPlaybackService
   ) {}
 
   @HostListener('window:resize', ['$event'])
@@ -515,6 +517,10 @@ export class WidgetContainerComponent {
 
   close(event: MouseEvent) {
     event.stopPropagation();
+    // Stop music playback when explicitly closing a music widget
+    if (this.widgetData.type === 'MUSIC_WIDGET') {
+      this.musicPlaybackService.stopAllForWidget(this.widgetData.id);
+    }
     this.closeEvent.emit();
   }
 
