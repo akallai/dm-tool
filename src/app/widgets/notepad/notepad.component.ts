@@ -2,7 +2,7 @@
 import { Component, Input, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { debounce } from 'lodash';
+import { debounce } from '../../utils/debounce';
 
 @Component({
   selector: 'app-notepad',

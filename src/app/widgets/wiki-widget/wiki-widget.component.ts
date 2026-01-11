@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { marked } from 'marked';
 import { ScrollingModule } from '@angular/cdk/scrolling';
-import { debounce } from 'lodash';
+import { debounce } from '../../utils/debounce';
 
 export interface WikiArticle {
   id: string;

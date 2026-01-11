@@ -1,0 +1,1 @@
+Commit all staged and unstaged changes (in a single commit) and give a meaningful commit message

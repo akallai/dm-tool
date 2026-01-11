@@ -1,0 +1,1 @@
+Review my code changes before committing. Examine unstaged changes first, then staged changes if none found. Provide feedback on code quality, best practices, and potential issues following the review criteria in the code-review agent.
