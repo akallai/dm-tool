@@ -49,6 +49,8 @@ All widgets follow this pattern:
 - `COMBAT_TRACKER`: Initiative and HP tracking (includes Mutant Year Zero support)
 - `DAYTIME_TRACKER`: Visual time progression tracking
 - `LLM_CHAT`: AI chat integration with OpenAI API
+- `HEX_MAP`: SVG-based hex grid map with paint, select, and path drawing modes (uses honeycomb-grid)
+- `NAME_GENERATOR`: Random name generator with fantasy and real-world culture presets (uses @xaroth8088/random-names)
 
 ### Data Persistence
 - All widget data stored in localStorage
@@ -63,6 +65,9 @@ All widgets follow this pattern:
 - Marked for Markdown parsing
 - RxJS for reactive state management
 - Karma/Jasmine for testing
+- honeycomb-grid for hex map calculations
+- @xaroth8088/random-names for name generation
+- pdfjs-dist for PDF rendering
 
 ### Browser Requirements
 - File System Access API (for file operations)
