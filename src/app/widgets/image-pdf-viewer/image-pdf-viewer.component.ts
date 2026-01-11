@@ -1,12 +1,14 @@
-import { Component, Input, ElementRef, ViewChild, OnInit, OnDestroy, Output, EventEmitter, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import { Component, Input, ElementRef, ViewChild, OnInit, OnDestroy, Output, EventEmitter, ChangeDetectorRef, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
 import { FileStorageService } from '../../services/file-storage.service';
 import * as pdfjsLib from 'pdfjs-dist';
+import { TextItem } from 'pdfjs-dist/types/src/display/api';
 
 // Set up PDF.js worker - served from public folder
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.mjs';
@@ -16,6 +18,12 @@ interface OutlineItem {
   dest: any;
   items: OutlineItem[];
   expanded?: boolean;
+}
+
+interface SearchMatch {
+  pageNum: number;
+  index: number;
+  text: string;
 }
 
 @Component({
@@ -71,8 +79,14 @@ interface OutlineItem {
           <div *ngFor="let page of pages; let i = index"
                class="page-wrapper"
                [attr.data-page]="i + 1"
+               [class.has-match]="pageHasMatch(i + 1)"
                #pageWrapper>
-            <canvas [id]="'pdf-page-' + (i + 1)" class="pdf-canvas"></canvas>
+            <div class="page-container">
+              <canvas [id]="'pdf-page-' + (i + 1)" class="pdf-canvas"></canvas>
+              <div *ngIf="pageHasMatch(i + 1) && showSearch" class="match-indicator">
+                {{ getPageMatchCount(i + 1) }} match{{ getPageMatchCount(i + 1) > 1 ? 'es' : '' }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -88,6 +102,16 @@ interface OutlineItem {
                   matTooltip="Table of Contents">
             <mat-icon>menu_book</mat-icon>
           </button>
+
+          <!-- Search Button -->
+          <button mat-icon-button
+                  (click)="toggleSearch()"
+                  [class.active]="showSearch"
+                  matTooltip="Search (Ctrl+F)">
+            <mat-icon>search</mat-icon>
+          </button>
+
+          <span class="separator">|</span>
 
           <!-- Page Navigation -->
           <button mat-icon-button (click)="previousPage()" [disabled]="currentPage <= 1">
@@ -123,6 +147,32 @@ interface OutlineItem {
           <span class="separator">|</span>
         </ng-container>
         <button mat-button (click)="clearFile()">Clear</button>
+      </div>
+
+      <!-- Search Bar -->
+      <div *ngIf="showSearch && pdfDoc" class="search-bar">
+        <input
+          #searchInput
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+          (keydown.enter)="nextMatch()"
+          (keydown.escape)="closeSearch()"
+          placeholder="Search in document..."
+          class="search-input"
+        />
+        <span class="match-count" *ngIf="searchQuery">
+          {{ pagesWithMatches.length > 0 ? (getCurrentPageMatchIndex() + 1) + '/' + pagesWithMatches.length + ' pages' : 'No matches' }}
+        </span>
+        <button mat-icon-button (click)="previousMatch()" [disabled]="pagesWithMatches.length === 0" matTooltip="Previous page">
+          <mat-icon>keyboard_arrow_up</mat-icon>
+        </button>
+        <button mat-icon-button (click)="nextMatch()" [disabled]="pagesWithMatches.length === 0" matTooltip="Next page">
+          <mat-icon>keyboard_arrow_down</mat-icon>
+        </button>
+        <button mat-icon-button (click)="closeSearch()" matTooltip="Close">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
     </div>
 
@@ -238,11 +288,31 @@ interface OutlineItem {
       display: flex;
       justify-content: center;
     }
+    .page-container {
+      position: relative;
+      display: inline-block;
+    }
     .pdf-canvas {
-      max-width: 100%;
-      height: auto;
+      display: block;
       box-shadow: 0 2px 10px rgba(0,0,0,0.3);
       background: white;
+    }
+    .page-wrapper.has-match .page-container {
+      outline: 3px solid rgba(255, 200, 0, 0.8);
+      outline-offset: -3px;
+    }
+    .match-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 200, 0, 0.9);
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      pointer-events: none;
+      z-index: 2;
     }
     .file-controls {
       position: absolute;
@@ -288,9 +358,46 @@ interface OutlineItem {
       margin: 0 4px;
       opacity: 0.5;
     }
+    .search-bar {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      border: var(--glass-border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      backdrop-filter: var(--glass-backdrop);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 10;
+    }
+    .search-input {
+      width: 200px;
+      padding: 6px 10px;
+      border: 1px solid var(--glass-border-color, rgba(255,255,255,0.2));
+      border-radius: 4px;
+      background: rgba(0,0,0,0.2);
+      color: var(--text-primary, white);
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--primary-color, #64b5f6);
+    }
+    .search-input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+    .match-count {
+      font-size: 12px;
+      opacity: 0.8;
+      min-width: 60px;
+      text-align: center;
+    }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule]
+  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule]
 })
 export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() settings: any;
@@ -298,6 +405,7 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
   @Output() settingsChange = new EventEmitter<any>();
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('pdfContainer') pdfContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('searchInput') searchInputRef!: ElementRef<HTMLInputElement>;
 
   // For template access
   Math = Math;
@@ -319,6 +427,16 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
   private renderedPages = new Set<number>();
   private renderingPages = new Set<number>();
   private scrollTimeout: any = null;
+
+  // Search
+  showSearch = false;
+  searchQuery = '';
+  searchMatches: SearchMatch[] = [];
+  currentMatchIndex = 0;
+  pagesWithMatches: number[] = [];
+  private pageTextContents: Map<number, string> = new Map();
+  private searchTimeout: any = null;
+  private pageMatchCounts: Map<number, number> = new Map();
 
   constructor(
     private sanitizer: DomSanitizer,
@@ -374,6 +492,9 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     }
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
+    }
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
     }
   }
 
@@ -724,6 +845,13 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     this.zoomLevel = 1;
     this.renderedPages.clear();
     this.renderingPages.clear();
+    this.showSearch = false;
+    this.searchQuery = '';
+    this.searchMatches = [];
+    this.currentMatchIndex = 0;
+    this.pagesWithMatches = [];
+    this.pageTextContents.clear();
+    this.pageMatchCounts.clear();
 
     if (this.fileInput?.nativeElement) {
       this.fileInput.nativeElement.value = '';
@@ -748,5 +876,169 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
 
   private notifySettingsChange() {
     this.settingsChange.emit(this.settings);
+  }
+
+  // Search methods
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'f' && this.pdfDoc) {
+      event.preventDefault();
+      this.toggleSearch();
+    }
+  }
+
+  toggleSearch() {
+    this.showSearch = !this.showSearch;
+    if (this.showSearch) {
+      this.cdr.detectChanges();
+      setTimeout(() => {
+        this.searchInputRef?.nativeElement?.focus();
+      }, 50);
+    }
+  }
+
+  closeSearch() {
+    this.showSearch = false;
+    this.searchQuery = '';
+    this.searchMatches = [];
+    this.currentMatchIndex = 0;
+    this.pageMatchCounts.clear();
+    this.pagesWithMatches = [];
+    this.cdr.detectChanges();
+  }
+
+  onSearchInput() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    this.searchTimeout = setTimeout(() => {
+      this.performSearch();
+    }, 300);
+  }
+
+  private async performSearch() {
+    if (!this.pdfDoc || !this.searchQuery.trim()) {
+      this.searchMatches = [];
+      this.currentMatchIndex = 0;
+      this.pageMatchCounts.clear();
+      this.pagesWithMatches = [];
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase();
+    this.searchMatches = [];
+    this.pageMatchCounts.clear();
+    this.pagesWithMatches = [];
+
+    // Extract text from all pages if not already done
+    for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
+      if (!this.pageTextContents.has(pageNum)) {
+        await this.extractPageText(pageNum);
+      }
+    }
+
+    // Search through all pages
+    for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
+      const text = this.pageTextContents.get(pageNum);
+      if (!text) continue;
+
+      const lowerText = text.toLowerCase();
+      let searchIndex = 0;
+      let pageMatchCount = 0;
+
+      while ((searchIndex = lowerText.indexOf(query, searchIndex)) !== -1) {
+        this.searchMatches.push({
+          pageNum,
+          index: pageMatchCount++,
+          text: text.substring(searchIndex, searchIndex + query.length)
+        });
+        searchIndex += 1;
+      }
+
+      if (pageMatchCount > 0) {
+        this.pageMatchCounts.set(pageNum, pageMatchCount);
+        this.pagesWithMatches.push(pageNum);
+      }
+    }
+
+    this.currentMatchIndex = 0;
+    this.cdr.detectChanges();
+
+    // Go to first page with matches
+    if (this.pagesWithMatches.length > 0) {
+      this.goToMatchPage(this.pagesWithMatches[0]);
+    }
+  }
+
+  private async extractPageText(pageNum: number) {
+    if (!this.pdfDoc) return;
+
+    try {
+      const page = await this.pdfDoc.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const items = textContent.items.filter((item): item is TextItem => 'str' in item);
+
+      const text = items.map(item => item.str).join(' ');
+      this.pageTextContents.set(pageNum, text);
+    } catch (error) {
+      console.error(`Error extracting text from page ${pageNum}:`, error);
+    }
+  }
+
+  // Helper methods for template
+  pageHasMatch(pageNum: number): boolean {
+    return this.pageMatchCounts.has(pageNum);
+  }
+
+  getPageMatchCount(pageNum: number): number {
+    return this.pageMatchCounts.get(pageNum) || 0;
+  }
+
+  getCurrentPageMatchIndex(): number {
+    const idx = this.pagesWithMatches.indexOf(this.currentPage);
+    return idx >= 0 ? idx : 0;
+  }
+
+  previousMatch() {
+    if (this.pagesWithMatches.length === 0) return;
+
+    // Find current page index in pages with matches
+    const currentIdx = this.pagesWithMatches.indexOf(this.currentPage);
+    let newIdx: number;
+
+    if (currentIdx <= 0) {
+      // Wrap to last page with matches
+      newIdx = this.pagesWithMatches.length - 1;
+    } else {
+      newIdx = currentIdx - 1;
+    }
+
+    this.goToMatchPage(this.pagesWithMatches[newIdx]);
+  }
+
+  nextMatch() {
+    if (this.pagesWithMatches.length === 0) return;
+
+    // Find current page index in pages with matches
+    const currentIdx = this.pagesWithMatches.indexOf(this.currentPage);
+    let newIdx: number;
+
+    if (currentIdx === -1 || currentIdx >= this.pagesWithMatches.length - 1) {
+      // Wrap to first page with matches
+      newIdx = 0;
+    } else {
+      newIdx = currentIdx + 1;
+    }
+
+    this.goToMatchPage(this.pagesWithMatches[newIdx]);
+  }
+
+  private goToMatchPage(pageNum: number) {
+    this.currentPage = pageNum;
+    this.pageInput = pageNum;
+    this.scrollToPage(pageNum);
+    this.savePage();
+    this.cdr.detectChanges();
   }
 }

@@ -20,6 +20,7 @@ import { SettingsConfig } from '../../settings/types/settings.types';
 import { LlmChatComponent } from '../../widgets/llm-chat/llm-chat.component';
 import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
 import { NameGeneratorComponent } from '../../widgets/name-generator/name-generator.component';
+import { CountdownComponent } from '../../widgets/countdown/countdown.component';
 import { MusicPlaybackService } from '../../services/music-playback.service';
 
 
@@ -44,7 +45,8 @@ import { MusicPlaybackService } from '../../services/music-playback.service';
     ResizableDirective,
     LlmChatComponent,
     HexMapComponent,
-    NameGeneratorComponent
+    NameGeneratorComponent,
+    CountdownComponent
   ]
 })
 export class WidgetContainerComponent {
@@ -97,7 +99,8 @@ export class WidgetContainerComponent {
       'DAYTIME_TRACKER': 'Daytime Tracker',
       'LLM_CHAT': 'LLM Chat',
       'HEX_MAP': 'Hex Map',
-      'NAME_GENERATOR': 'Name Generator'
+      'NAME_GENERATOR': 'Name Generator',
+      'COUNTDOWN_WIDGET': 'Countdown'
     };
     return titles[type] || 'Widget';
   }

@@ -39,6 +39,7 @@
       <app-llm-chat *ngSwitchCase="'LLM_CHAT'" [settings]="widgetData.settings"></app-llm-chat>
       <app-hex-map *ngSwitchCase="'HEX_MAP'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-hex-map>
       <app-name-generator *ngSwitchCase="'NAME_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-name-generator>
+      <app-countdown *ngSwitchCase="'COUNTDOWN_WIDGET'" [settings]="widgetData.settings" [widgetId]="widgetData.id"></app-countdown>
     </ng-container>
   </div>
 </div>

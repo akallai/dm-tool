@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR';
+export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR' | 'COUNTDOWN_WIDGET';
 
 interface WidgetOption {
   type: WidgetType;
@@ -257,7 +257,8 @@ export class WidgetSelectorDialogComponent {
     { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'moon.png', description: 'Time of day' },
     { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI assistant' },
     { type: 'HEX_MAP', label: 'Hex Map', icon: 'hex.svg', description: 'Hex grid map' },
-    { type: 'NAME_GENERATOR', label: 'Name Generator', icon: 'name.svg', description: 'Generate names' }
+    { type: 'NAME_GENERATOR', label: 'Name Generator', icon: 'name.svg', description: 'Generate names' },
+    { type: 'COUNTDOWN_WIDGET', label: 'Countdown', icon: 'countdown.svg', description: 'Timer countdown' }
   ];
 
 
