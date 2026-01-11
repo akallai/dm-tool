@@ -28,7 +28,7 @@
   <!-- Content -->
   <div class="widget-content">
     <ng-container [ngSwitch]="widgetData.type">
-      <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-image-pdf-viewer>
+      <app-image-pdf-viewer *ngSwitchCase="'IMAGE_PDF'" [settings]="widgetData.settings" [widgetId]="widgetData.id" (settingsChange)="onSettingsChange()"></app-image-pdf-viewer>
       <app-notepad *ngSwitchCase="'NOTEPAD'" [settings]="widgetData.settings" #notepad></app-notepad>
       <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-random-generator>
       <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
