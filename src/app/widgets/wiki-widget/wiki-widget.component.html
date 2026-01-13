@@ -2,6 +2,12 @@
   <div class="wiki-header">
     <button mat-button (click)="openExistingWiki()">Open Wiki</button>
     <button mat-button (click)="createNewWiki()">New Wiki</button>
+    <button mat-button (click)="importWikiZip()" matTooltip="Import from ZIP archive">
+      <mat-icon>upload</mat-icon> Import
+    </button>
+    <button mat-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP archive with images">
+      <mat-icon>download</mat-icon> Export
+    </button>
   </div>
 
   <!-- Loading/error indicators -->
@@ -84,6 +90,9 @@
           <div class="toolbar-divider"></div>
           <button mat-icon-button (click)="insertWikiLink()" matTooltip="Insert Wiki Link">
             <mat-icon>link</mat-icon>
+          </button>
+          <button mat-icon-button (click)="insertImage()" matTooltip="Insert Image">
+            <mat-icon>image</mat-icon>
           </button>
           <div class="toolbar-divider"></div>
           <button mat-icon-button (click)="insertTable()" matTooltip="Insert Table">

@@ -18,7 +18,10 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { WikiLink } from './wiki-link.extension';
+import { WikiImage } from './wiki-image.extension';
 import { isMarkdownContent, migrateMarkdownToHtml } from './content-migration.util';
+import { WikiImageStorageService } from '../../services/wiki-image-storage.service';
+import { WikiExportService } from './wiki-export.service';
 
 export interface WikiArticle {
   id: string;
@@ -46,6 +49,7 @@ export interface WikiData {
     MatTooltipModule,
     ScrollingModule
   ],
+  providers: [WikiExportService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
@@ -73,7 +77,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   private debouncedSaveWiki = debounce(this.saveWiki.bind(this), 1000);
 
   constructor(
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private imageStorage: WikiImageStorageService,
+    private exportService: WikiExportService
   ) {}
 
   ngOnInit() {
@@ -150,6 +156,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         TableCell,
         TableHeader,
         WikiLink,
+        WikiImage.configure({
+          onImageUpload: this.handleImageUpload.bind(this),
+          resolveImageUrl: this.resolveImageUrl.bind(this),
+        }),
       ],
       content: '',
       editable: true,
@@ -198,7 +208,138 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     }
 
     this.editor.commands.setContent(content);
+    // Note: wiki-image:// URLs are resolved by the WikiImage NodeView automatically
     this.cdr.markForCheck();
+  }
+
+  async handleImageUpload(file: File): Promise<string> {
+    const widgetId = this.settings?.id || 'default';
+    const imageId = await this.imageStorage.saveImage(widgetId, file);
+    return `wiki-image://${imageId}`;
+  }
+
+  async resolveImageUrl(src: string): Promise<string | null> {
+    if (!src.startsWith('wiki-image://')) {
+      return src;
+    }
+    const imageId = src.replace('wiki-image://', '');
+    return this.imageStorage.getBlobUrl(imageId);
+  }
+
+  insertImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file && this.editor) {
+        const src = await this.handleImageUpload(file);
+        this.editor.chain().focus().setWikiImage({ src, alt: file.name }).run();
+      }
+    };
+    input.click();
+  }
+
+  async exportWikiZip() {
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      const widgetId = this.settings?.id || 'default';
+      const zipBlob = await this.exportService.exportToZip(widgetId, this.wikiData);
+
+      // Download the ZIP file
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const baseName = this.fileName ? this.fileName.replace('.json', '') : 'wiki';
+      a.download = `${baseName}_export.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting wiki:', error);
+      this.errorMessage = 'Failed to export wiki';
+
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async importWikiZip() {
+    if (!window.showOpenFilePicker) {
+      this.errorMessage = 'File System Access API is not supported in this browser.';
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+      return;
+    }
+
+    let handle: FileSystemFileHandle;
+    try {
+      [handle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'Wiki Archive',
+          accept: { 'application/zip': ['.zip'] }
+        }]
+      });
+    } catch (error) {
+      // User cancelled file picker - not an error
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      throw error;
+    }
+
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    try {
+      const file = await handle.getFile();
+      const widgetId = this.settings?.id || 'default';
+
+      // Clear existing images for this widget before importing
+      await this.imageStorage.deleteImagesForWidget(widgetId);
+
+      // Import from ZIP
+      this.wikiData = await this.exportService.importFromZip(widgetId, file);
+
+      if (this.settings) {
+        this.settings.wikiData = this.wikiData;
+      }
+
+      // Select first article if available
+      if (this.wikiData.articles.length > 0) {
+        this.currentArticle = this.wikiData.articles[0];
+        await this.loadArticleContent(this.currentArticle);
+      } else {
+        this.currentArticle = null;
+        this.editor?.commands.setContent('');
+      }
+
+      // Clear the file handle since we imported from ZIP
+      this.fileHandle = null;
+      this.fileName = '';
+    } catch (error) {
+      console.error('Error importing wiki:', error);
+      this.errorMessage = 'Failed to import wiki';
+
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+    } finally {
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    }
   }
 
   private onContentChange() {
@@ -250,6 +391,11 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         }, 3000);
       }
     } catch (error) {
+      // User cancelled file picker - not an error
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
       console.error('Error opening wiki file:', error);
       this.errorMessage = 'Failed to open wiki file';
       this.isSaving = false;
@@ -294,6 +440,11 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         }, 3000);
       }
     } catch (error) {
+      // User cancelled file picker - not an error
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
       console.error('Error creating wiki file:', error);
       this.errorMessage = 'Failed to create wiki file';
       this.cdr.markForCheck();
@@ -627,6 +778,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
     // Destroy TipTap editor
     this.editor?.destroy();
+
+    // Revoke blob URLs for this widget only to prevent memory leaks
+    const widgetId = this.settings?.id || 'default';
+    this.imageStorage.revokeBlobUrlsForWidget(widgetId);
 
     // Cancel any pending debounced operations
     if (this.debouncedSaveWiki.cancel) {

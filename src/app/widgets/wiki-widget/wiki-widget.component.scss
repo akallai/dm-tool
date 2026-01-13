@@ -415,6 +415,20 @@
   cursor: pointer;
 }
 
+// Wiki image styling
+.tiptap-editor .ProseMirror img[data-wiki-image] {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5em 0;
+  display: block;
+
+  &.ProseMirror-selectednode {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+  }
+}
+
 .empty-state, .empty-wiki {
   display: flex;
   align-items: center;
