@@ -63,18 +63,46 @@ Verwalte Hintergrundmusik und Soundeffekte.
 
 ## Wiki Widget
 
-Dein persönliches Lexikon für deine Kampagne.
+Dein persönliches Lexikon für deine Kampagne mit WYSIWYG-Editor.
 
 ### Bedienung
 *   **Navigation**: Links findest du eine Liste aller Artikel. Nutze die Suche, um Artikel schnell zu finden.
-*   **Neuer Artikel**: Klicke auf das **+** in der Sidebar für einen neuen Hauptartikel oder auf den Button "Add Sub-Article" bei einem bestehenden Artikel für Unterseiten.
-*   **Bearbeiten**: Schreibe deine Texte im Markdown-Format (einfache Formatierung).
-    *   Schalte mit dem "Edit / Preview"-Schalter oben rechts zwischen Bearbeitungsmodus und Leseansicht um.
-*   **Speichern**: Artikel werden automatisch gespeichert, wenn die Option aktiviert ist ("Auto Save"), oder manuell.
+*   **Neuer Artikel**: Klicke auf das **+** in der Sidebar für einen neuen Hauptartikel oder auf das **+** bei einem bestehenden Artikel für Unterseiten.
+*   **Bearbeiten**: Der integrierte WYSIWYG-Editor ermöglicht direktes Formatieren ohne Markdown-Kenntnisse.
+*   **Speichern**: Artikel werden automatisch gespeichert (Änderungen werden nach 1 Sekunde in die Datei geschrieben).
 
-### Einstellungen (Zahnrad)
-*   **Auto Save**: Schaltet das automatische Speichern bei Änderungen an/aus.
-*   **Default View**: Legt fest, ob Artikel standardmäßig im Editier- oder Lese-Modus geöffnet werden.
+### Editor-Toolbar
+
+Die Toolbar bietet folgende Formatierungsoptionen:
+
+| Button | Funktion |
+|--------|----------|
+| **B** | Fett |
+| *I* | Kursiv |
+| H1/H2/H3 | Überschriften (3 Ebenen) |
+| Liste | Aufzählung (nummeriert oder Punkte) |
+| Zitat | Blockzitat |
+| Code | Code-Block |
+| Link | Wiki-Link einfügen |
+| Tabelle | Tabelle einfügen und bearbeiten |
+
+### Wiki-Links
+
+Verknüpfe Artikel miteinander:
+*   **Manuell**: Klicke auf den Link-Button in der Toolbar und gib den Artikelnamen ein
+*   **Schnell**: Tippe `[[Artikelname]]` direkt im Text - wird automatisch zum Link
+*   **Navigation**: Klicke auf einen Wiki-Link, um zum Artikel zu springen
+
+### Tabellen
+
+*   **Einfügen**: Klicke auf das Tabellen-Symbol für eine 3x3 Tabelle mit Kopfzeile
+*   **Spalten/Zeilen**: Nutze die Toolbar-Buttons zum Hinzufügen oder Entfernen
+*   **Größe anpassen**: Ziehe an den Spaltenrändern, um die Breite zu ändern
+*   **Löschen**: Entferne die gesamte Tabelle mit dem Löschen-Button
+
+### Abwärtskompatibilität
+
+Bestehende Artikel im Markdown-Format werden beim Öffnen automatisch in das neue HTML-Format konvertiert.
 
 ---
 

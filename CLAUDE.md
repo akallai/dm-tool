@@ -45,7 +45,7 @@ All widgets follow this pattern:
 - `RANDOM_GENERATOR`: Customizable random tables with weighted selection
 - `DICE_TOOL`: RPG dice roller with custom notation
 - `MUSIC_WIDGET`: Audio playback with multiple tracks
-- `WIKI_WIDGET`: Hierarchical article system with linking
+- `WIKI_WIDGET`: Hierarchical article system with TipTap WYSIWYG editor, wiki-links, and table support
 - `COMBAT_TRACKER`: Initiative and HP tracking (includes Mutant Year Zero support)
 - `DAYTIME_TRACKER`: Visual time progression tracking
 - `LLM_CHAT`: AI chat integration with OpenAI API
@@ -62,7 +62,8 @@ All widgets follow this pattern:
 ### Dependencies
 - Angular 19 with Material Design
 - CDK for drag-and-drop functionality
-- Marked for Markdown parsing
+- Marked for Markdown parsing (used for backward compatibility migration)
+- TipTap (@tiptap/core, @tiptap/starter-kit, extensions) for WYSIWYG editing in Wiki Widget
 - RxJS for reactive state management
 - Karma/Jasmine for testing
 - honeycomb-grid for hex map calculations
@@ -94,6 +95,9 @@ When creating new widgets:
 
 - `src/app/workspace/` - Core layout and widget container logic
 - `src/app/widgets/` - Individual widget components
+  - `wiki-widget/` - Wiki with TipTap editor
+    - `wiki-link.extension.ts` - Custom TipTap Mark for `[[wiki links]]`
+    - `content-migration.util.ts` - Markdown to HTML migration for backward compatibility
 - `src/app/services/` - Application services
 - `src/app/settings/` - Settings system with typed configurations
 - `src/app/dialogs/` - Modal dialogs (widget selector, etc.)

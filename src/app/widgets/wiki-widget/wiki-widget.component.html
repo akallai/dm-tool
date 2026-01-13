@@ -3,11 +3,11 @@
     <button mat-button (click)="openExistingWiki()">Open Wiki</button>
     <button mat-button (click)="createNewWiki()">New Wiki</button>
   </div>
-  
+
   <!-- Loading/error indicators -->
   <div *ngIf="isSaving" class="save-indicator">Saving...</div>
   <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
-  
+
   <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
     <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
       <div class="sidebar-toggle">
@@ -40,26 +40,82 @@
     <div class="wiki-content">
       <div *ngIf="currentArticle" class="article-container">
         <div class="article-header">
-          <input 
-            type="text" 
-            [(ngModel)]="currentArticle.title" 
-            (ngModelChange)="updateArticle()" 
+          <input
+            type="text"
+            [(ngModel)]="currentArticle.title"
+            (ngModelChange)="updateArticle()"
             placeholder="Article Title"
             class="title-input"
           >
-          <button mat-button (click)="toggleEditing()">
-            {{ isEditing ? 'Preview' : 'Edit' }}
+        </div>
+
+        <!-- Editor Toolbar -->
+        <div *ngIf="currentArticle" class="editor-toolbar">
+          <button mat-icon-button (click)="toggleBold()" [class.active]="editor?.isActive('bold')" matTooltip="Bold">
+            <mat-icon>format_bold</mat-icon>
+          </button>
+          <button mat-icon-button (click)="toggleItalic()" [class.active]="editor?.isActive('italic')" matTooltip="Italic">
+            <mat-icon>format_italic</mat-icon>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button mat-icon-button (click)="toggleHeading(1)" [class.active]="editor?.isActive('heading', { level: 1 })" matTooltip="Heading 1">
+            <mat-icon>title</mat-icon>
+          </button>
+          <button mat-icon-button (click)="toggleHeading(2)" [class.active]="editor?.isActive('heading', { level: 2 })" matTooltip="Heading 2">
+            <span class="heading-label">H2</span>
+          </button>
+          <button mat-icon-button (click)="toggleHeading(3)" [class.active]="editor?.isActive('heading', { level: 3 })" matTooltip="Heading 3">
+            <span class="heading-label">H3</span>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button mat-icon-button (click)="toggleBulletList()" [class.active]="editor?.isActive('bulletList')" matTooltip="Bullet List">
+            <mat-icon>format_list_bulleted</mat-icon>
+          </button>
+          <button mat-icon-button (click)="toggleOrderedList()" [class.active]="editor?.isActive('orderedList')" matTooltip="Numbered List">
+            <mat-icon>format_list_numbered</mat-icon>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button mat-icon-button (click)="toggleBlockquote()" [class.active]="editor?.isActive('blockquote')" matTooltip="Blockquote">
+            <mat-icon>format_quote</mat-icon>
+          </button>
+          <button mat-icon-button (click)="toggleCodeBlock()" [class.active]="editor?.isActive('codeBlock')" matTooltip="Code Block">
+            <mat-icon>code</mat-icon>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button mat-icon-button (click)="insertWikiLink()" matTooltip="Insert Wiki Link">
+            <mat-icon>link</mat-icon>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button mat-icon-button (click)="insertTable()" matTooltip="Insert Table">
+            <mat-icon>table_chart</mat-icon>
+          </button>
+          <button mat-icon-button (click)="addColumnBefore()" matTooltip="Add Column Before" [disabled]="!canAddColumnBefore()">
+            <mat-icon>first_page</mat-icon>
+          </button>
+          <button mat-icon-button (click)="addColumnAfter()" matTooltip="Add Column After" [disabled]="!canAddColumnAfter()">
+            <mat-icon>last_page</mat-icon>
+          </button>
+          <button mat-icon-button (click)="addRowBefore()" matTooltip="Add Row Before" [disabled]="!canAddRowBefore()">
+            <mat-icon>vertical_align_top</mat-icon>
+          </button>
+          <button mat-icon-button (click)="addRowAfter()" matTooltip="Add Row After" [disabled]="!canAddRowAfter()">
+            <mat-icon>vertical_align_bottom</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteColumn()" matTooltip="Delete Column" [disabled]="!canDeleteColumn()">
+            <mat-icon>view_week</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteRow()" matTooltip="Delete Row" [disabled]="!canDeleteRow()">
+            <mat-icon>view_day</mat-icon>
+          </button>
+          <button mat-icon-button (click)="deleteTable()" matTooltip="Delete Table" [disabled]="!canDeleteTable()">
+            <mat-icon>delete</mat-icon>
           </button>
         </div>
-        <div *ngIf="isEditing" class="editor-container">
-          <textarea 
-            [(ngModel)]="currentArticle.content" 
-            (ngModelChange)="updateArticle()" 
-            placeholder="Write your article here..."
-            class="content-editor"
-          ></textarea>
+
+        <!-- TipTap Editor Container -->
+        <div class="editor-container">
+          <div #editorContainer class="tiptap-editor"></div>
         </div>
-        <div *ngIf="!isEditing" class="preview-container" [innerHTML]="renderedContent"></div>
       </div>
       <div *ngIf="!currentArticle" class="empty-state">
         <p>No article selected. Add an article from the sidebar.</p>

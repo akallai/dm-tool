@@ -3,14 +3,13 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  /* Parent container styling handled by global widget-container */
 }
 
 .wiki-header {
   display: flex;
   gap: 8px;
   padding: 8px;
-  background: var(--header-bg); /* Use glass theme header */
+  background: var(--header-bg);
   border-bottom: var(--glass-border);
   color: var(--text-primary);
 
@@ -28,7 +27,7 @@
 
 .wiki-sidebar {
   display: flex;
-  background: var(--glass-bg); /* Replaced opaque grey */
+  background: var(--glass-bg);
   backdrop-filter: var(--glass-backdrop);
   border-right: var(--glass-border);
   transition: width 0.3s;
@@ -93,6 +92,7 @@
   border: var(--input-border);
   color: var(--text-primary);
   border-radius: 4px;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -106,7 +106,8 @@
   min-height: 0;
 }
 
-ul {
+// Sidebar article list styles (scoped to sidebar only)
+.wiki-sidebar ul {
   list-style: none;
   padding: 0;
   margin: 8px 0;
@@ -147,7 +148,7 @@ ul {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: transparent; /* Remove solid white */
+  background: transparent;
   min-height: 0;
   color: var(--text-primary);
 }
@@ -182,6 +183,50 @@ ul {
   }
 }
 
+// Editor toolbar
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  background: var(--glass-bg);
+  border-bottom: var(--glass-border);
+  flex-shrink: 0;
+
+  button {
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+
+    &:hover:not(:disabled) {
+      color: var(--text-primary);
+    }
+
+    &.active {
+      color: var(--accent-color);
+      background: rgba(var(--accent-color-rgb, 66, 165, 245), 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+
+  .toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--text-muted);
+    margin: 0 4px;
+    opacity: 0.3;
+  }
+
+  .heading-label {
+    font-size: 12px;
+    font-weight: 600;
+  }
+}
+
 .editor-container {
   flex: 1;
   display: flex;
@@ -190,35 +235,184 @@ ul {
   min-height: 0;
 }
 
-.content-editor {
-  flex: 1;
-  width: 100%;
-  resize: none;
-  padding: 12px;
-  background: var(--input-bg);
-  border: var(--input-border);
-  color: var(--text-primary);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-  line-height: 1.6;
-  overflow-y: auto;
-
-  &:focus {
-    outline: none;
-    border-color: var(--accent-color);
-  }
-}
-
-.preview-container {
+// TipTap editor styles
+.tiptap-editor {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background: var(--glass-bg); /* Semi-transparent background for reading */
+  background: var(--input-bg);
   border: var(--glass-border);
   border-radius: 4px;
-  margin: 8px;
   color: var(--text-primary);
+  min-height: 200px;
+
+  // TipTap ProseMirror styles
+  .ProseMirror {
+    outline: none;
+    min-height: 100%;
+    height: 100%;
+
+    > * + * {
+      margin-top: 0.75em;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      font-weight: 600;
+      margin: 0.5em 0;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 1.5em;
+      font-weight: 600;
+      margin: 0.5em 0;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 1.25em;
+      font-weight: 600;
+      margin: 0.5em 0;
+      line-height: 1.2;
+    }
+
+    ul, ol {
+      padding-left: 1.5em;
+      margin: 0.25em 0;
+
+      li {
+        margin: 0;
+
+        > * + * {
+          margin-top: 0;
+        }
+
+        p {
+          margin: 0;
+        }
+      }
+    }
+
+    code {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.75em 1em;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 0.5em 0;
+
+      code {
+        background: none;
+        padding: 0;
+        font-size: 0.9em;
+      }
+    }
+
+    blockquote {
+      border-left: 3px solid var(--accent-color);
+      padding-left: 1em;
+      margin: 0.5em 0;
+      margin-left: 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--text-muted);
+      margin: 1em 0;
+    }
+
+    // Wiki link styling
+    a.wiki-link {
+      color: var(--accent-color);
+      cursor: text;
+      text-decoration: none;
+      border-bottom: 1px dashed var(--accent-color);
+      transition: all 0.2s;
+
+      &:hover {
+        border-bottom-style: solid;
+        filter: brightness(1.2);
+      }
+    }
+
+    // Table styling
+    table {
+      border-collapse: collapse;
+      table-layout: fixed;
+      width: 100%;
+      margin: 0.5em 0;
+      overflow: hidden;
+
+      td, th {
+        min-width: 1em;
+        border: 1px solid var(--text-muted);
+        padding: 6px 8px;
+        vertical-align: top;
+        box-sizing: border-box;
+        position: relative;
+
+        > * {
+          margin-bottom: 0;
+        }
+      }
+
+      th {
+        font-weight: 600;
+        text-align: left;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .selectedCell:after {
+        z-index: 2;
+        position: absolute;
+        content: "";
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(var(--accent-color-rgb, 66, 165, 245), 0.2);
+        pointer-events: none;
+      }
+
+      .column-resize-handle {
+        position: absolute;
+        right: -2px;
+        top: 0;
+        bottom: -2px;
+        width: 4px;
+        background-color: var(--accent-color);
+        pointer-events: none;
+      }
+    }
+
+    .tableWrapper {
+      overflow-x: auto;
+      margin: 0.5em 0;
+    }
+
+    &.resize-cursor {
+      cursor: col-resize;
+    }
+  }
+}
+
+// Wiki links are clickable
+.tiptap-editor .ProseMirror a.wiki-link {
+  cursor: pointer;
 }
 
 .empty-state, .empty-wiki {

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ng build:*)",
       "Bash(ls src/app/widgets/music-widget/music-widget.component.* src/app/widgets/wiki-widget/wiki-widget.component.* src/app/workspace/widget-container/widget-container.component.*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run build:*)"
     ]
   }
 }
