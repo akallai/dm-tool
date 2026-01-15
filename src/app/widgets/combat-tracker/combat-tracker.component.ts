@@ -408,14 +408,13 @@ export class CharacterTemplateDialogComponent implements OnInit {
                [class.active]="i === activeIndex"
                [class.defeated]="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0"
                cdkDrag>
+            <!-- Defeated skull background for general/d&d mode -->
+            <div class="defeated-skull" *ngIf="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0">
+              <img src="images/skull.png" alt="defeated">
+            </div>
             <div class="card-content">
               <!-- Drag Handle -->
               <mat-icon cdkDragHandle class="drag-handle">drag_indicator</mat-icon>
-
-              <!-- Defeated Icon for general mode only -->
-              <div class="defeated-icon" *ngIf="settings?.gameMode !== 'mutant_year_zero' && combatant.health !== undefined && combatant.health <= 0">
-                <mat-icon>close</mat-icon>
-              </div>
 
               <!-- Combatant Header -->
               <div class="combatant-header">
@@ -641,6 +640,7 @@ export class CharacterTemplateDialogComponent implements OnInit {
       transition: all 0.3s ease;
       padding: 8px;
       backdrop-filter: var(--glass-backdrop);
+      overflow: hidden;
 
       &.active {
         background: rgba(64, 196, 255, 0.15); /* Accent color with low opacity */
@@ -649,15 +649,16 @@ export class CharacterTemplateDialogComponent implements OnInit {
       }
 
       &.defeated {
-        opacity: 0.7;
-        background: rgba(0, 0, 0, 0.4);
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(40, 0, 0, 0.4) 100%);
         border-color: var(--danger-color);
+        box-shadow: inset 0 0 20px rgba(255, 82, 82, 0.1);
       }
     }
 
     .card-content {
       position: relative;
       padding-left: 24px; /* Make room for the drag handle */
+      z-index: 1;
     }
 
     .drag-handle {
@@ -676,19 +677,20 @@ export class CharacterTemplateDialogComponent implements OnInit {
       }
     }
 
-    .defeated-icon {
+    .defeated-skull {
       position: absolute;
-      right: 10px;
+      left: 50%;
       top: 50%;
-      transform: translateY(-50%);
-      color: var(--danger-color);
+      transform: translate(-50%, -50%);
       pointer-events: none;
-      opacity: 0.8;
+      opacity: 0.3;
+      z-index: 0;
 
-      mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
+      img {
+        width: 150px;
+        height: 150px;
+        object-fit: contain;
+        filter: brightness(0.4) sepia(1) hue-rotate(-50deg) saturate(6) drop-shadow(0 0 8px rgba(255, 82, 82, 0.6));
       }
     }
 
