@@ -294,25 +294,16 @@ export class WidgetContainerComponent {
               label: 'Game Mode',
               options: [
                 { value: 'general', label: 'General' },
-                { value: 'mutant_year_zero', label: 'Mutant Year Zero' }
+                { value: 'mutant_year_zero', label: 'Mutant Year Zero' },
+                { value: 'dnd_5e', label: 'D&D 5e' }
               ],
               defaultValue: 'general'
             },
             {
-              key: 'showRoundCounter',
-              type: 'checkbox',
-              label: 'Show round counter'
-            },
-            {
-              key: 'autoSort',
-              type: 'checkbox',
-              label: 'Automatically sort by initiative'
-            },
-            {
               key: 'defaultInitiative',
-              type: 'number',
-              label: 'Default Initiative',
-              defaultValue: 0
+              type: 'text',
+              label: 'Default Initiative (number or dice: 1D6, 1d20, 2W4+1)',
+              defaultValue: '0'
             }
           ]
         };
