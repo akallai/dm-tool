@@ -8,7 +8,14 @@
     <button mat-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP archive with images">
       <mat-icon>download</mat-icon> Export
     </button>
-    <span *ngIf="fileName" class="file-info" [class.has-error]="saveError" [class.is-stale]="isSaveStale() && !saveError">
+    <!-- Warning: wiki has content but no file connection (e.g., after page reload) -->
+    <span *ngIf="!fileHandle && wikiData.articles.length > 0" class="file-info has-error">
+      <span class="save-error-indicator">
+        <mat-icon>link_off</mat-icon> NO FILE - click Open to reconnect
+      </span>
+    </span>
+    <!-- Normal file info when connected -->
+    <span *ngIf="fileHandle" class="file-info" [class.has-error]="saveError" [class.is-stale]="isSaveStale() && !saveError">
       <span class="file-name">{{ fileName }}</span>
       <span *ngIf="saveError" class="save-error-indicator">
         <mat-icon>error</mat-icon> NOT SAVING

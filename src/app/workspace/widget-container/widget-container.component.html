@@ -33,7 +33,7 @@
       <app-random-generator *ngSwitchCase="'RANDOM_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-random-generator>
       <app-dice-tool *ngSwitchCase="'DICE_TOOL'" [settings]="widgetData.settings"></app-dice-tool>
       <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings" [widgetId]="widgetData.id" (settingsChange)="onSettingsChange()"></app-music-widget>
-      <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-wiki-widget>
+      <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings" [widgetId]="widgetData.id" (settingsChange)="onSettingsChange()"></app-wiki-widget>
       <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
       <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-daytime-tracker>
       <app-llm-chat *ngSwitchCase="'LLM_CHAT'" [settings]="widgetData.settings"></app-llm-chat>

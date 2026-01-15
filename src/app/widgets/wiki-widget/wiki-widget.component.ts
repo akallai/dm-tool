@@ -22,6 +22,7 @@ import { WikiImage } from './wiki-image.extension';
 import { isMarkdownContent, migrateMarkdownToHtml } from './content-migration.util';
 import { WikiImageStorageService } from '../../services/wiki-image-storage.service';
 import { WikiExportService } from './wiki-export.service';
+import { WikiFileHandleService } from './wiki-file-handle.service';
 
 export interface WikiArticle {
   id: string;
@@ -55,6 +56,7 @@ export interface WikiData {
 })
 export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @Input() settings: any;
+  @Input() widgetId: string = '';
   @Output() settingsChange = new EventEmitter<void>();
   @ViewChild('editorContainer') editorContainer!: ElementRef;
 
@@ -83,7 +85,8 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   constructor(
     private cdr: ChangeDetectorRef,
     private imageStorage: WikiImageStorageService,
-    private exportService: WikiExportService
+    private exportService: WikiExportService,
+    private fileHandleService: WikiFileHandleService
   ) {}
 
   ngOnInit() {
@@ -111,6 +114,26 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       } else if (this.wikiData.articles.length > 0) {
         this.currentArticle = this.wikiData.articles[0];
       }
+
+      // Try to restore file handle from IndexedDB (survives page reload)
+      this.restoreFileHandle();
+    }
+  }
+
+  private async restoreFileHandle() {
+    if (!this.widgetId) {
+      return;
+    }
+
+    try {
+      const result = await this.fileHandleService.restoreHandle(this.widgetId);
+      if (result) {
+        this.fileHandle = result.handle;
+        this.fileName = result.fileName;
+        this.cdr.markForCheck();
+      }
+    } catch (error) {
+      console.error('Failed to restore file handle:', error);
     }
   }
 
@@ -224,7 +247,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   async handleImageUpload(file: File): Promise<string> {
-    const widgetId = this.settings?.id || 'default';
+    const widgetId = this.widgetId || 'default';
     const imageId = await this.imageStorage.saveImage(widgetId, file);
     return `wiki-image://${imageId}`;
   }
@@ -256,7 +279,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     this.cdr.markForCheck();
 
     try {
-      const widgetId = this.settings?.id || 'default';
+      const widgetId = this.widgetId || 'default';
       const zipBlob = await this.exportService.exportToZip(widgetId, this.wikiData);
 
       // Download the ZIP file
@@ -315,7 +338,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
     try {
       const file = await handle.getFile();
-      const widgetId = this.settings?.id || 'default';
+      const widgetId = this.widgetId || 'default';
 
       // Clear existing images for this widget before importing
       await this.imageStorage.deleteImagesForWidget(widgetId);
@@ -343,6 +366,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       this.saveError = false;
       this.hasUnsavedChanges = false;
       this.errorMessage = '';
+
+      // Remove stored handle from IndexedDB (reuse widgetId from above)
+      this.fileHandleService.removeHandle(widgetId);
     } catch (error) {
       console.error('Error importing wiki:', error);
       this.errorMessage = 'Failed to import wiki';
@@ -379,6 +405,12 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         this.saveError = false;
         this.hasUnsavedChanges = false;
         this.errorMessage = '';
+
+        // Persist handle to IndexedDB for page reload recovery
+        const widgetId = this.widgetId;
+        if (widgetId) {
+          this.fileHandleService.storeHandle(widgetId, handle, handle.name);
+        }
 
         // Show loading indicator
         this.isSaving = true;
@@ -445,6 +477,12 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         this.saveError = false;
         this.hasUnsavedChanges = false;
         this.errorMessage = '';
+
+        // Persist handle to IndexedDB for page reload recovery
+        const widgetId = this.widgetId;
+        if (widgetId) {
+          this.fileHandleService.storeHandle(widgetId, handle, handle.name);
+        }
 
         if (this.settings) {
           this.settings.wikiData = this.wikiData;
@@ -846,7 +884,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     this.editor?.destroy();
 
     // Revoke blob URLs for this widget only to prevent memory leaks
-    const widgetId = this.settings?.id || 'default';
+    const widgetId = this.widgetId || 'default';
     this.imageStorage.revokeBlobUrlsForWidget(widgetId);
 
     // Cancel any pending debounced operations
