@@ -1,8 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-daytime-tracker',
@@ -32,6 +33,12 @@ import { MatIconModule } from '@angular/material/icon';
           {{ formatTime() }}
         </span>
         <mat-icon class="time-icon">bedtime</mat-icon>
+      </div>
+      <div class="button-row">
+        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(-5)">-5</button>
+        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(-1)">-1</button>
+        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(1)">+1</button>
+        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(5)">+5</button>
       </div>
     </div>
   `,
@@ -118,6 +125,29 @@ import { MatIconModule } from '@angular/material/icon';
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
+  .button-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .time-adjust-btn {
+    min-width: 40px;
+    padding: 0 8px;
+    font-size: 0.85em;
+    height: 28px;
+    line-height: 28px;
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+
+  .time-adjust-btn:hover {
+    opacity: 1;
+  }
+
   /* Override MDC slider CSS variables */
   :host {
     --mdc-slider-track-active-color: transparent;
@@ -164,11 +194,13 @@ import { MatIconModule } from '@angular/material/icon';
     CommonModule,
     FormsModule,
     MatSliderModule,
-    MatIconModule
+    MatIconModule,
+    MatButtonModule
   ]
 })
 export class DaytimeTrackerComponent {
   @Input() settings: any;
+  @Output() settingsChange = new EventEmitter<void>();
 
   currentHour: number = 12;
   readonly DAY_COLOR = '#FFD700';
@@ -183,7 +215,16 @@ export class DaytimeTrackerComponent {
   onTimeChange() {
     if (this.settings) {
       this.settings.hour = this.currentHour;
+      this.settingsChange.emit();
     }
+  }
+
+  adjustTime(hours: number) {
+    let newHour = this.currentHour + hours;
+    // Wrap around 24-hour cycle
+    newHour = ((newHour % 24) + 24) % 24;
+    this.currentHour = newHour;
+    this.onTimeChange();
   }
 
   formatTime(): string {

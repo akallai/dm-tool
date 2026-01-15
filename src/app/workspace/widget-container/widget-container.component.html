@@ -35,7 +35,7 @@
       <app-music-widget *ngSwitchCase="'MUSIC_WIDGET'" [settings]="widgetData.settings" [widgetId]="widgetData.id" (settingsChange)="onSettingsChange()"></app-music-widget>
       <app-wiki-widget *ngSwitchCase="'WIKI_WIDGET'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-wiki-widget>
       <app-combat-tracker *ngSwitchCase="'COMBAT_TRACKER'" [settings]="widgetData.settings"></app-combat-tracker>
-      <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings"></app-daytime-tracker>
+      <app-daytime-tracker *ngSwitchCase="'DAYTIME_TRACKER'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-daytime-tracker>
       <app-llm-chat *ngSwitchCase="'LLM_CHAT'" [settings]="widgetData.settings"></app-llm-chat>
       <app-hex-map *ngSwitchCase="'HEX_MAP'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-hex-map>
       <app-name-generator *ngSwitchCase="'NAME_GENERATOR'" [settings]="widgetData.settings" (settingsChange)="onSettingsChange()"></app-name-generator>
