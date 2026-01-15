@@ -12,9 +12,98 @@
   background: var(--header-bg);
   border-bottom: var(--glass-border);
   color: var(--text-primary);
+  align-items: center;
 
   button {
     color: var(--text-primary) !important;
+  }
+
+  .file-info {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+
+    .file-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      opacity: 0.8;
+    }
+
+    .last-saved {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.7;
+
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+        color: #4caf50; // Green check
+      }
+
+      &.stale {
+        color: #ff9800; // Orange warning
+        opacity: 1;
+
+        mat-icon {
+          color: #ff9800;
+        }
+      }
+    }
+
+    .unsaved-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      opacity: 0.8;
+
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .save-error-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #f44336; // Red error
+      font-weight: 600;
+      animation: pulse-error 1.5s ease-in-out infinite;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &.has-error {
+      .file-name {
+        color: #f44336;
+      }
+    }
+
+    &.is-stale {
+      .file-name {
+        color: #ff9800;
+      }
+    }
+  }
+}
+
+@keyframes pulse-error {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 

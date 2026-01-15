@@ -67,6 +67,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   searchTerm: string = '';
   isSaving: boolean = false;
   errorMessage: string = '';
+  lastSavedToFile: Date | null = null;
+  saveError: boolean = false;  // Persistent error state - doesn't auto-clear
+  hasUnsavedChanges: boolean = false;  // Track pending changes
+  private lastSavedUpdateInterval: ReturnType<typeof setInterval> | null = null;
 
   // TipTap editor instance
   editor: Editor | null = null;
@@ -83,6 +87,13 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   ) {}
 
   ngOnInit() {
+    // Start interval to update the relative time display
+    this.lastSavedUpdateInterval = setInterval(() => {
+      if (this.lastSavedToFile) {
+        this.cdr.markForCheck();
+      }
+    }, 60000); // Update every minute
+
     if (this.settings && this.settings.wikiData) {
       this.wikiData = this.settings.wikiData;
 
@@ -328,6 +339,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       // Clear the file handle since we imported from ZIP
       this.fileHandle = null;
       this.fileName = '';
+      this.lastSavedToFile = null;
+      this.saveError = false;
+      this.hasUnsavedChanges = false;
+      this.errorMessage = '';
     } catch (error) {
       console.error('Error importing wiki:', error);
       this.errorMessage = 'Failed to import wiki';
@@ -343,6 +358,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   private onContentChange() {
+    this.hasUnsavedChanges = true;
     this.updateSettings();
     this.debouncedSaveWiki();
   }
@@ -359,6 +375,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
         this.fileHandle = handle;
         this.fileName = handle.name;
+        this.lastSavedToFile = null;
+        this.saveError = false;
+        this.hasUnsavedChanges = false;
+        this.errorMessage = '';
 
         // Show loading indicator
         this.isSaving = true;
@@ -422,6 +442,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         this.fileHandle = handle;
         this.fileName = handle.name;
         this.wikiData = { articles: [] };
+        this.saveError = false;
+        this.hasUnsavedChanges = false;
+        this.errorMessage = '';
 
         if (this.settings) {
           this.settings.wikiData = this.wikiData;
@@ -457,28 +480,36 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   async saveWiki() {
-    if (this.fileHandle) {
-      try {
-        this.isSaving = true;
-        this.cdr.markForCheck();
+    if (!this.fileHandle) {
+      // No file handle - can't save to file (only localStorage via updateSettings)
+      return;
+    }
 
-        const writable = await this.fileHandle.createWritable();
-        await writable.write(JSON.stringify(this.wikiData, null, 2));
-        await writable.close();
+    try {
+      this.isSaving = true;
+      this.cdr.markForCheck();
 
-        this.isSaving = false;
-        this.cdr.markForCheck();
-      } catch (error) {
-        console.error('Error saving wiki file:', error);
-        this.errorMessage = 'Failed to save wiki file';
-        this.isSaving = false;
-        this.cdr.markForCheck();
+      const writable = await this.fileHandle.createWritable();
+      await writable.write(JSON.stringify(this.wikiData, null, 2));
+      await writable.close();
 
-        setTimeout(() => {
-          this.errorMessage = '';
-          this.cdr.markForCheck();
-        }, 3000);
-      }
+      // Success - clear all error states
+      this.lastSavedToFile = new Date();
+      this.saveError = false;
+      this.hasUnsavedChanges = false;
+      this.errorMessage = '';
+      this.isSaving = false;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error saving wiki file:', error);
+
+      // PERSISTENT error state - doesn't auto-clear
+      this.saveError = true;
+      this.errorMessage = 'Save failed! Check file access.';
+      this.isSaving = false;
+      this.cdr.markForCheck();
+
+      // Note: errorMessage and saveError persist until next successful save
     }
   }
 
@@ -659,6 +690,41 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     return article.id;
   }
 
+  // Get relative time text for last saved timestamp
+  getLastSavedText(): string {
+    if (!this.lastSavedToFile) {
+      return '';
+    }
+
+    const now = new Date();
+    const diffMs = now.getTime() - this.lastSavedToFile.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSeconds < 10) {
+      return 'just now';
+    } else if (diffSeconds < 60) {
+      return `${diffSeconds}s ago`;
+    } else if (diffMinutes < 60) {
+      return diffMinutes === 1 ? '1 min ago' : `${diffMinutes} min ago`;
+    } else if (diffHours < 24) {
+      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+    } else {
+      return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+    }
+  }
+
+  // Check if last save is stale (> 2 minutes) - indicates potential save issues
+  isSaveStale(): boolean {
+    if (!this.lastSavedToFile || !this.fileHandle) {
+      return false;
+    }
+    const diffMs = new Date().getTime() - this.lastSavedToFile.getTime();
+    return diffMs > 2 * 60 * 1000; // > 2 minutes
+  }
+
   // Toolbar methods for TipTap editor
   toggleBold() {
     this.editor?.chain().focus().toggleBold().run();
@@ -786,6 +852,11 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     // Cancel any pending debounced operations
     if (this.debouncedSaveWiki.cancel) {
       this.debouncedSaveWiki.cancel();
+    }
+
+    // Clear the last saved update interval
+    if (this.lastSavedUpdateInterval) {
+      clearInterval(this.lastSavedUpdateInterval);
     }
   }
 }

@@ -8,6 +8,19 @@
     <button mat-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP archive with images">
       <mat-icon>download</mat-icon> Export
     </button>
+    <span *ngIf="fileName" class="file-info" [class.has-error]="saveError" [class.is-stale]="isSaveStale() && !saveError">
+      <span class="file-name">{{ fileName }}</span>
+      <span *ngIf="saveError" class="save-error-indicator">
+        <mat-icon>error</mat-icon> NOT SAVING
+      </span>
+      <span *ngIf="!saveError && hasUnsavedChanges && !isSaving" class="unsaved-indicator">
+        <mat-icon>edit</mat-icon> unsaved
+      </span>
+      <span *ngIf="!saveError && lastSavedToFile && !hasUnsavedChanges" class="last-saved" [class.stale]="isSaveStale()">
+        <mat-icon>{{ isSaveStale() ? 'warning' : 'check_circle' }}</mat-icon>
+        saved {{ getLastSavedText() }}
+      </span>
+    </span>
   </div>
 
   <!-- Loading/error indicators -->
