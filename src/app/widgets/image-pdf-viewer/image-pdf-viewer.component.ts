@@ -427,6 +427,9 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
   private renderedPages = new Set<number>();
   private renderingPages = new Set<number>();
   private scrollTimeout: any = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private lastContainerWidth = 0;
+  private resizeTimeout: any = null;
 
   // Search
   showSearch = false;
@@ -481,6 +484,38 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     if (this.pdfDoc) {
       setTimeout(() => this.renderVisiblePages(), 100);
     }
+    this.setupResizeObserver();
+  }
+
+  private setupResizeObserver() {
+    // Use ResizeObserver to detect container size changes with debounce
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        // Only re-render if width changed significantly (more than 5px)
+        if (this.pdfDoc && Math.abs(newWidth - this.lastContainerWidth) > 5) {
+          // Debounce: wait until resize stops before re-rendering
+          if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+          }
+          this.resizeTimeout = setTimeout(() => {
+            this.lastContainerWidth = newWidth;
+            this.reRenderAllPages();
+          }, 200);
+        }
+      }
+    });
+
+    // Observe the pdf container if it exists already
+    this.observePdfContainer();
+  }
+
+  private observePdfContainer() {
+    // Observe the pdf container when it exists
+    if (this.resizeObserver && this.pdfContainer?.nativeElement) {
+      this.lastContainerWidth = this.pdfContainer.nativeElement.clientWidth;
+      this.resizeObserver.observe(this.pdfContainer.nativeElement);
+    }
   }
 
   ngOnDestroy() {
@@ -495,6 +530,12 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     }
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
     }
   }
 
@@ -585,6 +626,8 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
         if (this.currentPage > 1) {
           this.scrollToPage(this.currentPage);
         }
+        // Setup resize observer for the pdf container now that it exists
+        this.observePdfContainer();
       }, 100);
     } catch (error) {
       console.error('Error loading PDF:', error);
