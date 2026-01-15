@@ -1,31 +1,35 @@
 <div class="wiki-widget">
   <div class="wiki-header">
-    <button mat-button (click)="openExistingWiki()">Open Wiki</button>
-    <button mat-button (click)="createNewWiki()">New Wiki</button>
-    <button mat-button (click)="importWikiZip()" matTooltip="Import from ZIP archive">
-      <mat-icon>upload</mat-icon> Import
+    <button mat-icon-button (click)="openExistingWiki()" matTooltip="Open Wiki">
+      <mat-icon>folder_open</mat-icon>
     </button>
-    <button mat-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP archive with images">
-      <mat-icon>download</mat-icon> Export
+    <button mat-icon-button (click)="createNewWiki()" matTooltip="New Wiki">
+      <mat-icon>note_add</mat-icon>
+    </button>
+    <button mat-icon-button (click)="importWikiZip()" matTooltip="Import from ZIP">
+      <mat-icon>upload</mat-icon>
+    </button>
+    <button mat-icon-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP">
+      <mat-icon>download</mat-icon>
     </button>
     <!-- Warning: wiki has content but no file connection (e.g., after page reload) -->
     <span *ngIf="!fileHandle && wikiData.articles.length > 0" class="file-info has-error">
-      <span class="save-error-indicator">
-        <mat-icon>link_off</mat-icon> NO FILE - click Open to reconnect
+      <span class="save-error-indicator" matTooltip="No file connected - click Open to reconnect">
+        <mat-icon>link_off</mat-icon>
       </span>
     </span>
     <!-- Normal file info when connected -->
     <span *ngIf="fileHandle" class="file-info" [class.has-error]="saveError" [class.is-stale]="isSaveStale() && !saveError">
       <span class="file-name">{{ fileName }}</span>
       <span *ngIf="saveError" class="save-error-indicator">
-        <mat-icon>error</mat-icon> NOT SAVING
+        <mat-icon>error</mat-icon> NOT SAVED
       </span>
       <span *ngIf="!saveError && hasUnsavedChanges && !isSaving" class="unsaved-indicator">
-        <mat-icon>edit</mat-icon> unsaved
+        <mat-icon>edit</mat-icon>
       </span>
       <span *ngIf="!saveError && lastSavedToFile && !hasUnsavedChanges" class="last-saved" [class.stale]="isSaveStale()">
         <mat-icon>{{ isSaveStale() ? 'warning' : 'check_circle' }}</mat-icon>
-        saved {{ getLastSavedText() }}
+        {{ getLastSavedText() }}
       </span>
     </span>
   </div>
@@ -36,25 +40,20 @@
 
   <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
     <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
-      <div class="sidebar-toggle">
-        <button mat-icon-button (click)="toggleSidebar()">
-          <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
-        </button>
-      </div>
-      <div class="sidebar-content" [class.hidden]="sidebarCollapsed">
-        <div class="sidebar-header">
-          <h3>Articles</h3>
-        </div>
-        <!-- Button to add a root article -->
-        <button mat-mini-fab color="primary" (click)="addArticle()">+</button>
+      <div class="sidebar-header">
         <input
+          *ngIf="!sidebarCollapsed"
           type="text"
-          placeholder="Search articles..."
+          placeholder="Search..."
           [(ngModel)]="searchTerm"
           class="search-input"
         />
-        <!-- Use virtual scrolling for better performance with large article lists -->
-        <cdk-virtual-scroll-viewport itemSize="36" class="article-viewport">
+        <button mat-icon-button (click)="toggleSidebar()" class="toggle-btn">
+          <mat-icon>{{ sidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+        </button>
+      </div>
+      <div class="sidebar-content" *ngIf="!sidebarCollapsed">
+        <cdk-virtual-scroll-viewport itemSize="24" class="article-viewport">
           <ul>
             <ng-container *ngFor="let article of filteredArticles; trackBy: trackByArticleId">
               <ng-container *ngTemplateOutlet="recursiveList; context:{ article: article, level: 0 }"></ng-container>
@@ -62,6 +61,9 @@
           </ul>
         </cdk-virtual-scroll-viewport>
       </div>
+      <button *ngIf="!sidebarCollapsed" mat-icon-button (click)="addArticle()" matTooltip="Add article" class="add-article-btn">
+        <mat-icon>add</mat-icon>
+      </button>
     </div>
     <div class="wiki-content">
       <div *ngIf="currentArticle" class="article-container">
@@ -158,14 +160,12 @@
 
 <!-- Recursive template for hierarchical display -->
 <ng-template #recursiveList let-article="article" let-level="level">
-  <li [style.paddingLeft.px]="level * 16" [class.active]="article.id === currentArticle?.id" (click)="selectArticle(article)">
-    <span>{{ article.title }}</span>
-    <button mat-icon-button color="warn" (click)="deleteArticle(article, $event)">
-      <mat-icon>delete</mat-icon>
-    </button>
-    <button mat-icon-button color="primary" (click)="addSubArticle(article, $event)">
-      <mat-icon>add</mat-icon>
-    </button>
+  <li [style.paddingLeft.px]="level * 12" [class.active]="article.id === currentArticle?.id" (click)="selectArticle(article)">
+    <span class="article-title">{{ article.title }}</span>
+    <span class="article-actions">
+      <mat-icon (click)="addSubArticle(article, $event)">add</mat-icon>
+      <mat-icon (click)="deleteArticle(article, $event)" class="delete-icon">close</mat-icon>
+    </span>
   </li>
   <ng-container *ngIf="article.children && article.children.length">
     <ng-container *ngFor="let child of article.children; trackBy: trackByArticleId">
