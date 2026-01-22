@@ -4,25 +4,76 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DM Tool is an Angular 19 application that provides digital tools for Game Masters running tabletop RPG sessions. It features a workspace-based architecture with draggable, resizable widgets and persistent tab-based layout management.
+DM Tool is a monorepo containing a digital toolkit for Game Masters running tabletop RPG sessions.
+
+### Repository Structure
+```
+dm-tool/
+├── frontend/          # Angular 19 web application
+│   ├── src/           # Angular source code
+│   └── api/           # Python Azure Functions (managed functions)
+└── infrastructure/    # Terraform configurations for Azure
+```
 
 ## Common Commands
 
-### Development
-- `npm start` or `ng serve` - Start development server on http://localhost:4200
-- `ng build` - Build for production (outputs to dist/)
-- `ng build --watch --configuration development` - Watch mode for development
-- `ng test` - Run unit tests with Karma
-- `ng deploy` - Deploy to GitHub Pages with base-href=/dm-tool/
+### Frontend Development
+All frontend commands should be run from the `frontend/` directory:
+```bash
+cd frontend
+npm start              # Start development server on http://localhost:4200
+npm run build          # Build for production (outputs to dist/dm-tool/browser)
+npm test               # Run unit tests with Karma
+```
 
-### No Linting/Type Checking
-This project does not have explicit lint or typecheck commands configured in package.json.
+### Full Stack Local Development
+```bash
+# Terminal 1: Angular dev server
+cd frontend && npm start
+
+# Terminal 2: SWA CLI with API
+cd frontend && swa start http://localhost:4200 --api-location ./api
+# Opens http://localhost:4280 (frontend + API at /api/*)
+```
+
+### API Development
+```bash
+cd frontend/api
+pip install -r requirements.txt    # Install Python dependencies
+func start                         # Run functions locally (requires Azure Functions Core Tools)
+```
+
+### Infrastructure Provisioning
+```bash
+cd infrastructure/environments/dev   # or prod
+terraform init
+terraform plan
+terraform apply
+terraform output -raw static_web_app_api_key   # Get deployment token
+```
+
+### Deployment
+```bash
+cd frontend
+npm run build
+swa deploy ./dist/dm-tool/browser --api-location ./api --api-language python --api-version 3.11 --env production --deployment-token <TOKEN>
+```
+
+**Important deployment notes:**
+- Angular 17+ outputs to `dist/dm-tool/browser/` (not `dist/dm-tool/`)
+- Must specify `--api-language python --api-version 3.11` for Python API (defaults to Node.js otherwise)
 
 ## Architecture Overview
 
-### Core Structure
+### Azure Infrastructure
+- **Static Web App (Free)**: Hosts Angular frontend + managed Python functions
+- **Storage Account (LRS Cool)**: Media blob storage with lifecycle policies
+- **Authentication**: Microsoft Entra ID (built-in, free)
+- Cost: ~$1/month
+
+### Frontend Architecture
 - **Workspace System**: Tab-based interface where each tab contains multiple widgets
-- **Widget Architecture**: Standalone Angular components with drag-and-drop, resize, and settings capabilities
+- **Widget Architecture**: Standalone Angular components with drag-and-drop, resize, and settings
 - **Services Layer**: Centralized state management for workspace, settings, and widget storage
 - **Settings System**: Dynamic configuration system with typed field definitions
 
@@ -33,11 +84,11 @@ This project does not have explicit lint or typecheck commands configured in pac
 
 ### Widget System
 All widgets follow this pattern:
-- Standalone Angular components
-- Implement settings interface via `getWidgetSettingsConfig()` 
+- Standalone Angular components in `frontend/src/app/widgets/`
+- Implement settings interface via `getWidgetSettingsConfig()`
 - Support drag/drop positioning and resizing via `WidgetContainerComponent`
 - Persist state through `WidgetStorageService`
-- Custom settings defined in `widget-container.component.ts:104-300`
+- Custom settings defined in `frontend/src/app/workspace/widget-container.component.ts:104-300`
 
 ### Widget Types
 - `IMAGE_PDF`: File viewer with drag-and-drop support
@@ -49,57 +100,53 @@ All widgets follow this pattern:
 - `COMBAT_TRACKER`: Initiative and HP tracking (includes Mutant Year Zero support)
 - `DAYTIME_TRACKER`: Visual time progression tracking
 - `LLM_CHAT`: AI chat integration with OpenAI API
-- `HEX_MAP`: SVG-based hex grid map with paint, select, and path drawing modes (uses honeycomb-grid)
-- `NAME_GENERATOR`: Random name generator with fantasy and real-world culture presets (uses @xaroth8088/random-names)
+- `HEX_MAP`: SVG-based hex grid map with paint, select, and path drawing modes
+- `NAME_GENERATOR`: Random name generator with fantasy and real-world culture presets
+
+### API Endpoints
+Python Azure Functions in `frontend/api/`:
+- `GET /api/health` - Health check (public)
+- `GET /api/media` - List media files
+- `GET /api/media/{filename}` - Download file
+- `PUT /api/media/{filename}` - Upload file
+- `DELETE /api/media/{filename}` - Delete file
 
 ### Data Persistence
-- All widget data stored in localStorage
-- Workspace layout (tabs, widget positions/sizes) automatically saved
-- File System Access API used for file operations where supported
+- Widget data stored in localStorage (frontend)
+- Media files stored in Azure Blob Storage (backend)
+- Workspace layout automatically saved
 
 ## Technical Details
 
 ### Dependencies
-- Angular 19 with Material Design
-- CDK for drag-and-drop functionality
-- Marked for Markdown parsing (used for backward compatibility migration)
-- TipTap (@tiptap/core, @tiptap/starter-kit, extensions) for WYSIWYG editing in Wiki Widget
-- RxJS for reactive state management
-- Karma/Jasmine for testing
+- Angular 19 with Material Design (Azure Blue theme)
+- TipTap for WYSIWYG editing in Wiki Widget
 - honeycomb-grid for hex map calculations
-- @xaroth8088/random-names for name generation
 - pdfjs-dist for PDF rendering
-
-### Browser Requirements
-- File System Access API (for file operations)
-- Modern CSS features (Grid, Flexbox)
-- Web Audio API (for music widgets)
+- azure-functions and azure-storage-blob (Python API)
 
 ### Build Configuration
-- Uses SCSS for styling
-- Azure Blue Material theme
-- GitHub Pages deployment configured
+- SCSS styling
 - Bundle size limits: 500kB warning, 1MB error
 
 ## Widget Development
 
 When creating new widgets:
-1. Create standalone component in `src/app/widgets/`
+1. Create standalone component in `frontend/src/app/widgets/`
 2. Add to `WidgetType` enum in `widget-selector-dialog.component.ts`
 3. Import in `widget-container.component.ts`
 4. Add settings configuration in `getWidgetSettingsConfig()` method
 5. Add title mapping in `getTitle()` method
-6. Follow established patterns for drag-and-drop integration
 
-## File Structure Notes
+## Infrastructure
 
-- `src/app/workspace/` - Core layout and widget container logic
-- `src/app/widgets/` - Individual widget components
-  - `wiki-widget/` - Wiki with TipTap editor
-    - `wiki-link.extension.ts` - Custom TipTap Mark for `[[wiki links]]`
-    - `content-migration.util.ts` - Markdown to HTML migration for backward compatibility
-- `src/app/services/` - Application services
-- `src/app/settings/` - Settings system with typed configurations
-- `src/app/dialogs/` - Modal dialogs (widget selector, etc.)
-- `public/backgrounds/` - Background images for workspace
-- `public/images/` - Static assets (dice images, etc.)
+### Terraform Modules
+- `modules/storage/` - Storage Account with media container and lifecycle policies
+- `modules/static-web-app/` - Static Web App with app settings
+
+### Environments
+- `environments/dev/` - Development environment
+- `environments/prod/` - Production environment
+
+### Remote State
+State stored in Azure Storage: `tfstatedmtool` in `rg-terraform-state`

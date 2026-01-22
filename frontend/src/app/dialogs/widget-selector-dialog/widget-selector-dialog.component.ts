@@ -29,7 +29,7 @@ interface WidgetOption {
           [attr.aria-label]="widget.label"
         >
           <div class="widget-icon">
-            <img [src]="'/dm-tool/images/' + widget.icon" [alt]="widget.label" />
+            <img [src]="'/images/' + widget.icon" [alt]="widget.label" />
           </div>
           <div class="widget-info">
             <span class="widget-label">{{ widget.label }}</span>

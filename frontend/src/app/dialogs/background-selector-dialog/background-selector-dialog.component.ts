@@ -97,9 +97,9 @@ export interface BackgroundOption {
 })
 export class BackgroundSelectorDialogComponent {
   backgrounds: BackgroundOption[] = [
-    { name: 'Glass', path: '/dm-tool/backgrounds/glass.png' },
-    { name: 'Glass Dragon', path: '/dm-tool/backgrounds/glass_dragon.png' },
-    { name: 'Glass Zombie', path: '/dm-tool/backgrounds/glass_zombie.png' }
+    { name: 'Glass', path: '/backgrounds/glass.png' },
+    { name: 'Glass Dragon', path: '/backgrounds/glass_dragon.png' },
+    { name: 'Glass Zombie', path: '/backgrounds/glass_zombie.png' }
   ];
 
   selectedIndex: number = 0;

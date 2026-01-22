@@ -21,7 +21,7 @@
             "outputPath": "dist/dm-tool",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "baseHref": "/dm-tool/",
+            "baseHref": "/",
             "polyfills": [
               "zone.js"
             ],
@@ -105,5 +105,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": false
   }
 }

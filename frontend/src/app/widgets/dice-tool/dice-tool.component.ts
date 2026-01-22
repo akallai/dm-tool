@@ -180,13 +180,13 @@ export class DiceToolComponent implements OnInit {
   customDiceInput: string = '';
 
   standardDice: DiceButton[] = [
-    { label: 'd4', formula: '1d4', image: '/dm-tool/images/d4.png', settingKey: 'enableD4' },
-    { label: 'd6', formula: '1d6', image: '/dm-tool/images/d6.png', settingKey: 'enableD6' },
-    { label: 'd8', formula: '1d8', image: '/dm-tool/images/d8.png', settingKey: 'enableD8' },
-    { label: 'd10', formula: '1d10', image: '/dm-tool/images/d10.png', settingKey: 'enableD10' },
-    { label: 'd12', formula: '1d12', image: '/dm-tool/images/d12.png', settingKey: 'enableD12' },
-    { label: 'd20', formula: '1d20', image: '/dm-tool/images/d20.png', settingKey: 'enableD20' },
-    { label: 'd100', formula: '1d100', image: '/dm-tool/images/d100.png', settingKey: 'enableD100' }
+    { label: 'd4', formula: '1d4', image: '/images/d4.png', settingKey: 'enableD4' },
+    { label: 'd6', formula: '1d6', image: '/images/d6.png', settingKey: 'enableD6' },
+    { label: 'd8', formula: '1d8', image: '/images/d8.png', settingKey: 'enableD8' },
+    { label: 'd10', formula: '1d10', image: '/images/d10.png', settingKey: 'enableD10' },
+    { label: 'd12', formula: '1d12', image: '/images/d12.png', settingKey: 'enableD12' },
+    { label: 'd20', formula: '1d20', image: '/images/d20.png', settingKey: 'enableD20' },
+    { label: 'd100', formula: '1d100', image: '/images/d100.png', settingKey: 'enableD100' }
   ];
 
   ngOnInit() {
