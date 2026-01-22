@@ -56,12 +56,8 @@ terraform output -raw static_web_app_api_key   # Get deployment token
 ```bash
 cd frontend
 npm run build
-swa deploy ./dist/dm-tool/browser --api-location ./api --api-language python --api-version 3.11 --env production --deployment-token <TOKEN>
+swa deploy ./dist/dm-tool/browser --api-location ./api --api-language python --api-version 3.10 --env production --deployment-token <TOKEN>
 ```
-
-**Important deployment notes:**
-- Angular 17+ outputs to `dist/dm-tool/browser/` (not `dist/dm-tool/`)
-- Must specify `--api-language python --api-version 3.11` for Python API (defaults to Node.js otherwise)
 
 ## Architecture Overview
 

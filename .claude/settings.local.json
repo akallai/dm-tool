@@ -4,7 +4,8 @@
       "Bash(ng build:*)",
       "Bash(ls src/app/widgets/music-widget/music-widget.component.* src/app/widgets/wiki-widget/wiki-widget.component.* src/app/workspace/widget-container/widget-container.component.*)",
       "WebSearch",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
