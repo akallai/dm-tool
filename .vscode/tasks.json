@@ -3,8 +3,10 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "frontend: start",
       "type": "npm",
       "script": "start",
+      "path": "frontend",
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",
@@ -21,8 +23,39 @@
       }
     },
     {
+      "label": "backend: start",
+      "type": "shell",
+      "command": "func start",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend/api"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "azurefunctions",
+        "pattern": {
+          "regexp": "^.*$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": {
+            "regexp": "Azure Functions Core Tools"
+          },
+          "endsPattern": {
+            "regexp": "For detailed output, run func with --verbose flag"
+          }
+        }
+      }
+    },
+    {
+      "label": "frontend+backend: start",
+      "dependsOn": ["frontend: start", "backend: start"],
+      "problemMatcher": []
+    },
+    {
       "type": "npm",
       "script": "test",
+      "path": "frontend",
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",
