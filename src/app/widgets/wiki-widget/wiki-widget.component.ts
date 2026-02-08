@@ -211,11 +211,18 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     // Handle wiki link clicks via event delegation
     this.wikiLinkClickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.classList.contains('wiki-link')) {
-        e.preventDefault();
-        e.stopPropagation();
+      const anchor = target.closest('a') as HTMLAnchorElement | null;
+      if (!anchor) return;
 
-        const title = target.getAttribute('data-wiki-title') || target.textContent;
+      // Always prevent default on anchor clicks inside the editor
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Check if this is a wiki link and navigate to the article
+      const wikiLink = target.closest('a.wiki-link') as HTMLElement | null
+        || (anchor.classList.contains('wiki-link') ? anchor : null);
+      if (wikiLink) {
+        const title = wikiLink.getAttribute('data-wiki-title') || wikiLink.textContent;
         if (title) {
           this.handleWikiLink(title);
         }
@@ -240,6 +247,19 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       article.content = content; // Update the article with migrated content
       this.updateSettings();
     }
+
+    // Clean up corrupted wiki links that have Link extension attributes
+    // (target="_blank", href="#", rel, external-link class) from prior bug
+    content = content.replace(
+      /<a\s+[^>]*class="[^"]*wiki-link[^"]*"[^>]*>/g,
+      (match) => {
+        return match
+          .replace(/\s*target="[^"]*"/g, '')
+          .replace(/\s*rel="[^"]*"/g, '')
+          .replace(/\s*href="#"/g, '')
+          .replace(/external-link\s*/g, '');
+      }
+    );
 
     this.editor.commands.setContent(content);
     // Note: wiki-image:// URLs are resolved by the WikiImage NodeView automatically

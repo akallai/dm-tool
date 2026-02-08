@@ -22,6 +22,8 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
 
   inclusive: false,
 
+  excludes: 'link',
+
   addOptions() {
     return {
       HTMLAttributes: {
