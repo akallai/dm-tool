@@ -849,13 +849,23 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   insertWikiLink() {
-    const title = prompt('Enter article title:');
-    if (title && this.editor) {
-      // Insert text with wiki link mark applied directly
+    const input = prompt('Enter article title (use # for header, e.g. Article#Header):');
+    if (input && this.editor) {
+      const hashIndex = input.indexOf('#');
+      let title: string | null = null;
+      let header: string | null = null;
+
+      if (hashIndex !== -1) {
+        title = input.substring(0, hashIndex) || null;
+        header = input.substring(hashIndex + 1) || null;
+      } else {
+        title = input;
+      }
+
       this.editor.chain().focus().insertContent({
         type: 'text',
-        text: title,
-        marks: [{ type: 'wikiLink', attrs: { title } }],
+        text: input,
+        marks: [{ type: 'wikiLink', attrs: { title, header } }],
       }).run();
     }
   }
