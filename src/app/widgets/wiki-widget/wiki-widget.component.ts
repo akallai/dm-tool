@@ -222,9 +222,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       const wikiLink = target.closest('a.wiki-link') as HTMLElement | null
         || (anchor.classList.contains('wiki-link') ? anchor : null);
       if (wikiLink) {
-        const title = wikiLink.getAttribute('data-wiki-title') || wikiLink.textContent;
-        if (title) {
-          this.handleWikiLink(title);
+        const title = wikiLink.getAttribute('data-wiki-title') || null;
+        const header = wikiLink.getAttribute('data-wiki-header') || null;
+        if (title || header) {
+          this.handleWikiLink(title, header);
         }
       }
     };
@@ -712,13 +713,48 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   // Handler for wiki link clicks
-  handleWikiLink(title: string) {
-    // Searches the tree (flattened) for an article with the matching title
+  handleWikiLink(title: string | null, header: string | null = null) {
+    if (!title && header) {
+      // Same-article header link: [[#Header]]
+      this.scrollToHeader(header, this.currentArticle?.title || 'current article');
+      return;
+    }
+
+    if (!title) return;
+
+    // Searches the tree for an article with the matching title
     const found = this.findArticleByTitle(this.wikiData.articles, title);
     if (found) {
-      this.selectArticle(found);
+      this.selectArticle(found).then(() => {
+        if (header) {
+          // Cross-article header link: [[Article#Header]]
+          // Small delay to let the DOM render the new content
+          setTimeout(() => this.scrollToHeader(header, title), 50);
+        }
+      });
     } else {
       this.errorMessage = `Article "${title}" not found.`;
+      this.cdr.markForCheck();
+
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+    }
+  }
+
+  private scrollToHeader(header: string, articleName: string) {
+    if (!this.editorContainer?.nativeElement) return;
+
+    const headings = this.editorContainer.nativeElement.querySelectorAll('h1, h2, h3');
+    const target = Array.from(headings).find(
+      (el) => (el as HTMLElement).textContent?.trim().toLowerCase() === header.toLowerCase()
+    ) as HTMLElement | undefined;
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      this.errorMessage = `Header "${header}" not found in "${articleName}".`;
       this.cdr.markForCheck();
 
       setTimeout(() => {
