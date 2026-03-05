@@ -1,8 +1,7 @@
-import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
 import { BackgroundSelectorDialogComponent } from '../dialogs/background-selector-dialog/background-selector-dialog.component';
-import { WidgetStorageService } from '../services/widget-storage.service';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
 import { WorkspaceService } from '../services/workspace.service';
+import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 
 export interface Tab {
   id: string;
@@ -43,6 +43,8 @@ export interface WidgetInstance {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WorkspaceComponent implements OnInit {
+  @Input() initialState: WorkspaceState | null = null;
+
   tabs: Tab[] = [];
   activeTabId: string = '';
   backgrounds: string[] = [
@@ -66,18 +68,26 @@ export class WorkspaceComponent implements OnInit {
 
   constructor(
     private dialog: MatDialog,
-    private widgetStorage: WidgetStorageService,
+    private persistence: WorkspacePersistenceService,
     private workspaceService: WorkspaceService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    // Load tabs and active tab from storage
-    const { tabs, activeTabId } = this.widgetStorage.loadTabs();
-    this.tabs = tabs;
-    this.activeTabId = activeTabId;
-    
-    // Update the workspace service
+    if (this.initialState) {
+      this.tabs = this.initialState.tabs;
+      this.activeTabId = this.initialState.activeTabId;
+      this.currentBackgroundIndex = this.initialState.backgroundIndex ?? 0;
+    } else {
+      const defaultTab: Tab = {
+        id: Date.now().toString(),
+        name: 'Main Tab',
+        widgets: []
+      };
+      this.tabs = [defaultTab];
+      this.activeTabId = defaultTab.id;
+      this.currentBackgroundIndex = 0;
+    }
     this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
   }
 
@@ -133,7 +143,11 @@ export class WorkspaceComponent implements OnInit {
   }
 
   saveTabs() {
-    this.widgetStorage.saveTabs(this.tabs, this.activeTabId);
+    this.persistence.saveWorkspace({
+      tabs: this.tabs,
+      activeTabId: this.activeTabId,
+      backgroundIndex: this.currentBackgroundIndex
+    });
     this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
   }
 
@@ -221,6 +235,7 @@ export class WorkspaceComponent implements OnInit {
     dialogRef.afterClosed().subscribe((index: number) => {
       if (index !== undefined && index !== null) {
         this.currentBackgroundIndex = index;
+        this.saveTabs();
         this.cdr.markForCheck();
       }
     });
@@ -228,12 +243,14 @@ export class WorkspaceComponent implements OnInit {
 
   nextBackground() {
     this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgrounds.length;
-    this.cdr.markForCheck(); // Trigger change detection
+    this.saveTabs();
+    this.cdr.markForCheck();
   }
 
   previousBackground() {
     this.currentBackgroundIndex = (this.currentBackgroundIndex - 1 + this.backgrounds.length) % this.backgrounds.length;
-    this.cdr.markForCheck(); // Trigger change detection
+    this.saveTabs();
+    this.cdr.markForCheck();
   }
 
   // Track widgets by ID for better performance with ngFor
