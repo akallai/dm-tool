@@ -1,1 +1,13 @@
-<app-workspace></app-workspace>
+<div *ngIf="loading" class="loading-screen">
+  <mat-spinner diameter="48"></mat-spinner>
+  <p>Loading workspace...</p>
+</div>
+
+<div *ngIf="error" class="error-screen">
+  <mat-icon class="error-icon">cloud_off</mat-icon>
+  <h2>Connection Error</h2>
+  <p>{{ error }}</p>
+  <button mat-raised-button color="primary" (click)="retry()">Retry</button>
+</div>
+
+<app-workspace *ngIf="!loading && !error" [initialState]="initialState"></app-workspace>
