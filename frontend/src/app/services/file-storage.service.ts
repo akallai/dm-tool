@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
-
-const DB_NAME = 'dm-tool-files';
-const STORE_NAME = 'files';
-const DB_VERSION = 1;
+import { MediaService } from './media.service';
+import { firstValueFrom } from 'rxjs';
 
 export interface StoredFile {
   id: string;
@@ -16,85 +14,42 @@ export interface StoredFile {
 })
 export class FileStorageService {
 
-  private openDb(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onerror = () => {
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        }
-      };
-    });
-  }
+  constructor(private media: MediaService) {}
 
   async saveFile(id: string, file: File): Promise<void> {
-    const db = await this.openDb();
-    try {
-      return await new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-
-        const storedFile: StoredFile = {
-          id,
-          blob: file,
-          fileName: file.name,
-          fileType: file.type
-        };
-
-        const request = store.put(storedFile);
-
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } finally {
-      db.close();
-    }
+    const blobPath = `files/${id}/${file.name}`;
+    await firstValueFrom(this.media.uploadFile(blobPath, file, file.type));
   }
 
   async getFile(id: string): Promise<StoredFile | null> {
-    const db = await this.openDb();
     try {
-      return await new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.get(id);
+      const files = await firstValueFrom(this.media.listFiles(`files/${id}/`));
+      if (files.length === 0) return null;
 
-        request.onsuccess = () => {
-          resolve(request.result || null);
-        };
-        request.onerror = () => reject(request.error);
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } finally {
-      db.close();
+      const fileInfo = files[0];
+      const blob = await firstValueFrom(this.media.downloadFile(fileInfo.name));
+      const fileName = fileInfo.name.split('/').pop() || fileInfo.name;
+
+      return {
+        id,
+        blob,
+        fileName,
+        fileType: fileInfo.content_type || 'application/octet-stream'
+      };
+    } catch (err: any) {
+      if (err.status === 404) return null;
+      throw err;
     }
   }
 
   async deleteFile(id: string): Promise<void> {
-    const db = await this.openDb();
     try {
-      return await new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.delete(id);
-
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-        transaction.onerror = () => reject(transaction.error);
-      });
-    } finally {
-      db.close();
+      const files = await firstValueFrom(this.media.listFiles(`files/${id}/`));
+      for (const file of files) {
+        await firstValueFrom(this.media.deleteFile(file.name));
+      }
+    } catch {
+      // Ignore errors on delete
     }
   }
 }
