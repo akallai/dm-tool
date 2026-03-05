@@ -11,6 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
+import { MediaService } from '../services/media.service';
+import { firstValueFrom } from 'rxjs';
 
 export interface Tab {
   id: string;
@@ -71,6 +73,7 @@ export class WorkspaceComponent implements OnInit {
     private dialog: MatDialog,
     private persistence: WorkspacePersistenceService,
     private workspaceService: WorkspaceService,
+    private media: MediaService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -129,13 +132,31 @@ export class WorkspaceComponent implements OnInit {
   }
 
   removeWidget(id: string) {
-    // Find the active tab
     const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
     if (!activeTab) return;
-    
+
+    const widget = activeTab.widgets.find(w => w.id === id);
     activeTab.widgets = activeTab.widgets.filter(w => w.id !== id);
     this.saveTabs();
-    this.cdr.markForCheck(); // Trigger change detection
+    this.cdr.markForCheck();
+
+    if (widget) {
+      this.cleanupWidgetBlobs(widget.id);
+    }
+  }
+
+  private async cleanupWidgetBlobs(widgetId: string) {
+    try {
+      const prefixes = [`files/${widgetId}/`, `wiki-images/${widgetId}/`, `audio/${widgetId}/`];
+      for (const prefix of prefixes) {
+        const files = await firstValueFrom(this.media.listFiles(prefix));
+        for (const file of files) {
+          await firstValueFrom(this.media.deleteFile(file.name));
+        }
+      }
+    } catch {
+      // Best-effort cleanup
+    }
   }
 
   resetWorkspace() {
