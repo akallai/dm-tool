@@ -55,6 +55,7 @@ export class WorkspaceComponent implements OnInit {
   currentBackgroundIndex: number = 0;
   editingTabId: string | null = null;
   tempTabName: string = '';
+  saveError: string | null = null;
 
   // Helper getter to access the widgets of the active tab
   get widgets(): WidgetInstance[] {
@@ -89,6 +90,11 @@ export class WorkspaceComponent implements OnInit {
       this.currentBackgroundIndex = 0;
     }
     this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
+
+    this.persistence.saveError$.subscribe(error => {
+      this.saveError = error;
+      this.cdr.markForCheck();
+    });
   }
 
   openWidgetSelector() {

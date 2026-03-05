@@ -1,3 +1,8 @@
+<div *ngIf="saveError" class="save-error-banner">
+  <mat-icon>warning</mat-icon>
+  <span>{{ saveError }}</span>
+</div>
+
 <div class="workspace" [ngStyle]="{'background-image': 'url(' + currentBackground + ')'}">
   <!-- Tabs bar at the top -->
   <div class="tabs-bar vertical">

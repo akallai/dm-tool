@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { MediaService } from './media.service';
 import { Tab } from '../workspace/workspace.component';
 import { debounce } from '../utils/debounce';
@@ -16,12 +16,27 @@ const WORKSPACE_BLOB_PATH = 'workspace/state.json';
   providedIn: 'root'
 })
 export class WorkspacePersistenceService {
+  saveError$ = new BehaviorSubject<string | null>(null);
   private debouncedSave: (state: WorkspaceState) => void;
+  private retryCount = 0;
+  private maxRetries = 3;
 
   constructor(private media: MediaService) {
     this.debouncedSave = debounce((state: WorkspaceState) => {
       this.saveWorkspaceImmediate(state).subscribe({
-        error: (err) => console.error('Failed to save workspace:', err)
+        next: () => {
+          this.retryCount = 0;
+          this.saveError$.next(null);
+        },
+        error: (err) => {
+          this.retryCount++;
+          if (this.retryCount <= this.maxRetries) {
+            this.saveError$.next('Failed to save. Retrying...');
+            setTimeout(() => this.debouncedSave(state), 1000 * Math.pow(2, this.retryCount));
+          } else {
+            this.saveError$.next('Changes could not be saved. Please check your connection.');
+          }
+        }
       });
     }, 2000);
   }
