@@ -211,13 +211,21 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     // Handle wiki link clicks via event delegation
     this.wikiLinkClickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.classList.contains('wiki-link')) {
-        e.preventDefault();
-        e.stopPropagation();
+      const anchor = target.closest('a') as HTMLAnchorElement | null;
+      if (!anchor) return;
 
-        const title = target.getAttribute('data-wiki-title') || target.textContent;
-        if (title) {
-          this.handleWikiLink(title);
+      // Always prevent default on anchor clicks inside the editor
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Check if this is a wiki link and navigate to the article
+      const wikiLink = target.closest('a.wiki-link') as HTMLElement | null
+        || (anchor.classList.contains('wiki-link') ? anchor : null);
+      if (wikiLink) {
+        const title = wikiLink.getAttribute('data-wiki-title') || null;
+        const header = wikiLink.getAttribute('data-wiki-header') || null;
+        if (title || header) {
+          this.handleWikiLink(title, header);
         }
       }
     };
@@ -240,6 +248,19 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       article.content = content; // Update the article with migrated content
       this.updateSettings();
     }
+
+    // Clean up corrupted wiki links that have Link extension attributes
+    // (target="_blank", href="#", rel, external-link class) from prior bug
+    content = content.replace(
+      /<a\s+[^>]*class="[^"]*wiki-link[^"]*"[^>]*>/g,
+      (match) => {
+        return match
+          .replace(/\s*target="[^"]*"/g, '')
+          .replace(/\s*rel="[^"]*"/g, '')
+          .replace(/\s*href="#"/g, '')
+          .replace(/external-link\s*/g, '');
+      }
+    );
 
     this.editor.commands.setContent(content);
     // Note: wiki-image:// URLs are resolved by the WikiImage NodeView automatically
@@ -692,13 +713,48 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   // Handler for wiki link clicks
-  handleWikiLink(title: string) {
-    // Searches the tree (flattened) for an article with the matching title
+  handleWikiLink(title: string | null, header: string | null = null) {
+    if (!title && header) {
+      // Same-article header link: [[#Header]]
+      this.scrollToHeader(header, this.currentArticle?.title || 'current article');
+      return;
+    }
+
+    if (!title) return;
+
+    // Searches the tree for an article with the matching title
     const found = this.findArticleByTitle(this.wikiData.articles, title);
     if (found) {
-      this.selectArticle(found);
+      this.selectArticle(found).then(() => {
+        if (header) {
+          // Cross-article header link: [[Article#Header]]
+          // Small delay to let the DOM render the new content
+          setTimeout(() => this.scrollToHeader(header, title), 50);
+        }
+      });
     } else {
       this.errorMessage = `Article "${title}" not found.`;
+      this.cdr.markForCheck();
+
+      setTimeout(() => {
+        this.errorMessage = '';
+        this.cdr.markForCheck();
+      }, 3000);
+    }
+  }
+
+  private scrollToHeader(header: string, articleName: string) {
+    if (!this.editorContainer?.nativeElement) return;
+
+    const headings = this.editorContainer.nativeElement.querySelectorAll('h1, h2, h3');
+    const target = Array.from(headings).find(
+      (el) => (el as HTMLElement).textContent?.trim().toLowerCase() === header.toLowerCase()
+    ) as HTMLElement | undefined;
+
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      this.errorMessage = `Header "${header}" not found in "${articleName}".`;
       this.cdr.markForCheck();
 
       setTimeout(() => {
@@ -793,13 +849,23 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   insertWikiLink() {
-    const title = prompt('Enter article title:');
-    if (title && this.editor) {
-      // Insert text with wiki link mark applied directly
+    const input = prompt('Enter article title (use # for header, e.g. Article#Header):');
+    if (input && this.editor) {
+      const hashIndex = input.indexOf('#');
+      let title: string | null = null;
+      let header: string | null = null;
+
+      if (hashIndex !== -1) {
+        title = input.substring(0, hashIndex) || null;
+        header = input.substring(hashIndex + 1) || null;
+      } else {
+        title = input;
+      }
+
       this.editor.chain().focus().insertContent({
         type: 'text',
-        text: title,
-        marks: [{ type: 'wikiLink', attrs: { title } }],
+        text: input,
+        marks: [{ type: 'wikiLink', attrs: { title, header } }],
       }).run();
     }
   }

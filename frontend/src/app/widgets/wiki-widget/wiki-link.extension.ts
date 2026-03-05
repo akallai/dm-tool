@@ -9,7 +9,7 @@ export interface WikiLinkOptions {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     wikiLink: {
-      setWikiLink: (attributes: { title: string }) => ReturnType;
+      setWikiLink: (attributes: { title: string; header?: string }) => ReturnType;
       unsetWikiLink: () => ReturnType;
     };
   }
@@ -21,6 +21,8 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
   priority: 1000,
 
   inclusive: false,
+
+  excludes: 'link',
 
   addOptions() {
     return {
@@ -44,6 +46,18 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
           };
         },
       },
+      header: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-wiki-header') || null,
+        renderHTML: attributes => {
+          if (!attributes['header']) {
+            return {};
+          }
+          return {
+            'data-wiki-header': attributes['header'],
+          };
+        },
+      },
     };
   },
 
@@ -57,7 +71,8 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
         getAttrs: element => {
           const el = element as HTMLElement;
           const title = el.getAttribute('data-wiki-title') || el.textContent;
-          return { title };
+          const header = el.getAttribute('data-wiki-header') || null;
+          return { title, header };
         },
       },
     ];
@@ -79,7 +94,7 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
   },
 
   addInputRules() {
-    // Custom input rule: when user types [[text]] and closes with ]],
+    // Custom input rule: when user types [[text]] or [[text#header]] and closes with ]],
     // replace with linked text
     const wikiLinkInputRegex = /\[\[([^\]]+)\]\]$/;
 
@@ -87,9 +102,21 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
       new InputRule({
         find: wikiLinkInputRegex,
         handler: ({ state, range, match, chain }) => {
-          const title = match[1];
-          if (!title) return;
+          const fullMatch = match[1];
+          if (!fullMatch) return;
 
+          const hashIndex = fullMatch.indexOf('#');
+          let title: string | null = null;
+          let header: string | null = null;
+
+          if (hashIndex !== -1) {
+            title = fullMatch.substring(0, hashIndex) || null;
+            header = fullMatch.substring(hashIndex + 1) || null;
+          } else {
+            title = fullMatch;
+          }
+
+          const displayText = fullMatch;
           const start = range.from;
           const end = range.to;
 
@@ -97,8 +124,8 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
             .deleteRange({ from: start, to: end })
             .insertContentAt(start, {
               type: 'text',
-              text: title,
-              marks: [{ type: 'wikiLink', attrs: { title } }],
+              text: displayText,
+              marks: [{ type: 'wikiLink', attrs: { title, header } }],
             })
             .run();
         },
@@ -113,10 +140,20 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
         key: new PluginKey('wikiLinkPaste'),
         props: {
           transformPastedHTML: (html) => {
-            // Convert [[text]] to wiki link HTML in pasted content
+            // Convert [[text]] and [[text#header]] to wiki link HTML in pasted content
             return html.replace(
               /\[\[([^\]]+)\]\]/g,
-              '<a class="wiki-link" data-wiki-title="$1">$1</a>'
+              (_match, content) => {
+                const hashIndex = content.indexOf('#');
+                if (hashIndex !== -1) {
+                  const title = content.substring(0, hashIndex);
+                  const header = content.substring(hashIndex + 1);
+                  const titleAttr = title ? ` data-wiki-title="${title}"` : '';
+                  const headerAttr = header ? ` data-wiki-header="${header}"` : '';
+                  return `<a class="wiki-link"${titleAttr}${headerAttr}>${content}</a>`;
+                }
+                return `<a class="wiki-link" data-wiki-title="${content}">${content}</a>`;
+              }
             );
           },
           transformPastedText: (text) => {
@@ -124,7 +161,17 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
             if (text.includes('[[')) {
               return text.replace(
                 /\[\[([^\]]+)\]\]/g,
-                '<a class="wiki-link" data-wiki-title="$1">$1</a>'
+                (_match, content) => {
+                  const hashIndex = content.indexOf('#');
+                  if (hashIndex !== -1) {
+                    const title = content.substring(0, hashIndex);
+                    const header = content.substring(hashIndex + 1);
+                    const titleAttr = title ? ` data-wiki-title="${title}"` : '';
+                    const headerAttr = header ? ` data-wiki-header="${header}"` : '';
+                    return `<a class="wiki-link"${titleAttr}${headerAttr}>${content}</a>`;
+                  }
+                  return `<a class="wiki-link" data-wiki-title="${content}">${content}</a>`;
+                }
               );
             }
             return text;
