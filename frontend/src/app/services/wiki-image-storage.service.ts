@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { MediaService } from './media.service';
+import { firstValueFrom } from 'rxjs';
 
 export interface StoredWikiImage {
   id: string;
@@ -13,160 +15,105 @@ export interface StoredWikiImage {
   providedIn: 'root'
 })
 export class WikiImageStorageService {
-  private dbName = 'dm-tool-wiki-images-db';
-  private storeName = 'wiki-images';
-  private dbVersion = 1;
-  private db: IDBDatabase | null = null;
-  // Cache blob URLs: imageId -> blobUrl
   private blobUrlCache = new Map<string, string>();
-  // Track which images belong to which widget for proper cleanup
   private widgetImageIds = new Map<string, Set<string>>();
 
-  async init(): Promise<void> {
-    if (this.db) return;
+  constructor(private media: MediaService) {}
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
-
-      request.onerror = () => {
-        console.error('Failed to open WikiImages IndexedDB:', request.error);
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-          store.createIndex('widgetId', 'widgetId', { unique: false });
-        }
-      };
-    });
-  }
-
-  private generateId(): string {
-    return crypto.randomUUID();
+  private blobPath(widgetId: string, imageId: string): string {
+    return `wiki-images/${widgetId}/${imageId}`;
   }
 
   async saveImage(widgetId: string, file: File): Promise<string> {
-    await this.init();
-    if (!this.db) throw new Error('Database not initialized');
+    const imageId = crypto.randomUUID();
+    const path = this.blobPath(widgetId, imageId);
 
-    const imageId = this.generateId();
+    await firstValueFrom(this.media.uploadFile(path, file, file.type));
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+    const meta = { fileName: file.name, mimeType: file.type, createdAt: Date.now() };
+    const metaBlob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+    await firstValueFrom(this.media.uploadFile(`${path}.meta`, metaBlob, 'application/json'));
 
-      const storedImage: StoredWikiImage = {
-        id: imageId,
-        widgetId,
-        fileName: file.name,
-        mimeType: file.type,
-        blob: file,
-        createdAt: Date.now()
-      };
-
-      const request = store.put(storedImage);
-
-      request.onsuccess = () => resolve(imageId);
-      request.onerror = () => reject(request.error);
-    });
+    return imageId;
   }
 
   async getImage(imageId: string): Promise<StoredWikiImage | null> {
-    await this.init();
-    if (!this.db) return null;
+    try {
+      const files = await firstValueFrom(this.media.listFiles(`wiki-images/`));
+      const imageFile = files.find(f => f.name.includes(`/${imageId}`) && !f.name.endsWith('.meta'));
+      if (!imageFile) return null;
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.get(imageId);
+      const parts = imageFile.name.split('/');
+      const widgetId = parts[1];
 
-      request.onsuccess = () => {
-        resolve(request.result || null);
-      };
+      const blob = await firstValueFrom(this.media.downloadFile(imageFile.name));
 
-      request.onerror = () => reject(request.error);
-    });
+      let fileName = imageId;
+      let mimeType = imageFile.content_type || 'image/png';
+      let createdAt = Date.now();
+      try {
+        const metaBlob = await firstValueFrom(this.media.downloadFile(`${imageFile.name}.meta`));
+        const metaText = await metaBlob.text();
+        const meta = JSON.parse(metaText);
+        fileName = meta.fileName || fileName;
+        mimeType = meta.mimeType || mimeType;
+        createdAt = meta.createdAt || createdAt;
+      } catch {
+        // Metadata not found, use defaults
+      }
+
+      return { id: imageId, widgetId, fileName, mimeType, blob, createdAt };
+    } catch {
+      return null;
+    }
   }
 
   async deleteImage(imageId: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    // Revoke blob URL if cached
     if (this.blobUrlCache.has(imageId)) {
       URL.revokeObjectURL(this.blobUrlCache.get(imageId)!);
       this.blobUrlCache.delete(imageId);
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const request = store.delete(imageId);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    const files = await firstValueFrom(this.media.listFiles(`wiki-images/`));
+    const toDelete = files.filter(f => f.name.includes(`/${imageId}`));
+    for (const file of toDelete) {
+      await firstValueFrom(this.media.deleteFile(file.name));
+    }
   }
 
   async deleteImagesForWidget(widgetId: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    // First get all images to revoke their blob URLs
-    const images = await this.getAllImagesForWidget(widgetId);
-    images.forEach(img => {
-      if (this.blobUrlCache.has(img.id)) {
-        URL.revokeObjectURL(this.blobUrlCache.get(img.id)!);
-        this.blobUrlCache.delete(img.id);
-      }
-    });
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('widgetId');
-      const request = index.openCursor(IDBKeyRange.only(widgetId));
-
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          store.delete(cursor.primaryKey);
-          cursor.continue();
+    const imageIds = this.widgetImageIds.get(widgetId);
+    if (imageIds) {
+      imageIds.forEach(id => {
+        const url = this.blobUrlCache.get(id);
+        if (url) {
+          URL.revokeObjectURL(url);
+          this.blobUrlCache.delete(id);
         }
-      };
+      });
+      this.widgetImageIds.delete(widgetId);
+    }
 
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+    const files = await firstValueFrom(this.media.listFiles(`wiki-images/${widgetId}/`));
+    for (const file of files) {
+      await firstValueFrom(this.media.deleteFile(file.name));
+    }
   }
 
   async getAllImagesForWidget(widgetId: string): Promise<StoredWikiImage[]> {
-    await this.init();
-    if (!this.db) return [];
+    const files = await firstValueFrom(this.media.listFiles(`wiki-images/${widgetId}/`));
+    const imageFiles = files.filter(f => !f.name.endsWith('.meta'));
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('widgetId');
-      const request = index.getAll(IDBKeyRange.only(widgetId));
-
-      request.onsuccess = () => {
-        resolve(request.result || []);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
+    const images: StoredWikiImage[] = [];
+    for (const file of imageFiles) {
+      const imageId = file.name.split('/').pop()!;
+      const image = await this.getImage(imageId);
+      if (image) images.push(image);
+    }
+    return images;
   }
 
   async getBlobUrl(imageId: string): Promise<string | null> {
-    // Check cache first
     if (this.blobUrlCache.has(imageId)) {
       return this.blobUrlCache.get(imageId)!;
     }
@@ -177,7 +124,6 @@ export class WikiImageStorageService {
     const blobUrl = URL.createObjectURL(image.blob);
     this.blobUrlCache.set(imageId, blobUrl);
 
-    // Track which widget this image belongs to for cleanup
     if (!this.widgetImageIds.has(image.widgetId)) {
       this.widgetImageIds.set(image.widgetId, new Set());
     }
@@ -209,27 +155,13 @@ export class WikiImageStorageService {
   }
 
   async importImages(widgetId: string, images: { id: string; fileName: string; mimeType: string; blob: Blob }[]): Promise<void> {
-    await this.init();
-    if (!this.db) throw new Error('Database not initialized');
+    for (const image of images) {
+      const path = this.blobPath(widgetId, image.id);
+      await firstValueFrom(this.media.uploadFile(path, image.blob, image.mimeType));
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-
-      images.forEach(image => {
-        const storedImage: StoredWikiImage = {
-          id: image.id,
-          widgetId,
-          fileName: image.fileName,
-          mimeType: image.mimeType,
-          blob: image.blob,
-          createdAt: Date.now()
-        };
-        store.put(storedImage);
-      });
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+      const meta = { fileName: image.fileName, mimeType: image.mimeType, createdAt: Date.now() };
+      const metaBlob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+      await firstValueFrom(this.media.uploadFile(`${path}.meta`, metaBlob, 'application/json'));
+    }
   }
 }
