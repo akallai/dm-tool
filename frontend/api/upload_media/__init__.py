@@ -7,7 +7,7 @@ from azure.storage.blob import ContentSettings
 
 # Add parent directory to path for shared imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared import get_blob_service_client, CONTAINER_NAME
+from shared import get_blob_service_client, CONTAINER_NAME, user_blob_path
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -25,7 +25,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         blob_service = get_blob_service_client()
         container_client = blob_service.get_container_client(CONTAINER_NAME)
-        blob_client = container_client.get_blob_client(filename)
+        blob_client = container_client.get_blob_client(user_blob_path(req, filename))
 
         # Get content type from header or guess from filename
         content_type = req.headers.get("Content-Type", "application/octet-stream")

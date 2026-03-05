@@ -6,7 +6,7 @@ import os
 
 # Add parent directory to path for shared imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared import get_blob_service_client, CONTAINER_NAME
+from shared import get_blob_service_client, CONTAINER_NAME, user_blob_prefix
 
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -17,13 +17,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         blob_service = get_blob_service_client()
         container_client = blob_service.get_container_client(CONTAINER_NAME)
 
-        # Get optional prefix filter from query params
-        prefix = req.params.get("prefix", "")
+        # Get optional prefix filter from query params, scoped to user
+        prefix = user_blob_prefix(req, req.params.get("prefix", ""))
+
+        # Length of user prefix to strip from returned names
+        user_prefix_len = len(user_blob_prefix(req))
 
         blobs = []
         for blob in container_client.list_blobs(name_starts_with=prefix):
             blobs.append({
-                "name": blob.name,
+                "name": blob.name[user_prefix_len:],
                 "size": blob.size,
                 "content_type": blob.content_settings.content_type if blob.content_settings else None,
                 "last_modified": blob.last_modified.isoformat() if blob.last_modified else None,
