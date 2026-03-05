@@ -534,7 +534,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
         }
       } else {
         // Delete files for this mapping if none exist
-        await this.audioStorage.deleteAudioFilesForMapping(mappingId);
+        await this.audioStorage.deleteAudioFilesForMapping(mappingId, this.widgetId);
       }
     } catch (error) {
       console.error('Error saving audio files to IndexedDB:', error);

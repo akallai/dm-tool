@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { MediaService } from './media.service';
+import { firstValueFrom } from 'rxjs';
 
 export interface StoredAudioFile {
   id: string;
@@ -12,177 +14,122 @@ export interface StoredAudioFile {
   providedIn: 'root'
 })
 export class AudioStorageService {
-  private dbName = 'dm-tool-audio-db';
-  private storeName = 'audio-files';
-  private dbVersion = 1;
-  private db: IDBDatabase | null = null;
 
-  async init(): Promise<void> {
-    if (this.db) return;
+  constructor(private media: MediaService) {}
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+  private blobPath(widgetId: string, mappingId: string, index: number): string {
+    return `audio/${widgetId}/${mappingId}/${index}`;
+  }
 
-      request.onerror = () => {
-        console.error('Failed to open IndexedDB:', request.error);
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
-          store.createIndex('widgetId', 'widgetId', { unique: false });
-          store.createIndex('mappingId', 'mappingId', { unique: false });
-        }
-      };
-    });
+  private metaPath(widgetId: string, mappingId: string): string {
+    return `audio/${widgetId}/${mappingId}/meta.json`;
   }
 
   async saveAudioFiles(widgetId: string, mappingId: string, files: { fileName: string, fileDataUrl: string }[]): Promise<void> {
-    await this.init();
-    if (!this.db) return;
+    await this.deleteAudioFilesForMapping(mappingId, widgetId);
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
+    const meta = files.map((f, i) => ({ index: i, fileName: f.fileName }));
+    const metaBlob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+    await firstValueFrom(this.media.uploadFile(this.metaPath(widgetId, mappingId), metaBlob, 'application/json'));
 
-      // First, delete existing files for this mapping
-      const index = store.index('mappingId');
-      const deleteRequest = index.openCursor(IDBKeyRange.only(mappingId));
-
-      deleteRequest.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          store.delete(cursor.primaryKey);
-          cursor.continue();
-        }
-      };
-
-      transaction.oncomplete = () => {
-        // Now add the new files
-        const addTransaction = this.db!.transaction([this.storeName], 'readwrite');
-        const addStore = addTransaction.objectStore(this.storeName);
-
-        files.forEach((file, index) => {
-          const storedFile: StoredAudioFile = {
-            id: `${mappingId}-${index}`,
-            mappingId,
-            widgetId,
-            fileName: file.fileName,
-            fileDataUrl: file.fileDataUrl
-          };
-          addStore.put(storedFile);
-        });
-
-        addTransaction.oncomplete = () => resolve();
-        addTransaction.onerror = () => reject(addTransaction.error);
-      };
-
-      transaction.onerror = () => reject(transaction.error);
-    });
+    for (let i = 0; i < files.length; i++) {
+      const audioBlob = this.dataUrlToBlob(files[i].fileDataUrl);
+      await firstValueFrom(this.media.uploadFile(
+        this.blobPath(widgetId, mappingId, i),
+        audioBlob,
+        audioBlob.type
+      ));
+    }
   }
 
-  async getAudioFiles(mappingId: string): Promise<{ fileName: string, fileDataUrl: string }[]> {
-    await this.init();
-    if (!this.db) return [];
+  async getAudioFiles(mappingId: string, widgetId: string): Promise<{ fileName: string, fileDataUrl: string }[]> {
+    try {
+      const prefix = `audio/${widgetId}/${mappingId}/`;
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('mappingId');
-      const request = index.getAll(IDBKeyRange.only(mappingId));
+      const metaBlobResp = await firstValueFrom(this.media.downloadFile(this.metaPath(widgetId, mappingId)));
+      const metaText = await metaBlobResp.text();
+      const meta: { index: number, fileName: string }[] = JSON.parse(metaText);
 
-      request.onsuccess = () => {
-        const files = request.result.map((stored: StoredAudioFile) => ({
-          fileName: stored.fileName,
-          fileDataUrl: stored.fileDataUrl
-        }));
-        resolve(files);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
+      const results: { fileName: string, fileDataUrl: string }[] = [];
+      for (const entry of meta) {
+        const audioBlob = await firstValueFrom(this.media.downloadFile(`${prefix}${entry.index}`));
+        const dataUrl = await this.blobToDataUrl(audioBlob);
+        results.push({ fileName: entry.fileName, fileDataUrl: dataUrl });
+      }
+      return results;
+    } catch {
+      return [];
+    }
   }
 
   async getAudioFilesForWidget(widgetId: string): Promise<Map<string, { fileName: string, fileDataUrl: string }[]>> {
-    await this.init();
-    if (!this.db) return new Map();
+    const result = new Map<string, { fileName: string, fileDataUrl: string }[]>();
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readonly');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('widgetId');
-      const request = index.getAll(IDBKeyRange.only(widgetId));
+    try {
+      const files = await firstValueFrom(this.media.listFiles(`audio/${widgetId}/`));
+      const mappingIds = new Set<string>();
+      for (const file of files) {
+        const parts = file.name.split('/');
+        if (parts.length >= 3) {
+          mappingIds.add(parts[2]);
+        }
+      }
 
-      request.onsuccess = () => {
-        const filesByMapping = new Map<string, { fileName: string, fileDataUrl: string }[]>();
+      for (const mappingId of mappingIds) {
+        const audioFiles = await this.getAudioFiles(mappingId, widgetId);
+        if (audioFiles.length > 0) {
+          result.set(mappingId, audioFiles);
+        }
+      }
+    } catch {
+      // Return empty map on error
+    }
 
-        request.result.forEach((stored: StoredAudioFile) => {
-          if (!filesByMapping.has(stored.mappingId)) {
-            filesByMapping.set(stored.mappingId, []);
-          }
-          filesByMapping.get(stored.mappingId)!.push({
-            fileName: stored.fileName,
-            fileDataUrl: stored.fileDataUrl
-          });
-        });
-
-        resolve(filesByMapping);
-      };
-
-      request.onerror = () => reject(request.error);
-    });
+    return result;
   }
 
   async deleteAudioFilesForWidget(widgetId: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('widgetId');
-      const request = index.openCursor(IDBKeyRange.only(widgetId));
-
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          store.delete(cursor.primaryKey);
-          cursor.continue();
-        }
-      };
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-    });
+    try {
+      const files = await firstValueFrom(this.media.listFiles(`audio/${widgetId}/`));
+      for (const file of files) {
+        await firstValueFrom(this.media.deleteFile(file.name));
+      }
+    } catch {
+      // Ignore
+    }
   }
 
-  async deleteAudioFilesForMapping(mappingId: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite');
-      const store = transaction.objectStore(this.storeName);
-      const index = store.index('mappingId');
-      const request = index.openCursor(IDBKeyRange.only(mappingId));
-
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          store.delete(cursor.primaryKey);
-          cursor.continue();
+  async deleteAudioFilesForMapping(mappingId: string, widgetId?: string): Promise<void> {
+    try {
+      if (widgetId) {
+        const files = await firstValueFrom(this.media.listFiles(`audio/${widgetId}/${mappingId}/`));
+        for (const file of files) {
+          await firstValueFrom(this.media.deleteFile(file.name));
         }
-      };
+      }
+    } catch {
+      // Ignore
+    }
+  }
 
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+  private dataUrlToBlob(dataUrl: string): Blob {
+    const [header, data] = dataUrl.split(',');
+    const mimeMatch = header.match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mime });
+  }
+
+  private blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
   }
 }
