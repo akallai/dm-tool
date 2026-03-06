@@ -272,19 +272,12 @@ export class WidgetContainerComponent {
           title: 'LLM Chat Settings',
           fields: [
             {
-              key: 'apiKey',
-              type: 'text',
-              label: 'API Key',
-              placeholder: 'Enter your API Key',
-              required: true
-            },
-            {
               key: 'model',
               type: 'text',
               label: 'Model',
               placeholder: 'Enter the model name',
               required: true,
-              defaultValue: 'gpt-5-mini-2025-08-07'
+              defaultValue: 'stepfun/step-3.5-flash:free'
             },
             {
               key: 'temperature',

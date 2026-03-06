@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **LLM Chat widget** — API requests now proxy through `/api/chat` backend instead of direct OpenAI calls; switched provider to OpenRouter; API key moved to server-side environment variable
+
+### Removed
+- **LLM Chat wiki context** — removed automatic wiki article injection into LLM context
+- **LLM Chat API key setting** — no longer needed in widget settings (handled server-side)
+
+### Changed
 - **Settings dialog** — renamed "Save" button to "Apply" to clarify it only applies changes in-memory (actual persistence requires Ctrl+S)
 - **Manual save** — replaced autosave with explicit save button (+ Ctrl+S) to reduce server requests; wiki content also saves only on button click with close confirmation for unsaved changes
 - **Wiki widget** — wikis are now independent entities stored in cloud storage, not tied to widget instances

@@ -1,18 +1,12 @@
-import { Component, Input, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { OpenAIService, ChatMessage } from '../../services/openai.service';
-
-interface WikiArticle {
-  id: string;
-  title: string;
-  content: string;
-  children?: WikiArticle[];
-}
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ChatService, ChatMessage } from '../../services/chat.service';
 
 @Component({
   selector: 'app-llm-chat',
@@ -160,31 +154,26 @@ interface WikiArticle {
     MatButtonModule,
     MatIconModule,
     MatInputModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatTooltipModule
   ]
 })
-export class LlmChatComponent implements OnInit, OnDestroy {
-  // Rest of the component code remains the same...
+export class LlmChatComponent implements OnInit {
   @Input() settings: any;
   @ViewChild('messageInput') messageInput!: ElementRef;
   @ViewChild('chatHistory') chatHistory!: ElementRef;
 
   conversation: ChatMessage[] = [];
   newMessage: string = '';
-  wikiContext: string = '';
   isLoading: boolean = false;
   errorMessage: string = '';
 
-  private refreshInterval: any;
-
   constructor(
-    private openAIService: OpenAIService,
+    private chatService: ChatService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    this.refreshWikiContext();
-
     // Load conversation from settings
     if (this.settings?.conversation) {
       this.conversation = this.settings.conversation;
@@ -194,58 +183,6 @@ export class LlmChatComponent implements OnInit, OnDestroy {
         }
       });
     }
-
-    // Automatically refresh wiki context every 5 seconds
-    this.refreshInterval = setInterval(() => {
-      this.refreshWikiContext();
-    }, 5000);
-  }
-
-  ngOnDestroy() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-  }
-
-  private findWikiWidget(): any {
-    // Get all widgets from the workspace
-    const widgets = (window as any).workspace?.widgets || [];
-    // Find the Wiki widget
-    return widgets.find((w: any) => w.type === 'WIKI_WIDGET');
-  }
-
-  private getAllArticles(articles: WikiArticle[]): WikiArticle[] {
-    let allArticles: WikiArticle[] = [];
-    for (const article of articles) {
-      allArticles.push(article);
-      if (article.children && article.children.length > 0) {
-        allArticles = allArticles.concat(this.getAllArticles(article.children));
-      }
-    }
-    return allArticles;
-  }
-
-  refreshWikiContext() {
-    const wikiWidget = this.findWikiWidget();
-    const articles = wikiWidget?.settings?.wikiData?.articles;
-    if (articles && Array.isArray(articles)) {
-      this.wikiContext = this.formatWikiArticles(articles);
-    } else {
-      this.wikiContext = '';
-    }
-  }
-
-  private formatWikiArticles(articles: WikiArticle[], prefix = ''): string {
-    let result = '';
-    for (const article of articles) {
-      if (article.title && article.content) {
-        result += `${prefix}${article.title}\n\`\`\`\n${article.content.trim()}\n\`\`\`\n\n`;
-      }
-      if (article.children && Array.isArray(article.children) && article.children.length > 0) {
-        result += this.formatWikiArticles(article.children, `${prefix}  `);
-      }
-    }
-    return result;
   }
 
   handleKeyDown(event: KeyboardEvent) {
@@ -274,8 +211,8 @@ export class LlmChatComponent implements OnInit, OnDestroy {
   async sendMessage() {
     if (!this.newMessage.trim() || this.isLoading) return;
 
-    if (!this.settings?.apiKey || !this.settings?.model) {
-      this.errorMessage = 'Please configure API key and model in settings';
+    if (!this.settings?.model) {
+      this.errorMessage = 'Please configure a model in settings';
       return;
     }
 
@@ -284,14 +221,6 @@ export class LlmChatComponent implements OnInit, OnDestroy {
 
     if (this.settings.prompt) {
       messages.push({ role: 'system', content: this.settings.prompt });
-    }
-
-    // Add wiki context if available
-    if (this.wikiContext) {
-      messages.push({
-        role: 'system',
-        content: `Here is the wiki context to consider in your responses:\n\n${this.wikiContext}`
-      });
     }
 
     messages.push(...this.conversation);
@@ -303,15 +232,13 @@ export class LlmChatComponent implements OnInit, OnDestroy {
       this.settings.conversation = this.conversation;
     }
 
-
     const sentMessage = this.newMessage;
     this.newMessage = '';
     this.isLoading = true;
 
     try {
-      const response = await this.openAIService
+      const response = await this.chatService
         .chat(
-          this.settings.apiKey,
           messages,
           this.settings.model,
           this.settings.temperature

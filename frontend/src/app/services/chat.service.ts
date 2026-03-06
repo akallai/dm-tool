@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -17,30 +17,25 @@ export interface ChatCompletionRequest {
 @Injectable({
   providedIn: 'root'
 })
-export class OpenAIService {
-  private readonly apiUrl = 'https://api.openai.com/v1/chat/completions';
+export class ChatService {
+  private readonly apiUrl = '/api/chat';
 
   constructor(private http: HttpClient) {}
 
-  chat(apiKey: string, messages: ChatMessage[], model: string, temperature?: number): Observable<any> {
-    const headers = new HttpHeaders()
-      .set('Content-Type', 'application/json')
-      .set('Authorization', `Bearer ${apiKey}`);
-
+  chat(messages: ChatMessage[], model: string, temperature?: number): Observable<any> {
     const body: ChatCompletionRequest = {
       model,
       messages
     };
 
-    // Only include temperature if explicitly provided
     if (temperature !== undefined && temperature !== null) {
       body.temperature = temperature;
     }
 
-    return this.http.post(this.apiUrl, body, { headers }).pipe(
+    return this.http.post(this.apiUrl, body).pipe(
       catchError(error => {
         console.error('API Error:', error);
-        return throwError(() => new Error(error.error?.error?.message || 'An error occurred'));
+        return throwError(() => new Error(error.error?.error?.message || error.error?.error || 'An error occurred'));
       })
     );
   }
