@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RandomTableStorageService, TableRef, TableBlobData } from '../../services/random-table-storage.service';
 import { RandomTablePickerDialogComponent } from '../../dialogs/random-table-picker-dialog/random-table-picker-dialog.component';
@@ -19,7 +19,7 @@ interface RandomMapping {
   templateUrl: './random-generator.component.html',
   styleUrls: ['./random-generator.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatExpansionModule, MatProgressSpinnerModule]
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatExpansionModule, MatProgressSpinnerModule, MatDialogModule]
 })
 export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
   @Input() settings: any = {};
@@ -279,7 +279,6 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
       this.lastKey = mapping.key;
       this.settings.lastResult = this.lastResult;
       this.settings.lastKey = this.lastKey;
-      this.tableDirty = true;
       this.settingsChange.emit();
     }
   }

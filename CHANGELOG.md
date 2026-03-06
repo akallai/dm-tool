@@ -16,6 +16,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Deleting a wiki widget no longer deletes wiki data
 - Wiki images stored under wiki-scoped paths (`wikis/{wikiId}/images/`)
 - Existing wikis auto-migrate from widget settings to blob storage on first load
+- **Random Generator** — table collections are now independent cloud-backed entities (like wikis), not tied to widget instances
+- Random table picker dialog for creating, opening, and deleting table collections
+- Multiple Random Generator widgets can share the same table collection
+- Existing random generators auto-migrate embedded mappings to blob storage on first load
+
+### Removed
+- File System Access API code from Random Generator (was non-functional in cloud architecture)
 
 ### Fixed
 - **API 500 errors** — pre-install Python packages (azure-storage-blob) for SWA managed functions deployment
