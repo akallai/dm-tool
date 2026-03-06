@@ -659,12 +659,12 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
         await this.loadPdf();
       }
 
-      // Save to IndexedDB
+      // Save to blob storage
       if (this.widgetId) {
         try {
           await this.fileStorage.saveFile(this.widgetId, file);
         } catch (error) {
-          console.error('Error saving file to IndexedDB:', error);
+          console.error('Error saving file to storage:', error);
         }
       }
 
@@ -988,7 +988,7 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
       try {
         await this.fileStorage.deleteFile(this.widgetId);
       } catch (error) {
-        console.error('Error deleting file from IndexedDB:', error);
+        console.error('Error deleting file from storage:', error);
       }
     }
 

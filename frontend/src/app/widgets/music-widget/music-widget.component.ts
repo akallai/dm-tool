@@ -490,11 +490,11 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.cdr.markForCheck();
     });
 
-    // Load audio files from IndexedDB
-    await this.loadAudioFromIndexedDB();
+    // Load audio files from storage
+    await this.loadAudioFromStorage();
   }
 
-  private async loadAudioFromIndexedDB() {
+  private async loadAudioFromStorage() {
     if (!this.widgetId || this.audioLoaded) return;
 
     try {
@@ -505,7 +505,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
         const files = filesByMapping.get(mappingId);
 
         if (files && files.length > 0) {
-          // Restore the file data URLs from IndexedDB
+          // Restore the file data URLs from storage
           mapping.files = files.map(f => ({
             fileName: f.fileName,
             fileDataUrl: f.fileDataUrl
@@ -516,11 +516,11 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.audioLoaded = true;
       this.cdr.markForCheck();
     } catch (error) {
-      console.error('Error loading audio files from IndexedDB:', error);
+      console.error('Error loading audio files from storage:', error);
     }
   }
 
-  private async saveAudioToIndexedDB(mapping: MusicMapping) {
+  private async saveAudioToStorage(mapping: MusicMapping) {
     if (!this.widgetId) return;
 
     const mappingId = this.getMappingId(mapping);
@@ -537,7 +537,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
         await this.audioStorage.deleteAudioFilesForMapping(mappingId, this.widgetId);
       }
     } catch (error) {
-      console.error('Error saving audio files to IndexedDB:', error);
+      console.error('Error saving audio files to storage:', error);
     }
   }
 
@@ -556,11 +556,11 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.masterMuted = this.settings.masterMuted ?? false;
       this.fadeDuration = this.settings.fadeDuration ?? 0.5;
 
-      // Save any audio files that have data URLs to IndexedDB
+      // Save any audio files that have data URLs to storage
       // This handles when files are added via the settings dialog
-      this.saveAllAudioToIndexedDB();
+      this.saveAllAudioToStorage();
 
-      // If we generated new IDs, emit settingsChange to save them to localStorage
+      // If we generated new IDs, emit settingsChange to persist them
       // This ensures the IDs persist across page reloads
       if (needsIdGeneration) {
         // Use setTimeout to avoid emitting during change detection
@@ -569,13 +569,13 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private async saveAllAudioToIndexedDB() {
+  private async saveAllAudioToStorage() {
     if (!this.widgetId) return;
 
     for (const mapping of this.mappings) {
       // Only save if mapping has files with data URLs
       if (mapping.files?.some(f => f.fileDataUrl)) {
-        await this.saveAudioToIndexedDB(mapping);
+        await this.saveAudioToStorage(mapping);
       }
     }
   }
