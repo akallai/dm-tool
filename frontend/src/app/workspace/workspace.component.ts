@@ -13,6 +13,7 @@ import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 import { MediaService } from '../services/media.service';
 import { WikiStorageService, WikiBlobData } from '../services/wiki-storage.service';
+import { RandomTableStorageService, TableBlobData } from '../services/random-table-storage.service';
 import { firstValueFrom } from 'rxjs';
 
 export interface Tab {
@@ -79,6 +80,7 @@ export class WorkspaceComponent implements OnInit {
     private workspaceService: WorkspaceService,
     private media: MediaService,
     private wikiStorage: WikiStorageService,
+    private tableStorage: RandomTableStorageService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -209,6 +211,19 @@ export class WorkspaceComponent implements OnInit {
           await this.wikiStorage.saveWiki(widget.settings.wikiRef.wikiId, blobData);
           delete widget.settings._unsavedArticles;
           delete widget.settings._wikiDirty;
+        }
+        if (widget.type === 'RANDOM_GENERATOR' && widget.settings?._unsavedMappings && widget.settings?.tableRef) {
+          const blobData: TableBlobData = {
+            name: widget.settings.tableRef.tableName,
+            mappings: widget.settings._unsavedMappings,
+            mappingCategories: widget.settings._unsavedMappingCategories || [],
+            useWeightedSelection: widget.settings._unsavedUseWeightedSelection ?? true,
+          };
+          await this.tableStorage.saveTable(widget.settings.tableRef.tableId, blobData);
+          delete widget.settings._unsavedMappings;
+          delete widget.settings._unsavedMappingCategories;
+          delete widget.settings._unsavedUseWeightedSelection;
+          delete widget.settings._tableDirty;
         }
       }
     }

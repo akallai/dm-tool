@@ -52,6 +52,7 @@ export class WidgetContainerComponent {
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
   @ViewChild(WikiWidgetComponent) wikiWidget?: WikiWidgetComponent;
+  @ViewChild(RandomGeneratorComponent) randomGeneratorWidget?: RandomGeneratorComponent;
 
   isMaximized = false;
   private previousPosition!: { x: number, y: number };
@@ -464,10 +465,13 @@ export class WidgetContainerComponent {
     if (this.wikiWidget) {
       await this.wikiWidget.saveWikiToServer();
     }
+    if (this.randomGeneratorWidget) {
+      await this.randomGeneratorWidget.saveTableToServer();
+    }
   }
 
   hasUnsavedChanges(): boolean {
-    return this.wikiWidget?.wikiDirty ?? false;
+    return (this.wikiWidget?.wikiDirty ?? false) || (this.randomGeneratorWidget?.tableDirty ?? false);
   }
 
   onSettingsChange() {
