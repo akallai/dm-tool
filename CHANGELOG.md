@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **Wiki widget** — wikis are now independent entities stored in cloud storage, not tied to widget instances
+- Wiki picker dialog for creating, opening, and deleting wikis (similar to PDF viewer pattern)
+- Deleting a wiki widget no longer deletes wiki data
+- Wiki images stored under wiki-scoped paths (`wikis/{wikiId}/images/`)
+- Existing wikis auto-migrate from widget settings to blob storage on first load
+
 ### Fixed
 - **API 500 errors** — pre-install Python packages (azure-storage-blob) for SWA managed functions deployment
 - **Workspace save/load 404** — use catch-all route `{*filename}` in API to handle URL-encoded slashes in blob paths

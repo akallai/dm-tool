@@ -534,6 +534,21 @@
   color: var(--text-muted);
 }
 
+.empty-state-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.switch-wiki-btn {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .error-message {
   position: absolute;
   top: 4px;

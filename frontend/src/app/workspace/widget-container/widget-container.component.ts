@@ -264,25 +264,7 @@ export class WidgetContainerComponent {
           ]
         };
       case 'WIKI_WIDGET':
-        return {
-          title: 'Wiki Settings',
-          fields: [
-            {
-              key: 'autoSave',
-              type: 'checkbox',
-              label: 'Auto-save changes'
-            },
-            {
-              key: 'defaultView',
-              type: 'select',
-              label: 'Default View',
-              options: [
-                { value: 'edit', label: 'Edit Mode' },
-                { value: 'preview', label: 'Preview Mode' }
-              ]
-            }
-          ]
-        };
+        return null;
         case 'LLM_CHAT':
         return {
           title: 'LLM Chat Settings',

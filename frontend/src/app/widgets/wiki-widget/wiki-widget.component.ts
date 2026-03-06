@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 // TipTap imports
 import { Editor } from '@tiptap/core';
@@ -19,6 +21,8 @@ import { WikiLink } from './wiki-link.extension';
 import { WikiImage } from './wiki-image.extension';
 import { isMarkdownContent, migrateMarkdownToHtml } from './content-migration.util';
 import { WikiImageStorageService } from '../../services/wiki-image-storage.service';
+import { WikiStorageService, WikiRef, WikiBlobData } from '../../services/wiki-storage.service';
+import { WikiPickerDialogComponent } from '../../dialogs/wiki-picker-dialog/wiki-picker-dialog.component';
 
 export interface WikiArticle {
   id: string;
@@ -44,6 +48,8 @@ export interface WikiData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    MatProgressSpinnerModule,
+    MatDialogModule,
     ScrollingModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +63,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
   wikiData: WikiData = { articles: [] };
   currentArticle: WikiArticle | null = null;
+  wikiRef: WikiRef | null = null;
+  wikiLoaded = false;
+  loading = false;
 
   sidebarCollapsed: boolean = false;
   searchTerm: string = '';
@@ -70,36 +79,191 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   constructor(
     private cdr: ChangeDetectorRef,
     private imageStorage: WikiImageStorageService,
+    private wikiStorage: WikiStorageService,
+    private dialog: MatDialog,
   ) {}
 
-  ngOnInit() {
-    if (this.settings && this.settings.wikiData) {
-      this.wikiData = this.settings.wikiData;
-      this.sidebarCollapsed = this.wikiData.sidebarCollapsed ?? false;
+  async ngOnInit() {
+    if (this.settings?.wikiRef) {
+      // Load wiki from blob storage
+      this.wikiRef = this.settings.wikiRef;
+      this.sidebarCollapsed = this.settings.sidebarCollapsed ?? false;
+      await this.loadWikiFromBlob(this.wikiRef!.wikiId);
+    } else if (this.settings?.wikiData) {
+      // Legacy: migrate embedded wiki data to blob storage
+      await this.migrateFromSettings();
+    }
+    // Otherwise: show empty state (no wikiRef, wikiLoaded stays false)
+  }
 
-      if (this.wikiData.currentArticleId) {
-        const found = this.findArticleById(this.wikiData.articles, this.wikiData.currentArticleId);
-        if (found) {
-          this.currentArticle = found;
+  private async loadWikiFromBlob(wikiId: string) {
+    this.loading = true;
+    this.cdr.markForCheck();
+
+    try {
+      const data = await this.wikiStorage.loadWiki(wikiId);
+      if (data) {
+        this.wikiData = {
+          articles: data.articles,
+          currentArticleId: this.settings?.currentArticleId,
+          sidebarCollapsed: this.settings?.sidebarCollapsed,
+        };
+
+        // Restore current article
+        const savedId = this.settings?.currentArticleId;
+        if (savedId) {
+          const found = this.findArticleById(this.wikiData.articles, savedId);
+          this.currentArticle = found || (this.wikiData.articles.length > 0 ? this.wikiData.articles[0] : null);
         } else if (this.wikiData.articles.length > 0) {
           this.currentArticle = this.wikiData.articles[0];
         }
+
+        this.wikiLoaded = true;
+      } else {
+        // Wiki blob not found — clear reference
+        this.wikiRef = null;
+        delete this.settings.wikiRef;
+        this.settingsChange.emit();
+      }
+    } catch (error) {
+      console.error('Error loading wiki:', error);
+    } finally {
+      this.loading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private async migrateFromSettings() {
+    this.loading = true;
+    this.cdr.markForCheck();
+
+    try {
+      const legacyData: WikiData = this.settings.wikiData;
+      const name = legacyData.articles[0]?.title || 'Migrated Wiki';
+
+      // Create wiki in blob storage
+      const ref = await this.wikiStorage.createWiki(name);
+
+      // Overwrite with actual article data
+      const blobData: WikiBlobData = {
+        name,
+        articles: legacyData.articles,
+      };
+      this.wikiStorage.saveWiki(ref.wikiId, blobData);
+
+      // Migrate images from wiki-images/{widgetId}/ to wikis/{wikiId}/images/
+      // (best-effort — images will still resolve from old paths via getImage scanning)
+
+      // Update settings: remove wikiData, add wikiRef
+      this.wikiRef = ref;
+      this.settings.wikiRef = ref;
+      this.settings.currentArticleId = legacyData.currentArticleId;
+      this.settings.sidebarCollapsed = legacyData.sidebarCollapsed;
+      delete this.settings.wikiData;
+      this.settingsChange.emit();
+
+      // Load the wiki
+      this.wikiData = {
+        articles: legacyData.articles,
+        currentArticleId: legacyData.currentArticleId,
+        sidebarCollapsed: legacyData.sidebarCollapsed,
+      };
+      this.sidebarCollapsed = legacyData.sidebarCollapsed ?? false;
+
+      if (legacyData.currentArticleId) {
+        const found = this.findArticleById(this.wikiData.articles, legacyData.currentArticleId);
+        this.currentArticle = found || (this.wikiData.articles.length > 0 ? this.wikiData.articles[0] : null);
       } else if (this.wikiData.articles.length > 0) {
         this.currentArticle = this.wikiData.articles[0];
       }
-    } else {
-      // Auto-initialize with Welcome article
-      this.wikiData = {
-        articles: [{
-          id: Date.now().toString(),
-          title: 'Welcome',
-          content: '<h2>Welcome to your Wiki</h2><p>This is your personal knowledge base. Use the sidebar to create and organize articles.</p><p>Tips:</p><ul><li>Click <strong>+</strong> in the sidebar to add articles</li><li>Use <strong>[[Article Name]]</strong> to create wiki links</li><li>Drag and drop images directly into the editor</li></ul>',
-          children: []
-        }]
-      };
-      this.currentArticle = this.wikiData.articles[0];
-      this.updateSettings();
+
+      this.wikiLoaded = true;
+    } catch (error) {
+      console.error('Error migrating wiki:', error);
+    } finally {
+      this.loading = false;
+      this.cdr.markForCheck();
     }
+  }
+
+  async createNewWiki() {
+    const name = prompt('Enter wiki name:');
+    if (!name?.trim()) return;
+
+    this.loading = true;
+    this.cdr.markForCheck();
+
+    try {
+      const ref = await this.wikiStorage.createWiki(name.trim());
+      this.wikiRef = ref;
+      this.settings.wikiRef = ref;
+      delete this.settings.wikiData;
+      this.settingsChange.emit();
+      await this.loadWikiFromBlob(ref.wikiId);
+    } catch (error) {
+      console.error('Error creating wiki:', error);
+      this.loading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  openExistingWiki() {
+    const dialogRef = this.dialog.open(WikiPickerDialogComponent, {
+      width: '500px',
+      maxHeight: '80vh',
+    });
+
+    dialogRef.afterClosed().subscribe(async (result: WikiRef | undefined) => {
+      if (result) {
+        this.wikiRef = result;
+        this.settings.wikiRef = result;
+        this.settings.currentArticleId = undefined;
+        this.settings.sidebarCollapsed = undefined;
+        delete this.settings.wikiData;
+        this.settingsChange.emit();
+        await this.loadWikiFromBlob(result.wikiId);
+      }
+    });
+  }
+
+  switchWiki() {
+    // Save current wiki data immediately before switching
+    if (this.wikiRef && this.wikiLoaded) {
+      const blobData: WikiBlobData = {
+        name: this.wikiRef.wikiName,
+        articles: this.wikiData.articles,
+      };
+      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+    }
+
+    // Destroy editor
+    if (this.wikiLinkClickHandler && this.editorContainer?.nativeElement) {
+      this.editorContainer.nativeElement.removeEventListener('click', this.wikiLinkClickHandler);
+      this.wikiLinkClickHandler = null;
+    }
+    this.editor?.destroy();
+    this.editor = null;
+    this.editorInitialized = false;
+
+    // Revoke blob URLs
+    if (this.wikiRef) {
+      this.imageStorage.revokeBlobUrlsForWiki(this.wikiRef.wikiId);
+    }
+
+    // Clear state
+    this.wikiRef = null;
+    this.wikiLoaded = false;
+    this.wikiData = { articles: [] };
+    this.currentArticle = null;
+    this.searchTerm = '';
+    this.sidebarCollapsed = false;
+
+    // Clear settings reference
+    delete this.settings.wikiRef;
+    delete this.settings.currentArticleId;
+    delete this.settings.sidebarCollapsed;
+    this.settingsChange.emit();
+    this.cdr.markForCheck();
   }
 
   private findArticleById(articles: WikiArticle[], id: string): WikiArticle | null {
@@ -211,7 +375,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     if (isMarkdownContent(content)) {
       content = await migrateMarkdownToHtml(content);
       article.content = content; // Update the article with migrated content
-      this.updateSettings();
+      this.saveWikiData();
     }
 
     // Clean up corrupted wiki links that have Link extension attributes
@@ -233,8 +397,8 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   async handleImageUpload(file: File): Promise<string> {
-    const widgetId = this.widgetId || 'default';
-    const imageId = await this.imageStorage.saveImage(widgetId, file);
+    const wikiId = this.wikiRef?.wikiId || this.widgetId || 'default';
+    const imageId = await this.imageStorage.saveImage(wikiId, file);
     return `wiki-image://${imageId}`;
   }
 
@@ -261,7 +425,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   private onContentChange() {
-    this.updateSettings();
+    this.saveWikiData();
   }
 
   // Add a new root article
@@ -351,27 +515,35 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   updateArticle() {
-    this.updateSettings();
+    this.saveWikiData();
   }
 
-  updateSettings() {
+  /** Save wiki content to blob storage (debounced) */
+  private saveWikiData() {
+    if (this.wikiRef) {
+      const blobData: WikiBlobData = {
+        name: this.wikiRef.wikiName,
+        articles: this.wikiData.articles,
+      };
+      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+    }
+  }
+
+  /** Save UI state (current article, sidebar) to widget settings */
+  private saveUIState() {
     if (this.settings) {
-      this.settings.wikiData = this.wikiData;
+      this.settings.currentArticleId = this.currentArticle?.id;
+      this.settings.sidebarCollapsed = this.sidebarCollapsed;
       this.settingsChange.emit();
     }
+    // Also save wiki data since article changes often accompany UI state changes
+    this.saveWikiData();
   }
 
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
     this.saveUIState();
     this.cdr.markForCheck();
-  }
-
-  // Save UI state (current article, sidebar state) to settings
-  private saveUIState() {
-    this.wikiData.currentArticleId = this.currentArticle?.id;
-    this.wikiData.sidebarCollapsed = this.sidebarCollapsed;
-    this.updateSettings();
   }
 
   // Recursively filter articles by a search term
@@ -597,11 +769,22 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   ngOnDestroy() {
+    // Save wiki data before destroying
+    if (this.wikiRef && this.wikiLoaded) {
+      const blobData: WikiBlobData = {
+        name: this.wikiRef.wikiName,
+        articles: this.wikiData.articles,
+      };
+      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+    }
+
     if (this.wikiLinkClickHandler && this.editorContainer?.nativeElement) {
       this.editorContainer.nativeElement.removeEventListener('click', this.wikiLinkClickHandler);
     }
     this.editor?.destroy();
-    const widgetId = this.widgetId || 'default';
-    this.imageStorage.revokeBlobUrlsForWidget(widgetId);
+
+    if (this.wikiRef) {
+      this.imageStorage.revokeBlobUrlsForWiki(this.wikiRef.wikiId);
+    }
   }
 }

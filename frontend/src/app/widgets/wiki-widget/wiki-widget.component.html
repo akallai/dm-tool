@@ -1,7 +1,21 @@
 <div class="wiki-widget">
   <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-  <div class="wiki-body">
+  <!-- Loading state -->
+  <div *ngIf="loading" class="empty-state">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <!-- Empty state: no wiki selected -->
+  <div *ngIf="!loading && !wikiLoaded" class="empty-state">
+    <div class="empty-state-buttons">
+      <button mat-raised-button color="primary" (click)="createNewWiki()">Create New Wiki</button>
+      <button mat-raised-button (click)="openExistingWiki()">Open Existing Wiki</button>
+    </div>
+  </div>
+
+  <!-- Wiki editor (only shown when wiki is loaded) -->
+  <div class="wiki-body" *ngIf="!loading && wikiLoaded">
     <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
       <div class="sidebar-header">
         <input
@@ -38,6 +52,9 @@
             placeholder="Article Title"
             class="title-input"
           >
+          <button mat-icon-button (click)="switchWiki()" matTooltip="Switch Wiki" class="switch-wiki-btn">
+            <mat-icon>swap_horiz</mat-icon>
+          </button>
         </div>
 
         <!-- Editor Toolbar -->

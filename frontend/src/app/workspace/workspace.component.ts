@@ -147,7 +147,7 @@ export class WorkspaceComponent implements OnInit {
 
   private async cleanupWidgetBlobs(widgetId: string) {
     try {
-      const prefixes = [`files/${widgetId}/`, `wiki-images/${widgetId}/`, `audio/${widgetId}/`];
+      const prefixes = [`files/${widgetId}/`, `audio/${widgetId}/`];
       for (const prefix of prefixes) {
         const files = await firstValueFrom(this.media.listFiles(prefix));
         for (const file of files) {
