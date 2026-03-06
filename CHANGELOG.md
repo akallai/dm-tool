@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **API 500 errors** — pre-install Python packages (azure-storage-blob) for SWA managed functions deployment
+- **Workspace save/load 404** — use catch-all route `{*filename}` in API to handle URL-encoded slashes in blob paths
+- **List endpoint routing conflict** — handle empty filename in get_media to prevent catch-all from stealing list route
+
 ### Added
 - **Media browser dialog** for browsing shared rulebooks, shared sounds, and user files
 - **Shared media support** — access pre-loaded content from blob storage (`rulebooks/`, `sounds/`)
