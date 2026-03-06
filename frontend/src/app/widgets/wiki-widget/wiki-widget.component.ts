@@ -22,6 +22,7 @@ import { isMarkdownContent, migrateMarkdownToHtml } from './content-migration.ut
 import { WikiImageStorageService } from '../../services/wiki-image-storage.service';
 import { WikiStorageService, WikiRef, WikiBlobData } from '../../services/wiki-storage.service';
 import { WikiPickerDialogComponent } from '../../dialogs/wiki-picker-dialog/wiki-picker-dialog.component';
+import { PromptDialogComponent } from '../../dialogs/prompt-dialog/prompt-dialog.component';
 
 export interface WikiArticle {
   id: string;
@@ -209,25 +210,35 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     }
   }
 
-  async createNewWiki() {
-    const name = prompt('Enter wiki name:');
-    if (!name?.trim()) return;
+  createNewWiki() {
+    const dialogRef = this.dialog.open(PromptDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'New Wiki',
+        message: 'Enter a name for the new wiki:',
+        placeholder: 'Wiki name',
+        confirmText: 'Create',
+      },
+    });
+    dialogRef.afterClosed().subscribe(async (name: string | undefined) => {
+      if (!name?.trim()) return;
 
-    this.loading = true;
-    this.cdr.markForCheck();
-
-    try {
-      const ref = await this.wikiStorage.createWiki(name.trim());
-      this.wikiRef = ref;
-      this.settings.wikiRef = ref;
-      delete this.settings.wikiData;
-      this.settingsChange.emit();
-      await this.loadWikiFromBlob(ref.wikiId);
-    } catch (error) {
-      console.error('Error creating wiki:', error);
-      this.loading = false;
+      this.loading = true;
       this.cdr.markForCheck();
-    }
+
+      try {
+        const ref = await this.wikiStorage.createWiki(name.trim());
+        this.wikiRef = ref;
+        this.settings.wikiRef = ref;
+        delete this.settings.wikiData;
+        this.settingsChange.emit();
+        await this.loadWikiFromBlob(ref.wikiId);
+      } catch (error) {
+        console.error('Error creating wiki:', error);
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   openExistingWiki() {
@@ -701,25 +712,34 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   insertWikiLink() {
-    const input = prompt('Enter article title (use # for header, e.g. Article#Header):');
-    if (input && this.editor) {
-      const hashIndex = input.indexOf('#');
-      let title: string | null = null;
-      let header: string | null = null;
+    const dialogRef = this.dialog.open(PromptDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Insert Wiki Link',
+        message: 'Enter article title (use # for header, e.g. Article#Header):',
+        placeholder: 'Article#Header',
+      },
+    });
+    dialogRef.afterClosed().subscribe((input: string | undefined) => {
+      if (input && this.editor) {
+        const hashIndex = input.indexOf('#');
+        let title: string | null = null;
+        let header: string | null = null;
 
-      if (hashIndex !== -1) {
-        title = input.substring(0, hashIndex) || null;
-        header = input.substring(hashIndex + 1) || null;
-      } else {
-        title = input;
+        if (hashIndex !== -1) {
+          title = input.substring(0, hashIndex) || null;
+          header = input.substring(hashIndex + 1) || null;
+        } else {
+          title = input;
+        }
+
+        this.editor.chain().focus().insertContent({
+          type: 'text',
+          text: input,
+          marks: [{ type: 'wikiLink', attrs: { title, header } }],
+        }).run();
       }
-
-      this.editor.chain().focus().insertContent({
-        type: 'text',
-        text: input,
-        marks: [{ type: 'wikiLink', attrs: { title, header } }],
-      }).run();
-    }
+    });
   }
 
   // Table methods
