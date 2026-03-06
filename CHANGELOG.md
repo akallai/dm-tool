@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **Settings dialog** — renamed "Save" button to "Apply" to clarify it only applies changes in-memory (actual persistence requires Ctrl+S)
 - **Manual save** — replaced autosave with explicit save button (+ Ctrl+S) to reduce server requests; wiki content also saves only on button click with close confirmation for unsaved changes
 - **Wiki widget** — wikis are now independent entities stored in cloud storage, not tied to widget instances
 - Wiki picker dialog for creating, opening, and deleting wikis (similar to PDF viewer pattern)
