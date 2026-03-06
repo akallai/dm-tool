@@ -10,4 +10,7 @@ module.exports = {
   ...presetConfig,
   setupFilesAfterEnv: ['<rootDir>/setup-jest.ts'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!.*\\.mjs$|lodash-es|@xaroth8088/random-names)',
+  ],
 };

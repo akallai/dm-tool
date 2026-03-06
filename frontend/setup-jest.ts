@@ -29,3 +29,10 @@ if (typeof URL.createObjectURL !== 'function') {
   URL.createObjectURL = () => `blob:mock-url-${++counter}`;
   URL.revokeObjectURL = () => {};
 }
+
+// Polyfill DOMMatrix for pdfjs-dist (not available in jsdom)
+if (typeof globalThis.DOMMatrix === 'undefined') {
+  (globalThis as any).DOMMatrix = class DOMMatrix {
+    constructor() {}
+  };
+}
