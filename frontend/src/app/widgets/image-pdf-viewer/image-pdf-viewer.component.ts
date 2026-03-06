@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -52,7 +53,7 @@ interface SearchMatch {
 
       <!-- Loading state -->
       <div *ngIf="loading" class="empty-state">
-        <span>Loading...</span>
+        <mat-spinner diameter="40"></mat-spinner>
       </div>
 
       <!-- Image viewer -->
@@ -408,7 +409,7 @@ interface SearchMatch {
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDialogModule]
+  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule]
 })
 export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() settings: any;

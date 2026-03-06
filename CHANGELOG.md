@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Fixed
+- **Loading spinners** — Music Widget now shows a spinner while audio files download; Image/PDF Viewer uses `mat-spinner` instead of plain text "Loading..." (#10)
 - **Wiki sidebar scroll** — replaced broken CDK virtual scroll with native scrolling to fix scroll position miscalculations with nested articles (#6)
 - **Native dialogs** — replaced all browser-native `prompt()`/`confirm()` calls with Angular Material dialogs for visual consistency (#8)
 
