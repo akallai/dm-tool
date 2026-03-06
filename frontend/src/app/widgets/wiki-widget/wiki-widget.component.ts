@@ -6,8 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ScrollingModule } from '@angular/cdk/scrolling';
-import { debounce } from '../../utils/debounce';
-
 // TipTap imports
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -21,8 +19,6 @@ import { WikiLink } from './wiki-link.extension';
 import { WikiImage } from './wiki-image.extension';
 import { isMarkdownContent, migrateMarkdownToHtml } from './content-migration.util';
 import { WikiImageStorageService } from '../../services/wiki-image-storage.service';
-import { WikiExportService } from './wiki-export.service';
-import { WikiFileHandleService } from './wiki-file-handle.service';
 
 export interface WikiArticle {
   id: string;
@@ -50,7 +46,6 @@ export interface WikiData {
     MatTooltipModule,
     ScrollingModule
   ],
-  providers: [WikiExportService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
@@ -62,48 +57,26 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
   wikiData: WikiData = { articles: [] };
   currentArticle: WikiArticle | null = null;
-  fileHandle: FileSystemFileHandle | null = null;
-  fileName: string = '';
 
   sidebarCollapsed: boolean = false;
   searchTerm: string = '';
-  isSaving: boolean = false;
   errorMessage: string = '';
-  lastSavedToFile: Date | null = null;
-  saveError: boolean = false;  // Persistent error state - doesn't auto-clear
-  hasUnsavedChanges: boolean = false;  // Track pending changes
-  private lastSavedUpdateInterval: ReturnType<typeof setInterval> | null = null;
 
   // TipTap editor instance
   editor: Editor | null = null;
   private editorInitialized = false;
   private wikiLinkClickHandler: ((e: MouseEvent) => void) | null = null;
 
-  // Create a debounced save function
-  private debouncedSaveWiki = debounce(this.saveWiki.bind(this), 1000);
-
   constructor(
     private cdr: ChangeDetectorRef,
     private imageStorage: WikiImageStorageService,
-    private exportService: WikiExportService,
-    private fileHandleService: WikiFileHandleService
   ) {}
 
   ngOnInit() {
-    // Start interval to update the relative time display
-    this.lastSavedUpdateInterval = setInterval(() => {
-      if (this.lastSavedToFile) {
-        this.cdr.markForCheck();
-      }
-    }, 60000); // Update every minute
-
     if (this.settings && this.settings.wikiData) {
       this.wikiData = this.settings.wikiData;
-
-      // Restore UI state from wikiData
       this.sidebarCollapsed = this.wikiData.sidebarCollapsed ?? false;
 
-      // Restore the currently open article by ID
       if (this.wikiData.currentArticleId) {
         const found = this.findArticleById(this.wikiData.articles, this.wikiData.currentArticleId);
         if (found) {
@@ -114,26 +87,18 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       } else if (this.wikiData.articles.length > 0) {
         this.currentArticle = this.wikiData.articles[0];
       }
-
-      // Try to restore file handle from IndexedDB (survives page reload)
-      this.restoreFileHandle();
-    }
-  }
-
-  private async restoreFileHandle() {
-    if (!this.widgetId) {
-      return;
-    }
-
-    try {
-      const result = await this.fileHandleService.restoreHandle(this.widgetId);
-      if (result) {
-        this.fileHandle = result.handle;
-        this.fileName = result.fileName;
-        this.cdr.markForCheck();
-      }
-    } catch (error) {
-      console.error('Failed to restore file handle:', error);
+    } else {
+      // Auto-initialize with Welcome article
+      this.wikiData = {
+        articles: [{
+          id: Date.now().toString(),
+          title: 'Welcome',
+          content: '<h2>Welcome to your Wiki</h2><p>This is your personal knowledge base. Use the sidebar to create and organize articles.</p><p>Tips:</p><ul><li>Click <strong>+</strong> in the sidebar to add articles</li><li>Use <strong>[[Article Name]]</strong> to create wiki links</li><li>Drag and drop images directly into the editor</li></ul>',
+          children: []
+        }]
+      };
+      this.currentArticle = this.wikiData.articles[0];
+      this.updateSettings();
     }
   }
 
@@ -295,281 +260,8 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     input.click();
   }
 
-  async exportWikiZip() {
-    this.isSaving = true;
-    this.cdr.markForCheck();
-
-    try {
-      const widgetId = this.widgetId || 'default';
-      const zipBlob = await this.exportService.exportToZip(widgetId, this.wikiData);
-
-      // Download the ZIP file
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      const baseName = this.fileName ? this.fileName.replace('.json', '') : 'wiki';
-      a.download = `${baseName}_export.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error exporting wiki:', error);
-      this.errorMessage = 'Failed to export wiki';
-
-      setTimeout(() => {
-        this.errorMessage = '';
-        this.cdr.markForCheck();
-      }, 3000);
-    } finally {
-      this.isSaving = false;
-      this.cdr.markForCheck();
-    }
-  }
-
-  async importWikiZip() {
-    if (!window.showOpenFilePicker) {
-      this.errorMessage = 'File System Access API is not supported in this browser.';
-      this.cdr.markForCheck();
-      setTimeout(() => {
-        this.errorMessage = '';
-        this.cdr.markForCheck();
-      }, 3000);
-      return;
-    }
-
-    let handle: FileSystemFileHandle;
-    try {
-      [handle] = await window.showOpenFilePicker({
-        types: [{
-          description: 'Wiki Archive',
-          accept: { 'application/zip': ['.zip'] }
-        }]
-      });
-    } catch (error) {
-      // User cancelled file picker - not an error
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
-      throw error;
-    }
-
-    this.isSaving = true;
-    this.cdr.markForCheck();
-
-    try {
-      const file = await handle.getFile();
-      const widgetId = this.widgetId || 'default';
-
-      // Clear existing images for this widget before importing
-      await this.imageStorage.deleteImagesForWidget(widgetId);
-
-      // Import from ZIP
-      this.wikiData = await this.exportService.importFromZip(widgetId, file);
-
-      if (this.settings) {
-        this.settings.wikiData = this.wikiData;
-      }
-
-      // Select first article if available
-      if (this.wikiData.articles.length > 0) {
-        this.currentArticle = this.wikiData.articles[0];
-        await this.loadArticleContent(this.currentArticle);
-      } else {
-        this.currentArticle = null;
-        this.editor?.commands.setContent('');
-      }
-
-      // Clear the file handle since we imported from ZIP
-      this.fileHandle = null;
-      this.fileName = '';
-      this.lastSavedToFile = null;
-      this.saveError = false;
-      this.hasUnsavedChanges = false;
-      this.errorMessage = '';
-
-      // Remove stored handle from IndexedDB (reuse widgetId from above)
-      this.fileHandleService.removeHandle(widgetId);
-    } catch (error) {
-      console.error('Error importing wiki:', error);
-      this.errorMessage = 'Failed to import wiki';
-
-      setTimeout(() => {
-        this.errorMessage = '';
-        this.cdr.markForCheck();
-      }, 3000);
-    } finally {
-      this.isSaving = false;
-      this.cdr.markForCheck();
-    }
-  }
-
   private onContentChange() {
-    this.hasUnsavedChanges = true;
     this.updateSettings();
-    this.debouncedSaveWiki();
-  }
-
-  async openExistingWiki() {
-    try {
-      if (window.showOpenFilePicker) {
-        const [handle] = await window.showOpenFilePicker({
-          types: [{
-            description: 'Wiki Files',
-            accept: { 'application/json': ['.json'] }
-          }]
-        });
-
-        this.fileHandle = handle;
-        this.fileName = handle.name;
-        this.lastSavedToFile = null;
-        this.saveError = false;
-        this.hasUnsavedChanges = false;
-        this.errorMessage = '';
-
-        // Persist handle to IndexedDB for page reload recovery
-        const widgetId = this.widgetId;
-        if (widgetId) {
-          this.fileHandleService.storeHandle(widgetId, handle, handle.name);
-        }
-
-        // Show loading indicator
-        this.isSaving = true;
-        this.cdr.markForCheck();
-
-        const file = await handle.getFile();
-        const text = await file.text();
-        this.wikiData = JSON.parse(text);
-
-        if (this.settings) {
-          this.settings.wikiData = this.wikiData;
-        }
-
-        if (this.wikiData.articles.length > 0) {
-          this.currentArticle = this.wikiData.articles[0];
-          await this.loadArticleContent(this.currentArticle);
-        } else {
-          this.currentArticle = null;
-          this.editor?.commands.setContent('');
-        }
-
-        this.isSaving = false;
-        this.cdr.markForCheck();
-      } else {
-        this.errorMessage = 'File System Access API is not supported in this browser.';
-        this.cdr.markForCheck();
-        setTimeout(() => {
-          this.errorMessage = '';
-          this.cdr.markForCheck();
-        }, 3000);
-      }
-    } catch (error) {
-      // User cancelled file picker - not an error
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
-
-      console.error('Error opening wiki file:', error);
-      this.errorMessage = 'Failed to open wiki file';
-      this.isSaving = false;
-      this.cdr.markForCheck();
-
-      setTimeout(() => {
-        this.errorMessage = '';
-        this.cdr.markForCheck();
-      }, 3000);
-    }
-  }
-
-  async createNewWiki() {
-    try {
-      if (window.showSaveFilePicker) {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: 'untitled_wiki.json',
-          types: [{
-            description: 'Wiki Files',
-            accept: { 'application/json': ['.json'] }
-          }]
-        });
-
-        this.fileHandle = handle;
-        this.fileName = handle.name;
-        this.wikiData = { articles: [] };
-        this.saveError = false;
-        this.hasUnsavedChanges = false;
-        this.errorMessage = '';
-
-        // Persist handle to IndexedDB for page reload recovery
-        const widgetId = this.widgetId;
-        if (widgetId) {
-          this.fileHandleService.storeHandle(widgetId, handle, handle.name);
-        }
-
-        if (this.settings) {
-          this.settings.wikiData = this.wikiData;
-        }
-
-        this.currentArticle = null;
-        this.editor?.commands.setContent('');
-        await this.saveWiki();
-      } else {
-        this.errorMessage = 'File System Access API is not supported in this browser.';
-        this.cdr.markForCheck();
-
-        setTimeout(() => {
-          this.errorMessage = '';
-          this.cdr.markForCheck();
-        }, 3000);
-      }
-    } catch (error) {
-      // User cancelled file picker - not an error
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
-
-      console.error('Error creating wiki file:', error);
-      this.errorMessage = 'Failed to create wiki file';
-      this.cdr.markForCheck();
-
-      setTimeout(() => {
-        this.errorMessage = '';
-        this.cdr.markForCheck();
-      }, 3000);
-    }
-  }
-
-  async saveWiki() {
-    if (!this.fileHandle) {
-      // No file handle - can't save to file (only localStorage via updateSettings)
-      return;
-    }
-
-    try {
-      this.isSaving = true;
-      this.cdr.markForCheck();
-
-      const writable = await this.fileHandle.createWritable();
-      await writable.write(JSON.stringify(this.wikiData, null, 2));
-      await writable.close();
-
-      // Success - clear all error states
-      this.lastSavedToFile = new Date();
-      this.saveError = false;
-      this.hasUnsavedChanges = false;
-      this.errorMessage = '';
-      this.isSaving = false;
-      this.cdr.markForCheck();
-    } catch (error) {
-      console.error('Error saving wiki file:', error);
-
-      // PERSISTENT error state - doesn't auto-clear
-      this.saveError = true;
-      this.errorMessage = 'Save failed! Check file access.';
-      this.isSaving = false;
-      this.cdr.markForCheck();
-
-      // Note: errorMessage and saveError persist until next successful save
-    }
   }
 
   // Add a new root article
@@ -660,7 +352,6 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
 
   updateArticle() {
     this.updateSettings();
-    this.debouncedSaveWiki();
   }
 
   updateSettings() {
@@ -782,41 +473,6 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   // Track articles for better performance
   trackByArticleId(index: number, article: WikiArticle): string {
     return article.id;
-  }
-
-  // Get relative time text for last saved timestamp
-  getLastSavedText(): string {
-    if (!this.lastSavedToFile) {
-      return '';
-    }
-
-    const now = new Date();
-    const diffMs = now.getTime() - this.lastSavedToFile.getTime();
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffSeconds < 10) {
-      return 'just now';
-    } else if (diffSeconds < 60) {
-      return `${diffSeconds}s ago`;
-    } else if (diffMinutes < 60) {
-      return diffMinutes === 1 ? '1 min ago' : `${diffMinutes} min ago`;
-    } else if (diffHours < 24) {
-      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
-    } else {
-      return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
-    }
-  }
-
-  // Check if last save is stale (> 2 minutes) - indicates potential save issues
-  isSaveStale(): boolean {
-    if (!this.lastSavedToFile || !this.fileHandle) {
-      return false;
-    }
-    const diffMs = new Date().getTime() - this.lastSavedToFile.getTime();
-    return diffMs > 2 * 60 * 1000; // > 2 minutes
   }
 
   // Toolbar methods for TipTap editor
@@ -941,26 +597,11 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   ngOnDestroy() {
-    // Remove click event listener to prevent memory leaks
     if (this.wikiLinkClickHandler && this.editorContainer?.nativeElement) {
       this.editorContainer.nativeElement.removeEventListener('click', this.wikiLinkClickHandler);
     }
-
-    // Destroy TipTap editor
     this.editor?.destroy();
-
-    // Revoke blob URLs for this widget only to prevent memory leaks
     const widgetId = this.widgetId || 'default';
     this.imageStorage.revokeBlobUrlsForWidget(widgetId);
-
-    // Cancel any pending debounced operations
-    if (this.debouncedSaveWiki.cancel) {
-      this.debouncedSaveWiki.cancel();
-    }
-
-    // Clear the last saved update interval
-    if (this.lastSavedUpdateInterval) {
-      clearInterval(this.lastSavedUpdateInterval);
-    }
   }
 }

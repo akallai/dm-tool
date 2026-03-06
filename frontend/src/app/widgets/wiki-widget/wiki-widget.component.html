@@ -1,44 +1,7 @@
 <div class="wiki-widget">
-  <div class="wiki-header">
-    <button mat-icon-button (click)="openExistingWiki()" matTooltip="Open Wiki">
-      <mat-icon>folder_open</mat-icon>
-    </button>
-    <button mat-icon-button (click)="createNewWiki()" matTooltip="New Wiki">
-      <mat-icon>note_add</mat-icon>
-    </button>
-    <button mat-icon-button (click)="importWikiZip()" matTooltip="Import from ZIP">
-      <mat-icon>upload</mat-icon>
-    </button>
-    <button mat-icon-button (click)="exportWikiZip()" [disabled]="wikiData.articles.length === 0" matTooltip="Export to ZIP">
-      <mat-icon>download</mat-icon>
-    </button>
-    <!-- Warning: wiki has content but no file connection (e.g., after page reload) -->
-    <span *ngIf="!fileHandle && wikiData.articles.length > 0" class="file-info has-error">
-      <span class="save-error-indicator" matTooltip="No file connected - click Open to reconnect">
-        <mat-icon>link_off</mat-icon>
-      </span>
-    </span>
-    <!-- Normal file info when connected -->
-    <span *ngIf="fileHandle" class="file-info" [class.has-error]="saveError" [class.is-stale]="isSaveStale() && !saveError">
-      <span class="file-name">{{ fileName }}</span>
-      <span *ngIf="saveError" class="save-error-indicator">
-        <mat-icon>error</mat-icon> NOT SAVED
-      </span>
-      <span *ngIf="!saveError && hasUnsavedChanges && !isSaving" class="unsaved-indicator">
-        <mat-icon>edit</mat-icon>
-      </span>
-      <span *ngIf="!saveError && lastSavedToFile && !hasUnsavedChanges" class="last-saved" [class.stale]="isSaveStale()">
-        <mat-icon>{{ isSaveStale() ? 'warning' : 'check_circle' }}</mat-icon>
-        {{ getLastSavedText() }}
-      </span>
-    </span>
-  </div>
-
-  <!-- Loading/error indicators -->
-  <div *ngIf="isSaving" class="save-indicator">Saving...</div>
   <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-  <div class="wiki-body" *ngIf="fileHandle || wikiData.articles.length">
+  <div class="wiki-body">
     <div class="wiki-sidebar" [class.collapsed]="sidebarCollapsed">
       <div class="sidebar-header">
         <input
@@ -152,9 +115,6 @@
         <p>No article selected. Add an article from the sidebar.</p>
       </div>
     </div>
-  </div>
-  <div *ngIf="!fileHandle && wikiData.articles.length === 0" class="empty-wiki">
-    <p>No wiki loaded. Open an existing wiki or create a new one.</p>
   </div>
 </div>
 

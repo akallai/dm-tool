@@ -5,108 +5,6 @@
   position: relative;
 }
 
-.wiki-header {
-  display: flex;
-  padding: 0 4px;
-  background: var(--header-bg);
-  border-bottom: var(--glass-border);
-  color: var(--text-primary);
-  align-items: center;
-  height: 24px;
-
-  button {
-    color: var(--text-primary) !important;
-    width: 22px;
-    height: 22px;
-    line-height: 22px;
-
-    mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
-      line-height: 16px;
-    }
-  }
-
-  .file-info {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 10px;
-    color: var(--text-secondary);
-
-    .file-name {
-      font-weight: 500;
-      color: var(--text-primary);
-      opacity: 0.8;
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .last-saved, .unsaved-indicator, .save-error-indicator {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-
-      mat-icon {
-        font-size: 12px;
-        width: 12px;
-        height: 12px;
-      }
-    }
-
-    .last-saved {
-      opacity: 0.7;
-
-      mat-icon {
-        color: #4caf50;
-      }
-
-      &.stale {
-        opacity: 1;
-
-        mat-icon {
-          color: #ff9800;
-        }
-      }
-    }
-
-    .unsaved-indicator {
-      color: var(--text-secondary);
-      opacity: 0.8;
-    }
-
-    .save-error-indicator {
-      color: #f44336;
-      animation: pulse-error 1.5s ease-in-out infinite;
-    }
-
-    &.has-error {
-      .file-name {
-        color: #f44336;
-      }
-    }
-
-    &.is-stale {
-      .file-name {
-        color: #ff9800;
-      }
-    }
-  }
-}
-
-@keyframes pulse-error {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 .wiki-body {
   display: flex;
   flex: 1;
@@ -626,7 +524,7 @@
   }
 }
 
-.empty-state, .empty-wiki {
+.empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -636,21 +534,14 @@
   color: var(--text-muted);
 }
 
-.save-indicator, .error-message {
+.error-message {
   position: absolute;
-  top: 26px;
+  top: 4px;
   right: 8px;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
   z-index: 100;
   color: white;
-}
-
-.save-indicator {
-  background: var(--accent-color);
-}
-
-.error-message {
   background: var(--danger-color);
 }
