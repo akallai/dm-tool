@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AudioStorageService } from '../../services/audio-storage.service';
 import { MusicPlaybackService } from '../../services/music-playback.service';
 import { Subscription } from 'rxjs';
@@ -27,6 +28,11 @@ export interface MusicMapping {
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
     <div class="music-widget">
+      <!-- Loading overlay -->
+      <div *ngIf="loadingAudio" class="loading-overlay">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
       <!-- Master Channel Strip -->
       <div class="master-strip">
         <div class="channel-label">MASTER</div>
@@ -409,6 +415,17 @@ export interface MusicMapping {
       gap: 4px;
     }
 
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10;
+      border-radius: 4px;
+    }
+
     .empty-channels mat-icon {
       font-size: 24px;
       height: 24px;
@@ -417,7 +434,7 @@ export interface MusicMapping {
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatTooltipModule]
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule, MatTooltipModule]
 })
 export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   @Input() settings: any = {};
@@ -425,6 +442,7 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   @Output() settingsChange = new EventEmitter<void>();
 
   mappings: MusicMapping[] = [];
+  loadingAudio = false;
   private audioLoaded = false;
   masterVolume: number = 100;
   masterMuted: boolean = false;
@@ -497,6 +515,8 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   private async loadAudioFromStorage() {
     if (!this.widgetId || this.audioLoaded) return;
 
+    this.loadingAudio = true;
+    this.cdr.markForCheck();
     try {
       const filesByMapping = await this.audioStorage.getAudioFilesForWidget(this.widgetId);
 
@@ -517,6 +537,9 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
       this.cdr.markForCheck();
     } catch (error) {
       console.error('Error loading audio files from storage:', error);
+    } finally {
+      this.loadingAudio = false;
+      this.cdr.markForCheck();
     }
   }
 
