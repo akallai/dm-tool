@@ -1,9 +1,10 @@
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 export type WidgetType = 'IMAGE_PDF' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR' | 'COUNTDOWN_WIDGET';
 
@@ -261,15 +262,28 @@ export class WidgetSelectorDialogComponent {
   ];
 
 
-  constructor(private dialogRef: MatDialogRef<WidgetSelectorDialogComponent>) {}
+  constructor(
+    private dialogRef: MatDialogRef<WidgetSelectorDialogComponent>,
+    private dialog: MatDialog,
+  ) {}
 
   select(type: WidgetType) {
     this.dialogRef.close({ action: 'add', type });
   }
 
   reset() {
-    if (confirm('Are you sure you want to reset the workspace? All widgets will be closed.')) {
-      this.dialogRef.close({ action: 'reset' });
-    }
+    const confirmRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Reset Workspace',
+        message: 'Are you sure you want to reset the workspace? All widgets will be closed.',
+        confirmText: 'Reset',
+        warn: true,
+      },
+    });
+    confirmRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.dialogRef.close({ action: 'reset' });
+      }
+    });
   }
 }
