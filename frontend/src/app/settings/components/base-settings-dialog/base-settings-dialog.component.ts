@@ -670,25 +670,14 @@ export class BaseSettingsDialogComponent {
   }
 
   onFileButtonClick(field: SettingsField) {
-    // For notepad file buttons, we don't need an actual file input
-    // Just signal the request based on the field key
-    if (field.key === 'openFileButton') {
-      this.settings._openFilePickerRequested = true;
-      this.dialogRef.close(this.settings);
-    } else if (field.key === 'createFileButton') {
-      this.settings._createFilePickerRequested = true;
-      this.dialogRef.close(this.settings);
-    } else {
-      // Find the file input element that's a sibling of the button
-      const fieldIndex = this.config.fields.indexOf(field);
-      const inputs = document.querySelectorAll('.file-button-field input[type="file"]');
-      const input = inputs[fieldIndex] as HTMLInputElement;
-      if (input) {
-        input.onchange = async (e: Event) => {
-          await this.onFileButtonSelected(e as Event, field);
-        };
-        input.click();
-      }
+    const fieldIndex = this.config.fields.indexOf(field);
+    const inputs = document.querySelectorAll('.file-button-field input[type="file"]');
+    const input = inputs[fieldIndex] as HTMLInputElement;
+    if (input) {
+      input.onchange = async (e: Event) => {
+        await this.onFileButtonSelected(e as Event, field);
+      };
+      input.click();
     }
   }
 
