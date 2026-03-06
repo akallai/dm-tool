@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 export interface StoredWikiImage {
   id: string;
-  widgetId: string;
+  wikiId: string;
   fileName: string;
   mimeType: string;
   blob: Blob;
@@ -16,17 +16,17 @@ export interface StoredWikiImage {
 })
 export class WikiImageStorageService {
   private blobUrlCache = new Map<string, string>();
-  private widgetImageIds = new Map<string, Set<string>>();
+  private wikiImageIds = new Map<string, Set<string>>();
 
   constructor(private media: MediaService) {}
 
-  private blobPath(widgetId: string, imageId: string): string {
-    return `wiki-images/${widgetId}/${imageId}`;
+  private blobPath(wikiId: string, imageId: string): string {
+    return `wikis/${wikiId}/images/${imageId}`;
   }
 
-  async saveImage(widgetId: string, file: File): Promise<string> {
+  async saveImage(wikiId: string, file: File): Promise<string> {
     const imageId = crypto.randomUUID();
-    const path = this.blobPath(widgetId, imageId);
+    const path = this.blobPath(wikiId, imageId);
 
     await firstValueFrom(this.media.uploadFile(path, file, file.type));
 
@@ -39,12 +39,12 @@ export class WikiImageStorageService {
 
   async getImage(imageId: string): Promise<StoredWikiImage | null> {
     try {
-      const files = await firstValueFrom(this.media.listFiles(`wiki-images/`));
-      const imageFile = files.find(f => f.name.includes(`/${imageId}`) && !f.name.endsWith('.meta'));
+      const files = await firstValueFrom(this.media.listFiles('wikis/'));
+      const imageFile = files.find(f => f.name.includes(`/images/${imageId}`) && !f.name.endsWith('.meta'));
       if (!imageFile) return null;
 
       const parts = imageFile.name.split('/');
-      const widgetId = parts[1];
+      const wikiId = parts[1];
 
       const blob = await firstValueFrom(this.media.downloadFile(imageFile.name));
 
@@ -62,7 +62,7 @@ export class WikiImageStorageService {
         // Metadata not found, use defaults
       }
 
-      return { id: imageId, widgetId, fileName, mimeType, blob, createdAt };
+      return { id: imageId, wikiId, fileName, mimeType, blob, createdAt };
     } catch {
       return null;
     }
@@ -74,15 +74,15 @@ export class WikiImageStorageService {
       this.blobUrlCache.delete(imageId);
     }
 
-    const files = await firstValueFrom(this.media.listFiles(`wiki-images/`));
-    const toDelete = files.filter(f => f.name.includes(`/${imageId}`));
+    const files = await firstValueFrom(this.media.listFiles('wikis/'));
+    const toDelete = files.filter(f => f.name.includes(`/images/${imageId}`));
     for (const file of toDelete) {
       await firstValueFrom(this.media.deleteFile(file.name));
     }
   }
 
-  async deleteImagesForWidget(widgetId: string): Promise<void> {
-    const imageIds = this.widgetImageIds.get(widgetId);
+  async deleteImagesForWiki(wikiId: string): Promise<void> {
+    const imageIds = this.wikiImageIds.get(wikiId);
     if (imageIds) {
       imageIds.forEach(id => {
         const url = this.blobUrlCache.get(id);
@@ -91,17 +91,17 @@ export class WikiImageStorageService {
           this.blobUrlCache.delete(id);
         }
       });
-      this.widgetImageIds.delete(widgetId);
+      this.wikiImageIds.delete(wikiId);
     }
 
-    const files = await firstValueFrom(this.media.listFiles(`wiki-images/${widgetId}/`));
+    const files = await firstValueFrom(this.media.listFiles(`wikis/${wikiId}/images/`));
     for (const file of files) {
       await firstValueFrom(this.media.deleteFile(file.name));
     }
   }
 
-  async getAllImagesForWidget(widgetId: string): Promise<StoredWikiImage[]> {
-    const files = await firstValueFrom(this.media.listFiles(`wiki-images/${widgetId}/`));
+  async getAllImagesForWiki(wikiId: string): Promise<StoredWikiImage[]> {
+    const files = await firstValueFrom(this.media.listFiles(`wikis/${wikiId}/images/`));
     const imageFiles = files.filter(f => !f.name.endsWith('.meta'));
 
     const images: StoredWikiImage[] = [];
@@ -124,10 +124,10 @@ export class WikiImageStorageService {
     const blobUrl = URL.createObjectURL(image.blob);
     this.blobUrlCache.set(imageId, blobUrl);
 
-    if (!this.widgetImageIds.has(image.widgetId)) {
-      this.widgetImageIds.set(image.widgetId, new Set());
+    if (!this.wikiImageIds.has(image.wikiId)) {
+      this.wikiImageIds.set(image.wikiId, new Set());
     }
-    this.widgetImageIds.get(image.widgetId)!.add(imageId);
+    this.wikiImageIds.get(image.wikiId)!.add(imageId);
 
     return blobUrl;
   }
@@ -139,8 +139,8 @@ export class WikiImageStorageService {
     }
   }
 
-  revokeBlobUrlsForWidget(widgetId: string): void {
-    const imageIds = this.widgetImageIds.get(widgetId);
+  revokeBlobUrlsForWiki(wikiId: string): void {
+    const imageIds = this.wikiImageIds.get(wikiId);
     if (!imageIds) return;
 
     imageIds.forEach(imageId => {
@@ -151,12 +151,12 @@ export class WikiImageStorageService {
       }
     });
 
-    this.widgetImageIds.delete(widgetId);
+    this.wikiImageIds.delete(wikiId);
   }
 
-  async importImages(widgetId: string, images: { id: string; fileName: string; mimeType: string; blob: Blob }[]): Promise<void> {
+  async importImages(wikiId: string, images: { id: string; fileName: string; mimeType: string; blob: Blob }[]): Promise<void> {
     for (const image of images) {
-      const path = this.blobPath(widgetId, image.id);
+      const path = this.blobPath(wikiId, image.id);
       await firstValueFrom(this.media.uploadFile(path, image.blob, image.mimeType));
 
       const meta = { fileName: image.fileName, mimeType: image.mimeType, createdAt: Date.now() };

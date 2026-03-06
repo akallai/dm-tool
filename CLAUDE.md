@@ -55,15 +55,23 @@ cd infrastructure/environments/dev   # or prod
 terraform init
 terraform plan
 terraform apply
-terraform output -raw static_web_app_api_key   # Get deployment token
+terraform output -raw static_web_app_api_key   # Get deployment token (may be stale)
 ```
 
 ### Deployment
+**Important:** The terraform `static_web_app_api_key` output can become stale if the key was rotated or the resource recreated. If deployment silently fails with "No matching static site found" (visible only with `--dry-run`), fetch a fresh token via Azure CLI:
+```bash
+az staticwebapp secrets list --name swa-dmtool-dev --resource-group rg-dmtool-dev --query "properties.apiKey" -o tsv
+```
+
+Deploy:
 ```bash
 ./deploy.sh   # Fetches token, installs Python packages, builds frontend, deploys
 ```
 
 **Gotcha:** SWA CLI does not auto-install Python packages — the script handles this by pip-installing into `.python_packages/` targeting Linux x86_64. This directory is gitignored and regenerated on each deploy.
+
+**Gotcha:** SWA CLI v2.0.7 exits with code 0 even when deployment fails due to an invalid token. Always verify with `--dry-run` first if unsure, or check the deployed bundle hash after deploying.
 
 ## Architecture Overview
 
