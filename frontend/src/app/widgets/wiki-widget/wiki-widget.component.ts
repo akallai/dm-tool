@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ScrollingModule } from '@angular/cdk/scrolling';
 // TipTap imports
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -49,8 +48,7 @@ export interface WikiData {
     MatIconModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    MatDialogModule,
-    ScrollingModule
+    MatDialogModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None

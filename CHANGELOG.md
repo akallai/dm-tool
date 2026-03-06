@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
+### Fixed
+- **Wiki sidebar scroll** — replaced broken CDK virtual scroll with native scrolling to fix scroll position miscalculations with nested articles (#6)
+
 ### Changed
 - **LLM Chat widget** — API requests now proxy through `/api/chat` backend instead of direct OpenAI calls; switched provider to OpenRouter; API key moved to server-side environment variable
 
