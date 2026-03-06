@@ -20,6 +20,9 @@ import {
   FileButtonFieldConfig
 } from '../../types/settings.types';
 import { MusicFile } from '../../../widgets/music-widget/music-widget.component';
+import { MatDialog } from '@angular/material/dialog';
+import { MediaService } from '../../../services/media.service';
+import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../../dialogs/media-browser-dialog/media-browser-dialog.component';
 
 @Component({
   selector: 'app-base-settings-dialog',
@@ -149,10 +152,16 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
                       Select folder
                     </mat-checkbox>
                   </div>
-                  <button mat-button class="file-input-button" (click)="triggerFileInput(field.key, i)">
-                    <mat-icon>upload_file</mat-icon>
-                    <span>Select Files</span>
-                  </button>
+                  <div class="file-action-buttons">
+                    <button mat-button class="file-input-button" (click)="triggerFileInput(field.key, i)">
+                      <mat-icon>upload_file</mat-icon>
+                      <span>Select Files</span>
+                    </button>
+                    <button mat-button class="file-input-button" (click)="browseLibraryForMapping(field.key, i)">
+                      <mat-icon>library_music</mat-icon>
+                      <span>Browse</span>
+                    </button>
+                  </div>
                   <input type="file"
                          [accept]="getMappingFileAccept(field)"
                          [multiple]="getMappingFileMultiple(field) || mapping.useFolderMode"
@@ -342,6 +351,10 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       width: 14px;
       opacity: 0.8;
     }
+    .file-action-buttons {
+      display: flex;
+      gap: 8px;
+    }
     .file-input-button {
       display: flex;
       align-items: center;
@@ -351,7 +364,7 @@ import { MusicFile } from '../../../widgets/music-widget/music-widget.component'
       color: var(--text-primary);
       font-size: 12px;
       padding: 6px 12px;
-      width: 100%;
+      flex: 1;
       justify-content: center;
     }
     .file-input-button mat-icon {
@@ -411,7 +424,9 @@ export class BaseSettingsDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<BaseSettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) data: { config: SettingsConfig; settings: any }
+    @Inject(MAT_DIALOG_DATA) data: { config: SettingsConfig; settings: any },
+    private dialog: MatDialog,
+    private mediaService: MediaService,
   ) {
     this.config = data.config;
     this.settings = { ...data.settings };
@@ -604,6 +619,31 @@ export class BaseSettingsDialogComponent {
     if (input) {
       input.click();
     }
+  }
+
+  browseLibraryForMapping(fieldKey: string, mappingIndex: number) {
+    const browseRef = this.dialog.open(MediaBrowserDialogComponent, {
+      data: { filter: 'audio' },
+      width: '600px',
+      maxHeight: '80vh',
+    });
+
+    browseRef.afterClosed().subscribe((result: MediaBrowserResult | undefined) => {
+      if (!result) return;
+
+      this.mediaService.downloadFile(result.path, result.scope).subscribe(blob => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const mapping = this.settings[fieldKey][mappingIndex];
+          if (!mapping.files) mapping.files = [];
+          mapping.files.push({
+            fileName: result.fileName,
+            fileDataUrl: reader.result as string,
+          });
+        };
+        reader.readAsDataURL(blob);
+      });
+    });
   }
 
   save() {

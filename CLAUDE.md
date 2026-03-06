@@ -150,6 +150,10 @@ Python Azure Functions in `frontend/api/`:
 - SCSS styling
 - Bundle size limits: 3MB warning, 5MB error (production)
 
+## Workflow Rules
+
+- When finishing a feature, always add it to `CHANGELOG.md` under the `[Unreleased]` section following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
 ## Widget Development
 
 When creating new widgets:

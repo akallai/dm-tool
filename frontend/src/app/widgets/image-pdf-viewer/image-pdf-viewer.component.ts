@@ -6,7 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DomSanitizer } from '@angular/platform-browser';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FileStorageService } from '../../services/file-storage.service';
+import { MediaService } from '../../services/media.service';
+import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../dialogs/media-browser-dialog/media-browser-dialog.component';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
 
@@ -41,9 +44,10 @@ interface SearchMatch {
 
       <!-- Empty state -->
       <div *ngIf="!fileUrl && !loading" class="empty-state">
-        <button mat-raised-button color="primary" (click)="openFileDialog()">
-          Open File
-        </button>
+        <div class="empty-state-buttons">
+          <button mat-raised-button color="primary" (click)="openFileDialog()">Upload File</button>
+          <button mat-raised-button (click)="browseLibrary()">Browse Library</button>
+        </div>
       </div>
 
       <!-- Loading state -->
@@ -146,6 +150,9 @@ interface SearchMatch {
 
           <span class="separator">|</span>
         </ng-container>
+        <button mat-icon-button matTooltip="Browse Library" (click)="browseLibrary()">
+          <mat-icon>folder_open</mat-icon>
+        </button>
         <button mat-button (click)="clearFile()">Clear</button>
       </div>
 
@@ -210,6 +217,10 @@ interface SearchMatch {
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .empty-state-buttons {
+      display: flex;
+      gap: 12px;
     }
     .content-view {
       flex: 1;
@@ -397,7 +408,7 @@ interface SearchMatch {
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule]
+  imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDialogModule]
 })
 export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() settings: any;
@@ -444,6 +455,8 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
   constructor(
     private sanitizer: DomSanitizer,
     private fileStorage: FileStorageService,
+    private mediaService: MediaService,
+    private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -454,25 +467,32 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
       this.pageInput = this.currentPage;
     }
 
-    // Try to restore file from IndexedDB
+    // Try to restore file
     if (this.widgetId) {
       this.loading = true;
       this.cdr.detectChanges();
       try {
-        const storedFile = await this.fileStorage.getFile(this.widgetId);
-        if (storedFile?.blob) {
-          this.isImage = storedFile.fileType?.startsWith('image/') || false;
+        const fileRef = this.settings?.fileRef as MediaBrowserResult | undefined;
+        if (fileRef) {
+          // Restore from media browser reference
+          await this.loadFromMediaRef(fileRef);
+        } else {
+          // Fall back to blob storage (existing upload behavior)
+          const storedFile = await this.fileStorage.getFile(this.widgetId);
+          if (storedFile?.blob) {
+            this.isImage = storedFile.fileType?.startsWith('image/') || false;
 
-          if (this.isImage) {
-            this.fileUrl = URL.createObjectURL(storedFile.blob);
-          } else {
-            this.pdfData = await storedFile.blob.arrayBuffer();
-            this.fileUrl = 'pdf';
-            await this.loadPdf();
+            if (this.isImage) {
+              this.fileUrl = URL.createObjectURL(storedFile.blob);
+            } else {
+              this.pdfData = await storedFile.blob.arrayBuffer();
+              this.fileUrl = 'pdf';
+              await this.loadPdf();
+            }
           }
         }
       } catch (error) {
-        console.error('Error restoring file from IndexedDB:', error);
+        console.error('Error restoring file:', error);
       } finally {
         this.loading = false;
         this.cdr.detectChanges();
@@ -541,6 +561,70 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
 
   openFileDialog() {
     this.fileInput.nativeElement.click();
+  }
+
+  browseLibrary() {
+    const dialogRef = this.dialog.open(MediaBrowserDialogComponent, {
+      data: { filter: 'image-pdf' },
+      width: '600px',
+      maxHeight: '80vh',
+    });
+
+    dialogRef.afterClosed().subscribe((result: MediaBrowserResult | undefined) => {
+      if (result) {
+        this.loadFromMediaRef(result).then(() => {
+          if (this.settings) {
+            this.settings.fileRef = result;
+            this.settings.fileName = result.fileName;
+            this.settings.fileType = result.contentType;
+            this.settings.pdfPage = this.currentPage;
+            delete this.settings.fileDataUrl;
+            this.notifySettingsChange();
+          }
+        });
+      }
+    });
+  }
+
+  private async loadFromMediaRef(ref: MediaBrowserResult): Promise<void> {
+    this.loading = true;
+    this.cdr.detectChanges();
+
+    // Clean up previous file
+    if (this.fileUrl && this.isImage) {
+      URL.revokeObjectURL(this.fileUrl);
+    }
+    if (this.pdfDoc) {
+      this.pdfDoc.destroy();
+      this.pdfDoc = null;
+    }
+
+    this.currentPage = this.settings?.pdfPage || 1;
+    this.pageInput = this.currentPage;
+    this.renderedPages.clear();
+    this.renderingPages.clear();
+    this.outline = [];
+    this.showToc = false;
+    this.zoomLevel = 1;
+
+    try {
+      const blob = await this.mediaService.downloadFile(ref.path, ref.scope).toPromise();
+      if (!blob) throw new Error('Download returned empty');
+
+      this.isImage = ref.contentType.startsWith('image/');
+      if (this.isImage) {
+        this.fileUrl = URL.createObjectURL(blob);
+      } else {
+        this.pdfData = await blob.arrayBuffer();
+        this.fileUrl = 'pdf';
+        await this.loadPdf();
+      }
+    } catch (error) {
+      console.error('Error loading media ref:', error);
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   async onFileSelected(event: Event) {
@@ -913,6 +997,7 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
       this.settings.fileType = null;
       this.settings.pdfPage = null;
       delete this.settings.fileDataUrl;
+      delete this.settings.fileRef;
       this.notifySettingsChange();
     }
   }

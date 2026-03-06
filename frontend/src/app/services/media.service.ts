@@ -17,19 +17,27 @@ export class MediaService {
 
   constructor(private http: HttpClient) {}
 
-  listFiles(prefix?: string): Observable<FileMetadata[]> {
+  listFiles(prefix?: string, scope?: 'user' | 'shared'): Observable<FileMetadata[]> {
     let params = new HttpParams();
     if (prefix) {
       params = params.set('prefix', prefix);
+    }
+    if (scope) {
+      params = params.set('scope', scope);
     }
     return this.http
       .get<{ files: FileMetadata[] }>(`${this.apiBase}/media`, { params })
       .pipe(map(response => response.files));
   }
 
-  downloadFile(filename: string): Observable<Blob> {
+  downloadFile(filename: string, scope?: 'user' | 'shared'): Observable<Blob> {
+    let params = new HttpParams();
+    if (scope) {
+      params = params.set('scope', scope);
+    }
     return this.http.get(`${this.apiBase}/media/${encodeURIComponent(filename)}`, {
-      responseType: 'blob'
+      responseType: 'blob',
+      params
     });
   }
 

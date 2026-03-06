@@ -59,3 +59,13 @@ def user_blob_prefix(req, prefix: str = "") -> str:
     user_id = get_user_id(req)
     prefix = unquote(prefix)
     return f"users/{user_id}/{prefix}"
+
+
+def shared_blob_path(filename: str) -> str:
+    """Return a blob path without user prefix (for shared content)."""
+    return unquote(filename)
+
+
+def shared_blob_prefix(prefix: str = "") -> str:
+    """Return a prefix without user scope (for shared content)."""
+    return unquote(prefix)
