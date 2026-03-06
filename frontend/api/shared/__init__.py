@@ -22,7 +22,7 @@ def get_user_id(req) -> str:
     x-ms-client-principal as a base64 JSON payload.
     Falls back to 'anonymous' for local development without auth.
     """
-    # Direct header (most reliable, set by SWA runtime)
+    # Direct header (most reliable, set by SWA runtime in production)
     principal_id = req.headers.get("x-ms-client-principal-id")
     if principal_id:
         return principal_id
@@ -38,6 +38,11 @@ def get_user_id(req) -> str:
                 return user_id
         except Exception:
             pass
+
+    # Fallback: frontend-supplied header (for SWA CLI local dev)
+    app_user_id = req.headers.get("x-app-user-id")
+    if app_user_id:
+        return app_user_id
 
     return "anonymous"
 
