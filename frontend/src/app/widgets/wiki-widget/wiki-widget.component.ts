@@ -66,6 +66,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   wikiRef: WikiRef | null = null;
   wikiLoaded = false;
   loading = false;
+  wikiDirty = false;
 
   sidebarCollapsed: boolean = false;
   searchTerm: string = '';
@@ -97,6 +98,30 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   private async loadWikiFromBlob(wikiId: string) {
+    // Restore from in-memory cache (tab switch case)
+    if (this.settings?._unsavedArticles) {
+      this.wikiData = {
+        articles: this.settings._unsavedArticles,
+        currentArticleId: this.settings.currentArticleId,
+        sidebarCollapsed: this.settings.sidebarCollapsed,
+      };
+      this.wikiDirty = this.settings._wikiDirty ?? false;
+      delete this.settings._unsavedArticles;
+      delete this.settings._wikiDirty;
+
+      const savedId = this.settings?.currentArticleId;
+      if (savedId) {
+        const found = this.findArticleById(this.wikiData.articles, savedId);
+        this.currentArticle = found || (this.wikiData.articles.length > 0 ? this.wikiData.articles[0] : null);
+      } else if (this.wikiData.articles.length > 0) {
+        this.currentArticle = this.wikiData.articles[0];
+      }
+
+      this.wikiLoaded = true;
+      this.cdr.markForCheck();
+      return;
+    }
+
     this.loading = true;
     this.cdr.markForCheck();
 
@@ -227,15 +252,6 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   switchWiki() {
-    // Save current wiki data immediately before switching
-    if (this.wikiRef && this.wikiLoaded) {
-      const blobData: WikiBlobData = {
-        name: this.wikiRef.wikiName,
-        articles: this.wikiData.articles,
-      };
-      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
-    }
-
     // Destroy editor
     if (this.wikiLinkClickHandler && this.editorContainer?.nativeElement) {
       this.editorContainer.nativeElement.removeEventListener('click', this.wikiLinkClickHandler);
@@ -374,8 +390,15 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     // Migrate markdown to HTML if needed (backward compatibility)
     if (isMarkdownContent(content)) {
       content = await migrateMarkdownToHtml(content);
-      article.content = content; // Update the article with migrated content
-      this.saveWikiData();
+      article.content = content;
+      // One-time migration save
+      if (this.wikiRef) {
+        const blobData: WikiBlobData = {
+          name: this.wikiRef.wikiName,
+          articles: this.wikiData.articles,
+        };
+        await this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+      }
     }
 
     // Clean up corrupted wiki links that have Link extension attributes
@@ -425,7 +448,8 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   private onContentChange() {
-    this.saveWikiData();
+    this.wikiDirty = true;
+    this.settingsChange.emit();
   }
 
   // Add a new root article
@@ -450,6 +474,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     }
 
     this.saveUIState();
+    this.wikiDirty = true;
     this.cdr.markForCheck();
   }
 
@@ -474,6 +499,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     }
 
     this.saveUIState();
+    this.wikiDirty = true;
     this.cdr.markForCheck();
   }
 
@@ -492,6 +518,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       }
     }
     this.saveUIState();
+    this.wikiDirty = true;
     this.cdr.markForCheck();
   }
 
@@ -515,17 +542,18 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   updateArticle() {
-    this.saveWikiData();
+    this.wikiDirty = true;
+    this.settingsChange.emit();
   }
 
-  /** Save wiki content to blob storage (debounced) */
-  private saveWikiData() {
-    if (this.wikiRef) {
+  async saveWikiToServer(): Promise<void> {
+    if (this.wikiRef && this.wikiLoaded) {
       const blobData: WikiBlobData = {
         name: this.wikiRef.wikiName,
         articles: this.wikiData.articles,
       };
-      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+      await this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+      this.wikiDirty = false;
     }
   }
 
@@ -536,8 +564,6 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       this.settings.sidebarCollapsed = this.sidebarCollapsed;
       this.settingsChange.emit();
     }
-    // Also save wiki data since article changes often accompany UI state changes
-    this.saveWikiData();
   }
 
   toggleSidebar() {
@@ -769,13 +795,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   }
 
   ngOnDestroy() {
-    // Save wiki data before destroying
+    // Preserve wiki data in settings so it survives tab switches
     if (this.wikiRef && this.wikiLoaded) {
-      const blobData: WikiBlobData = {
-        name: this.wikiRef.wikiName,
-        articles: this.wikiData.articles,
-      };
-      this.wikiStorage.saveWiki(this.wikiRef.wikiId, blobData);
+      this.settings._unsavedArticles = this.wikiData.articles;
+      this.settings._wikiDirty = this.wikiDirty;
     }
 
     if (this.wikiLinkClickHandler && this.editorContainer?.nativeElement) {

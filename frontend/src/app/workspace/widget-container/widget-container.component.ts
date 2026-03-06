@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CdkDragEnd } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,6 +51,7 @@ export class WidgetContainerComponent {
   @Input() widgetData!: WidgetInstance;
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
+  @ViewChild(WikiWidgetComponent) wikiWidget?: WikiWidgetComponent;
 
   isMaximized = false;
   private previousPosition!: { x: number, y: number };
@@ -449,11 +450,24 @@ export class WidgetContainerComponent {
 
   close(event: MouseEvent) {
     event.stopPropagation();
+    if (this.hasUnsavedChanges() && !confirm('You have unsaved changes. Close anyway?')) {
+      return;
+    }
     // Stop music playback when explicitly closing a music widget
     if (this.widgetData.type === 'MUSIC_WIDGET') {
       this.musicPlaybackService.stopAllForWidget(this.widgetData.id);
     }
     this.closeEvent.emit();
+  }
+
+  async saveWidget(): Promise<void> {
+    if (this.wikiWidget) {
+      await this.wikiWidget.saveWikiToServer();
+    }
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.wikiWidget?.wikiDirty ?? false;
   }
 
   onSettingsChange() {

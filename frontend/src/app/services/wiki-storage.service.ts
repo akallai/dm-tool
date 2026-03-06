@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MediaService } from './media.service';
-import { debounce } from '../utils/debounce';
 
 export interface WikiMeta {
   wikiId: string;
@@ -30,8 +29,6 @@ export interface WikiRef {
   providedIn: 'root'
 })
 export class WikiStorageService {
-  private debouncedSaves = new Map<string, (data: WikiBlobData) => void>();
-
   constructor(private media: MediaService) {}
 
   private metaPath(wikiId: string): string {
@@ -101,23 +98,11 @@ export class WikiStorageService {
     }
   }
 
-  saveWiki(wikiId: string, data: WikiBlobData): void {
-    if (!this.debouncedSaves.has(wikiId)) {
-      const debouncedFn = debounce((d: WikiBlobData) => {
-        this.uploadJson(this.dataPath(wikiId), d);
-      }, 2000);
-      this.debouncedSaves.set(wikiId, debouncedFn);
-    }
-    this.debouncedSaves.get(wikiId)!(data);
+  async saveWiki(wikiId: string, data: WikiBlobData): Promise<void> {
+    await this.uploadJson(this.dataPath(wikiId), data);
   }
 
   async deleteWiki(wikiId: string): Promise<void> {
-    const debouncedFn = this.debouncedSaves.get(wikiId) as (ReturnType<typeof debounce>) | undefined;
-    if (debouncedFn) {
-      debouncedFn.cancel();
-      this.debouncedSaves.delete(wikiId);
-    }
-
     const files = await firstValueFrom(this.media.listFiles(`wikis/${wikiId}/`));
     for (const file of files) {
       await firstValueFrom(this.media.deleteFile(file.name));

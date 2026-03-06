@@ -49,6 +49,15 @@
       <button class="add-widget-btn" (click)="openWidgetSelector()" matTooltip="Add new widget">
         <mat-icon>extension</mat-icon>
       </button>
+
+      <!-- Save button -->
+      <button class="save-btn"
+              [class.dirty]="isDirty"
+              [class.saving]="isSaving"
+              (click)="saveToServer()"
+              [matTooltip]="isDirty ? 'Save changes (Ctrl+S)' : 'All changes saved'">
+        <mat-icon>{{ isSaving ? 'sync' : 'save' }}</mat-icon>
+      </button>
     </div>
   </div>
 

@@ -623,26 +623,30 @@ export class BaseSettingsDialogComponent {
 
   browseLibraryForMapping(fieldKey: string, mappingIndex: number) {
     const browseRef = this.dialog.open(MediaBrowserDialogComponent, {
-      data: { filter: 'audio' },
+      data: { filter: 'audio', multiple: true },
       width: '600px',
       maxHeight: '80vh',
     });
 
-    browseRef.afterClosed().subscribe((result: MediaBrowserResult | undefined) => {
+    browseRef.afterClosed().subscribe((result: MediaBrowserResult | MediaBrowserResult[] | undefined) => {
       if (!result) return;
 
-      this.mediaService.downloadFile(result.path, result.scope).subscribe(blob => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const mapping = this.settings[fieldKey][mappingIndex];
-          if (!mapping.files) mapping.files = [];
-          mapping.files.push({
-            fileName: result.fileName,
-            fileDataUrl: reader.result as string,
-          });
-        };
-        reader.readAsDataURL(blob);
-      });
+      const results = Array.isArray(result) ? result : [result];
+      const mapping = this.settings[fieldKey][mappingIndex];
+      if (!mapping.files) mapping.files = [];
+
+      for (const item of results) {
+        this.mediaService.downloadFile(item.path, item.scope).subscribe(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            mapping.files.push({
+              fileName: item.fileName,
+              fileDataUrl: reader.result as string,
+            });
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
     });
   }
 

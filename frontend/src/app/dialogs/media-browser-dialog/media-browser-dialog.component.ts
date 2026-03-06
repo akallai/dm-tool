@@ -11,6 +11,7 @@ import { MediaService, FileMetadata } from '../../services/media.service';
 
 export interface MediaBrowserDialogData {
   filter: 'image-pdf' | 'audio' | 'all';
+  multiple?: boolean;
 }
 
 export interface MediaBrowserResult {
@@ -44,12 +45,12 @@ interface FileGroup {
               </div>
               <div *ngIf="!rulebooksLoading" class="file-list">
                 <!-- Ungrouped files -->
-                <div *ngFor="let file of rulebookUngrouped" class="file-row" (click)="selectFile(file, 'shared')">
+                <div *ngFor="let file of rulebookUngrouped" class="file-row" [class.selected]="isSelected(file, 'shared')" (click)="selectFile(file, 'shared')">
                   <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
                   <span class="file-name">{{ getDisplayName(file.name) }}</span>
                   <span class="file-size">{{ formatSize(file.size) }}</span>
                   <button mat-icon-button matTooltip="Select" (click)="selectFile(file, 'shared'); $event.stopPropagation()">
-                    <mat-icon>check_circle</mat-icon>
+                    <mat-icon>{{ multiple && isSelected(file, 'shared') ? 'check_box' : multiple ? 'check_box_outline_blank' : 'check_circle' }}</mat-icon>
                   </button>
                 </div>
                 <!-- Grouped files -->
@@ -59,12 +60,12 @@ interface FileGroup {
                       <mat-panel-title>{{ group.name }}</mat-panel-title>
                       <mat-panel-description>{{ group.files.length }} file{{ group.files.length !== 1 ? 's' : '' }}</mat-panel-description>
                     </mat-expansion-panel-header>
-                    <div *ngFor="let file of group.files" class="file-row" (click)="selectFile(file, 'shared')">
+                    <div *ngFor="let file of group.files" class="file-row" [class.selected]="isSelected(file, 'shared')" (click)="selectFile(file, 'shared')">
                       <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
                       <span class="file-name">{{ getDisplayName(file.name) }}</span>
                       <span class="file-size">{{ formatSize(file.size) }}</span>
                       <button mat-icon-button matTooltip="Select" (click)="selectFile(file, 'shared'); $event.stopPropagation()">
-                        <mat-icon>check_circle</mat-icon>
+                        <mat-icon>{{ multiple && isSelected(file, 'shared') ? 'check_box' : multiple ? 'check_box_outline_blank' : 'check_circle' }}</mat-icon>
                       </button>
                     </div>
                   </mat-expansion-panel>
@@ -85,12 +86,12 @@ interface FileGroup {
                 No sounds available.
               </div>
               <div *ngIf="!soundsLoading" class="file-list">
-                <div *ngFor="let file of soundUngrouped" class="file-row" (click)="selectFile(file, 'shared')">
+                <div *ngFor="let file of soundUngrouped" class="file-row" [class.selected]="isSelected(file, 'shared')" (click)="selectFile(file, 'shared')">
                   <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
                   <span class="file-name">{{ getDisplayName(file.name) }}</span>
                   <span class="file-size">{{ formatSize(file.size) }}</span>
                   <button mat-icon-button matTooltip="Select" (click)="selectFile(file, 'shared'); $event.stopPropagation()">
-                    <mat-icon>check_circle</mat-icon>
+                    <mat-icon>{{ multiple && isSelected(file, 'shared') ? 'check_box' : multiple ? 'check_box_outline_blank' : 'check_circle' }}</mat-icon>
                   </button>
                 </div>
                 <mat-accordion *ngIf="soundGroups.length > 0">
@@ -99,12 +100,12 @@ interface FileGroup {
                       <mat-panel-title>{{ group.name }}</mat-panel-title>
                       <mat-panel-description>{{ group.files.length }} file{{ group.files.length !== 1 ? 's' : '' }}</mat-panel-description>
                     </mat-expansion-panel-header>
-                    <div *ngFor="let file of group.files" class="file-row" (click)="selectFile(file, 'shared')">
+                    <div *ngFor="let file of group.files" class="file-row" [class.selected]="isSelected(file, 'shared')" (click)="selectFile(file, 'shared')">
                       <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
                       <span class="file-name">{{ getDisplayName(file.name) }}</span>
                       <span class="file-size">{{ formatSize(file.size) }}</span>
                       <button mat-icon-button matTooltip="Select" (click)="selectFile(file, 'shared'); $event.stopPropagation()">
-                        <mat-icon>check_circle</mat-icon>
+                        <mat-icon>{{ multiple && isSelected(file, 'shared') ? 'check_box' : multiple ? 'check_box_outline_blank' : 'check_circle' }}</mat-icon>
                       </button>
                     </div>
                   </mat-expansion-panel>
@@ -131,13 +132,13 @@ interface FileGroup {
                 No files uploaded yet.
               </div>
               <div *ngIf="!myFilesLoading" class="file-list">
-                <div *ngFor="let file of myFiles; let i = index" class="file-row" (click)="selectFile(file, 'user')">
+                <div *ngFor="let file of myFiles; let i = index" class="file-row" [class.selected]="isSelected(file, 'user')" (click)="selectFile(file, 'user')">
                   <mat-icon class="file-type-icon">{{ getFileIcon(file) }}</mat-icon>
                   <span class="file-name">{{ getDisplayName(file.name) }}</span>
                   <span class="file-size">{{ formatSize(file.size) }}</span>
                   <ng-container *ngIf="deletingIndex !== i">
                     <button mat-icon-button matTooltip="Select" (click)="selectFile(file, 'user'); $event.stopPropagation()">
-                      <mat-icon>check_circle</mat-icon>
+                      <mat-icon>{{ multiple && isSelected(file, 'user') ? 'check_box' : multiple ? 'check_box_outline_blank' : 'check_circle' }}</mat-icon>
                     </button>
                     <button mat-icon-button matTooltip="Delete" color="warn" (click)="confirmDelete(i); $event.stopPropagation()">
                       <mat-icon>delete</mat-icon>
@@ -161,6 +162,11 @@ interface FileGroup {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
+      <button *ngIf="multiple" mat-raised-button color="primary"
+              [disabled]="selectedFiles.size === 0"
+              (click)="confirmSelection()">
+        Add {{ selectedFiles.size }} file{{ selectedFiles.size !== 1 ? 's' : '' }}
+      </button>
     </mat-dialog-actions>
   `,
   styles: [`
@@ -198,6 +204,10 @@ interface FileGroup {
     }
     .file-row:hover {
       background: var(--item-hover, rgba(255,255,255,0.1));
+    }
+    .file-row.selected {
+      background: rgba(100, 255, 218, 0.1);
+      border-left: 2px solid var(--accent-color, #64ffda);
     }
     .file-type-icon {
       color: var(--accent-color, #64b5f6);
@@ -271,6 +281,9 @@ export class MediaBrowserDialogComponent implements OnInit {
 
   deletingIndex = -1;
 
+  multiple: boolean;
+  selectedFiles = new Map<string, { file: FileMetadata, scope: 'user' | 'shared' }>();
+
   private filter: 'image-pdf' | 'audio' | 'all';
 
   constructor(
@@ -279,6 +292,7 @@ export class MediaBrowserDialogComponent implements OnInit {
     private mediaService: MediaService,
   ) {
     this.filter = data.filter;
+    this.multiple = data.multiple ?? false;
     this.showRulebooks = this.filter === 'image-pdf' || this.filter === 'all';
     this.showSounds = this.filter === 'audio' || this.filter === 'all';
 
@@ -382,6 +396,16 @@ export class MediaBrowserDialogComponent implements OnInit {
   }
 
   selectFile(file: FileMetadata, scope: 'user' | 'shared') {
+    if (this.multiple) {
+      const key = `${scope}:${file.name}`;
+      if (this.selectedFiles.has(key)) {
+        this.selectedFiles.delete(key);
+      } else {
+        this.selectedFiles.set(key, { file, scope });
+      }
+      return;
+    }
+
     const result: MediaBrowserResult = {
       path: file.name,
       scope,
@@ -390,6 +414,24 @@ export class MediaBrowserDialogComponent implements OnInit {
       size: file.size,
     };
     this.dialogRef.close(result);
+  }
+
+  isSelected(file: FileMetadata, scope: 'user' | 'shared'): boolean {
+    return this.selectedFiles.has(`${scope}:${file.name}`);
+  }
+
+  confirmSelection() {
+    const results: MediaBrowserResult[] = [];
+    this.selectedFiles.forEach(({ file, scope }) => {
+      results.push({
+        path: file.name,
+        scope,
+        fileName: this.getDisplayName(file.name),
+        contentType: file.content_type || 'application/octet-stream',
+        size: file.size,
+      });
+    });
+    this.dialogRef.close(results);
   }
 
   getDisplayName(name: string): string {

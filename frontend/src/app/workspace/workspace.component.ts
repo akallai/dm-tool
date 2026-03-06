@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, ViewChildren, QueryList } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
 import { BackgroundSelectorDialogComponent } from '../dialogs/background-selector-dialog/background-selector-dialog.component';
@@ -12,6 +12,7 @@ import { WidgetContainerComponent } from '../workspace/widget-container/widget-c
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 import { MediaService } from '../services/media.service';
+import { WikiStorageService, WikiBlobData } from '../services/wiki-storage.service';
 import { firstValueFrom } from 'rxjs';
 
 export interface Tab {
@@ -46,6 +47,7 @@ export interface WidgetInstance {
 })
 export class WorkspaceComponent implements OnInit {
   @Input() initialState: WorkspaceState | null = null;
+  @ViewChildren(WidgetContainerComponent) widgetContainers!: QueryList<WidgetContainerComponent>;
 
   tabs: Tab[] = [];
   activeTabId: string = '';
@@ -58,6 +60,8 @@ export class WorkspaceComponent implements OnInit {
   editingTabId: string | null = null;
   tempTabName: string = '';
   saveError: string | null = null;
+  isDirty = false;
+  isSaving = false;
 
   // Helper getter to access the widgets of the active tab
   get widgets(): WidgetInstance[] {
@@ -74,6 +78,7 @@ export class WorkspaceComponent implements OnInit {
     private persistence: WorkspacePersistenceService,
     private workspaceService: WorkspaceService,
     private media: MediaService,
+    private wikiStorage: WikiStorageService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -96,6 +101,14 @@ export class WorkspaceComponent implements OnInit {
 
     this.persistence.saveError$.subscribe(error => {
       this.saveError = error;
+      if (error === null) {
+        // Save succeeded
+        this.isDirty = false;
+        this.isSaving = false;
+      } else if (!error.includes('Retrying')) {
+        // Permanent failure
+        this.isSaving = false;
+      }
       this.cdr.markForCheck();
     });
   }
@@ -170,12 +183,41 @@ export class WorkspaceComponent implements OnInit {
   }
 
   saveTabs() {
+    this.isDirty = true;
+    this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
+    this.cdr.markForCheck();
+  }
+
+  async saveToServer() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+    this.cdr.markForCheck();
+
+    // Save currently rendered wiki widgets
+    for (const container of this.widgetContainers) {
+      await container.saveWidget();
+    }
+
+    // Save wiki data stashed in settings from widgets on other tabs
+    for (const tab of this.tabs) {
+      for (const widget of tab.widgets) {
+        if (widget.type === 'WIKI_WIDGET' && widget.settings?._unsavedArticles && widget.settings?.wikiRef) {
+          const blobData: WikiBlobData = {
+            name: widget.settings.wikiRef.wikiName,
+            articles: widget.settings._unsavedArticles,
+          };
+          await this.wikiStorage.saveWiki(widget.settings.wikiRef.wikiId, blobData);
+          delete widget.settings._unsavedArticles;
+          delete widget.settings._wikiDirty;
+        }
+      }
+    }
+
     this.persistence.saveWorkspace({
       tabs: this.tabs,
       activeTabId: this.activeTabId,
       backgroundIndex: this.currentBackgroundIndex
     });
-    this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
   }
 
   saveWidgets() {
@@ -301,5 +343,20 @@ export class WorkspaceComponent implements OnInit {
   cycleNext(event: KeyboardEvent) {
     event.preventDefault();
     this.nextBackground();
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+      event.preventDefault();
+      this.saveToServer();
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    if (this.isDirty) {
+      event.preventDefault();
+    }
   }
 }
