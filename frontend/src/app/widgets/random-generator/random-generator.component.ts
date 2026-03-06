@@ -159,7 +159,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
       },
     });
     dialogRef.afterClosed().subscribe(async (name: string | undefined) => {
-      if (!name) return;
+      if (!name?.trim()) return;
 
       this.loading = true;
       this.cdr.markForCheck();
