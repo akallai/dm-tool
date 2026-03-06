@@ -1,17 +1,22 @@
 <div class="random-generator">
-  <ng-container *ngIf="!hasLoadedData; else loadedState">
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && !tableLoaded">
     <div class="empty-state">
-      <button mat-stroked-button color="primary" (click)="openExistingFile()">
-        Open Random Generator File
+      <button mat-raised-button color="primary" (click)="createNewTable()">
+        Create New Table Collection
       </button>
-      <button mat-stroked-button color="accent" (click)="createNewFile()">
-        New Random Generator File
+      <button mat-raised-button (click)="openExistingTable()">
+        Open Existing
       </button>
     </div>
   </ng-container>
-  <ng-template #loadedState>
+
+  <ng-container *ngIf="!loading && tableLoaded">
     <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
-      No mappings available. Add mappings in settings.
+      No lists yet. Add lists in Settings.
     </div>
     <div *ngIf="mappings.length > 0" class="content-wrapper">
       <!-- Display categorized mappings -->
@@ -19,8 +24,8 @@
         <div class="category-section">
           <div class="category-header">{{ category }}</div>
           <div class="button-grid">
-            <button mat-raised-button 
-                    *ngFor="let mapping of getMappingsByCategory(category)" 
+            <button mat-raised-button
+                    *ngFor="let mapping of getMappingsByCategory(category)"
                     (click)="randomize(mapping)"
                     [disabled]="!hasItems(mapping)">
               {{ mapping.key || 'No Key' }}
@@ -28,22 +33,22 @@
           </div>
         </div>
       </ng-container>
-      
+
       <!-- Display uncategorized mappings -->
       <div class="uncategorized-section" *ngIf="getUncategorizedMappings().length > 0">
         <div class="button-grid">
-          <button mat-raised-button 
-                  *ngFor="let mapping of getUncategorizedMappings()" 
+          <button mat-raised-button
+                  *ngFor="let mapping of getUncategorizedMappings()"
                   (click)="randomize(mapping)"
                   [disabled]="!hasItems(mapping)">
             {{ mapping.key || 'No Key' }}
           </button>
         </div>
       </div>
-      
+
       <div *ngIf="lastResult" class="result">
         <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
       </div>
     </div>
-  </ng-template>
+  </ng-container>
 </div>

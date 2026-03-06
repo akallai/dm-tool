@@ -69,6 +69,13 @@
   margin-top: 4px;
 }
 
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
