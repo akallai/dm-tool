@@ -34,9 +34,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `AudioStorageService` rewritten from IndexedDB to Azure Blob Storage
 - `WorkspaceComponent` rewired to use server-backed persistence
 - `AppComponent` now loads workspace state from server before rendering
+- **Wiki widget is now fully cloud-only** — all data persists via Azure Blob Storage, no local file operations
+- Wiki widget auto-initializes with a Welcome article when first added
 
 ### Removed
 - **Notepad widget** — superseded by Wiki widget (WYSIWYG editor with cloud persistence)
+- Wiki local file operations (Open, New, Save to disk via File System Access API)
+- Wiki ZIP import/export and `jszip` dependency
+- `WikiFileHandleService` (IndexedDB file handle persistence)
+- `WikiExportService` (ZIP archive service)
 - `WidgetStorageService` (replaced by server-side persistence)
 - localStorage and IndexedDB usage for all data storage
 - GitHub Pages deployment workflow
