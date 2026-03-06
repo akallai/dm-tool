@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 
 interface Combatant {
   id: string;
@@ -1279,12 +1280,22 @@ export class CombatTrackerComponent implements OnInit {
   }
 
   reset() {
-    if (confirm('Are you sure you want to reset the combat tracker?')) {
-      this.activeIndex = 0;
-      this.currentRound = 1;
-      this.saveState();
-      this.cdr.detectChanges();
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Reset Combat',
+        message: 'Are you sure you want to reset the combat tracker?',
+        confirmText: 'Reset',
+        warn: true,
+      },
+    });
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.activeIndex = 0;
+        this.currentRound = 1;
+        this.saveState();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   sortByInitiative() {
