@@ -7,6 +7,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RandomTableStorageService, TableRef, TableBlobData } from '../../services/random-table-storage.service';
 import { RandomTablePickerDialogComponent } from '../../dialogs/random-table-picker-dialog/random-table-picker-dialog.component';
+import { PromptDialogComponent } from '../../dialogs/prompt-dialog/prompt-dialog.component';
 
 interface RandomMapping {
   key: string;
@@ -147,29 +148,39 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  async createNewTable() {
-    const name = prompt('Table collection name:');
-    if (!name) return;
+  createNewTable() {
+    const dialogRef = this.dialog.open(PromptDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'New Table Collection',
+        message: 'Enter a name for the table collection:',
+        placeholder: 'Table name',
+        confirmText: 'Create',
+      },
+    });
+    dialogRef.afterClosed().subscribe(async (name: string | undefined) => {
+      if (!name) return;
 
-    this.loading = true;
-    this.cdr.markForCheck();
-
-    try {
-      const ref = await this.tableStorage.createTable(name);
-      this.tableRef = ref;
-      this.settings.tableRef = ref;
-      this.settings.mappings = [];
-      this.settings.mappingCategories = [];
-      this.settings.useWeightedSelection = true;
-      this.mappings = this.settings.mappings;
-      this.tableLoaded = true;
-      this.settingsChange.emit();
-    } catch (error) {
-      console.error('Error creating table collection:', error);
-    } finally {
-      this.loading = false;
+      this.loading = true;
       this.cdr.markForCheck();
-    }
+
+      try {
+        const ref = await this.tableStorage.createTable(name);
+        this.tableRef = ref;
+        this.settings.tableRef = ref;
+        this.settings.mappings = [];
+        this.settings.mappingCategories = [];
+        this.settings.useWeightedSelection = true;
+        this.mappings = this.settings.mappings;
+        this.tableLoaded = true;
+        this.settingsChange.emit();
+      } catch (error) {
+        console.error('Error creating table collection:', error);
+      } finally {
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   openExistingTable() {
