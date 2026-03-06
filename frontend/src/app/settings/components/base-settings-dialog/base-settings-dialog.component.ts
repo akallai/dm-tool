@@ -210,7 +210,7 @@ import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../../dialog
               color="primary"
               (click)="save()"
               [disabled]="!isValid()">
-        Save
+        Apply
       </button>
     </mat-dialog-actions>
   `,
