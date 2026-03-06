@@ -3,25 +3,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Frontend",
+      "name": "Full Stack (SWA)",
       "type": "chrome",
       "request": "launch",
-      "preLaunchTask": "frontend: start",
-      "url": "http://localhost:4200/"
-    },
-    {
-      "name": "Backend",
-      "type": "node",
-      "request": "launch",
-      "preLaunchTask": "backend: start",
-      "timeout": 30000
-    },
-    {
-      "name": "Frontend + Backend",
-      "type": "chrome",
-      "request": "launch",
-      "preLaunchTask": "frontend+backend: start",
-      "url": "http://localhost:4200/"
+      "preLaunchTask": "swa: start",
+      "url": "http://localhost:4280/"
     },
     {
       "name": "ng test",
