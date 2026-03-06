@@ -30,13 +30,13 @@
         </button>
       </div>
       <div class="sidebar-content" *ngIf="!sidebarCollapsed">
-        <cdk-virtual-scroll-viewport itemSize="24" class="article-viewport">
+        <div class="article-list">
           <ul>
             <ng-container *ngFor="let article of filteredArticles; trackBy: trackByArticleId">
               <ng-container *ngTemplateOutlet="recursiveList; context:{ article: article, level: 0 }"></ng-container>
             </ng-container>
           </ul>
-        </cdk-virtual-scroll-viewport>
+        </div>
       </div>
       <button *ngIf="!sidebarCollapsed" mat-icon-button (click)="addArticle()" matTooltip="Add article" class="add-article-btn">
         <mat-icon>add</mat-icon>

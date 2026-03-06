@@ -141,15 +141,11 @@
   }
 }
 
-.article-viewport {
-  height: 100%;
+.article-list {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-
-  ::ng-deep .cdk-virtual-scroll-content-wrapper {
-    padding-right: 4px;
-  }
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 // Sidebar article list styles
