@@ -21,6 +21,8 @@ import { HexMapComponent } from '../../widgets/hex-map/hex-map.component';
 import { NameGeneratorComponent } from '../../widgets/name-generator/name-generator.component';
 import { CountdownComponent } from '../../widgets/countdown/countdown.component';
 import { MusicPlaybackService } from '../../services/music-playback.service';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 
 
 @Component({
@@ -44,7 +46,8 @@ import { MusicPlaybackService } from '../../services/music-playback.service';
     LlmChatComponent,
     HexMapComponent,
     NameGeneratorComponent,
-    CountdownComponent
+    CountdownComponent,
+    MatDialogModule
   ]
 })
 export class WidgetContainerComponent {
@@ -64,7 +67,8 @@ export class WidgetContainerComponent {
   constructor(
     private settingsService: SettingsService,
     private elementRef: ElementRef,
-    private musicPlaybackService: MusicPlaybackService
+    private musicPlaybackService: MusicPlaybackService,
+    private dialog: MatDialog,
   ) {}
 
   @HostListener('window:resize', ['$event'])
@@ -444,10 +448,26 @@ export class WidgetContainerComponent {
 
   close(event: MouseEvent) {
     event.stopPropagation();
-    if (this.hasUnsavedChanges() && !confirm('You have unsaved changes. Close anyway?')) {
-      return;
+    if (this.hasUnsavedChanges()) {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        data: {
+          title: 'Unsaved Changes',
+          message: 'You have unsaved changes. Close anyway?',
+          confirmText: 'Close',
+          warn: true,
+        },
+      });
+      dialogRef.afterClosed().subscribe(confirmed => {
+        if (confirmed) {
+          this.performClose();
+        }
+      });
+    } else {
+      this.performClose();
     }
-    // Stop music playback when explicitly closing a music widget
+  }
+
+  private performClose() {
     if (this.widgetData.type === 'MUSIC_WIDGET') {
       this.musicPlaybackService.stopAllForWidget(this.widgetData.id);
     }
