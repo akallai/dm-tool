@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
-export type WidgetType = 'IMAGE_PDF' | 'NOTEPAD' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR' | 'COUNTDOWN_WIDGET';
+export type WidgetType = 'IMAGE_PDF' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR' | 'COUNTDOWN_WIDGET';
 
 interface WidgetOption {
   type: WidgetType;
@@ -248,8 +248,7 @@ interface WidgetOption {
 export class WidgetSelectorDialogComponent {
   widgetTypes: WidgetOption[] = [
     { type: 'IMAGE_PDF', label: 'Image/PDF Viewer', icon: 'image.png', description: 'View images & PDFs' },
-    { type: 'NOTEPAD', label: 'Notepad', icon: 'notepad.png', description: 'Text notes' },
-    { type: 'RANDOM_GENERATOR', label: 'Random Generator', icon: 'random_generator.png', description: 'Random tables' },
+{ type: 'RANDOM_GENERATOR', label: 'Random Generator', icon: 'random_generator.png', description: 'Random tables' },
     { type: 'DICE_TOOL', label: 'Dice Tool', icon: 'dice.png', description: 'Roll dice' },
     { type: 'MUSIC_WIDGET', label: 'Music Widget', icon: 'note.png', description: 'Play tracks' },
     { type: 'WIKI_WIDGET', label: 'Wiki', icon: 'wiki.png', description: 'Knowledge base' },

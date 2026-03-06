@@ -1,27 +1,5 @@
 # Deployment Testing Findings
 
-## Bugs Found & Fixed
-
-### 1. CRITICAL: Python packages not installed in SWA runtime (500 errors)
-**Symptom:** All media API endpoints returned 500 with empty body. Only `/api/health` worked.
-**Root cause:** SWA CLI deployment does not automatically install Python packages from `requirements.txt`. The `azure-storage-blob` package was missing in the runtime.
-**Fix:** Pre-install packages into `.python_packages/lib/site-packages` targeting Linux x86_64 before deploying:
-```bash
-pip install -r requirements.txt --target .python_packages/lib/site-packages \
-  --platform manylinux2014_x86_64 --only-binary=:all: --python-version 3.10
-```
-**Note:** Must target Linux platform since SWA runs on Linux, not Windows.
-
-### 2. CRITICAL: URL-encoded slashes cause 404 routing failures
-**Symptom:** PUT/GET `/api/media/workspace%2Fstate.json` returned 404 (empty body, SWA-level).
-**Root cause:** Azure SWA decodes `%2F` → `/` before route matching. The route pattern `media/{filename}` only matches a single path segment, so `workspace/state.json` (two segments) doesn't match.
-**Fix:** Changed route pattern from `media/{filename}` to `media/{*filename}` (catch-all) in all three function.json files (get_media, upload_media, delete_media).
-
-### 3. MODERATE: Catch-all route conflicts with list endpoint
-**Symptom:** After fix #2, `GET /api/media?prefix=...` returned 400 "Filename is required" instead of listing files.
-**Root cause:** The catch-all `media/{*filename}` on the GET endpoint also matches `GET /api/media` (with empty filename), stealing the route from the `list_media` function.
-**Fix:** Added list logic fallback in `get_media/__init__.py` — when filename is empty, delegates to `_list_media()` handler.
-
 ## Test Results
 
 ### API Endpoints

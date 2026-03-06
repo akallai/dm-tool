@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `AppComponent` now loads workspace state from server before rendering
 
 ### Removed
+- **Notepad widget** — superseded by Wiki widget (WYSIWYG editor with cloud persistence)
 - `WidgetStorageService` (replaced by server-side persistence)
 - localStorage and IndexedDB usage for all data storage
 - GitHub Pages deployment workflow

@@ -60,10 +60,10 @@ terraform output -raw static_web_app_api_key   # Get deployment token
 
 ### Deployment
 ```bash
-cd frontend
-npm run build
-swa deploy ./dist/dm-tool/browser --api-location ./api --api-language python --api-version 3.10 --env production --deployment-token <TOKEN>
+./deploy.sh   # Fetches token, installs Python packages, builds frontend, deploys
 ```
+
+**Gotcha:** SWA CLI does not auto-install Python packages — the script handles this by pip-installing into `.python_packages/` targeting Linux x86_64. This directory is gitignored and regenerated on each deploy.
 
 ## Architecture Overview
 
@@ -118,7 +118,6 @@ All widgets follow this pattern:
 
 ### Widget Types
 - `IMAGE_PDF`: File viewer with drag-and-drop support
-- `NOTEPAD`: Markdown editor with preview mode
 - `RANDOM_GENERATOR`: Customizable random tables with weighted selection
 - `DICE_TOOL`: RPG dice roller with custom notation
 - `MUSIC_WIDGET`: Audio playback with multiple tracks

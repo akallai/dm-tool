@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener } from '@angular/core';
 import { CdkDragEnd } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,7 +7,6 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { WidgetInstance } from '../workspace.component';
 import { WidgetType } from '../../dialogs/widget-selector-dialog/widget-selector-dialog.component';
 import { ImagePdfViewerComponent } from '../../widgets/image-pdf-viewer/image-pdf-viewer.component';
-import { NotepadComponent } from '../../widgets/notepad/notepad.component';
 import { RandomGeneratorComponent } from '../../widgets/random-generator/random-generator.component';
 import { DiceToolComponent } from '../../widgets/dice-tool/dice-tool.component';
 import { MusicWidgetComponent } from '../../widgets/music-widget/music-widget.component';
@@ -35,7 +34,6 @@ import { MusicPlaybackService } from '../../services/music-playback.service';
     MatIconModule,
     DragDropModule,
     ImagePdfViewerComponent,
-    NotepadComponent,
     RandomGeneratorComponent,
     DiceToolComponent,
     MusicWidgetComponent,
@@ -53,8 +51,6 @@ export class WidgetContainerComponent {
   @Input() widgetData!: WidgetInstance;
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
-
-  @ViewChild('notepad') notepadComponent?: NotepadComponent;
 
   isMaximized = false;
   private previousPosition!: { x: number, y: number };
@@ -90,7 +86,6 @@ export class WidgetContainerComponent {
     }
     const titles: Record<WidgetType, string> = {
       'IMAGE_PDF': 'Image/PDF Viewer',
-      'NOTEPAD': 'Notepad',
       'RANDOM_GENERATOR': 'Random Generator',
       'DICE_TOOL': 'Dice Tool',
       'MUSIC_WIDGET': 'Music Widget',
@@ -110,22 +105,8 @@ export class WidgetContainerComponent {
     const config = this.getWidgetSettingsConfig(this.widgetData.type);
     if (config) {
       this.settingsService.openSettings(config, this.widgetData.settings)
-        .subscribe(async result => {
-          if (result && this.notepadComponent) {
-            // Handle notepad file picker requests
-            if (result._openFilePickerRequested) {
-              delete result._openFilePickerRequested;
-              await this.notepadComponent.openNewFile();
-              result.fileName = this.widgetData.settings.fileName;
-            }
-            if (result._createFilePickerRequested) {
-              delete result._createFilePickerRequested;
-              await this.notepadComponent.createNewFileFromSettings();
-              result.fileName = this.widgetData.settings.fileName;
-            }
-            this.widgetData.settings = result;
-            this.update.emit();
-          } else if (result) {
+        .subscribe(result => {
+          if (result) {
             this.widgetData.settings = result;
             this.update.emit();
           }
@@ -195,31 +176,6 @@ export class WidgetContainerComponent {
               key: 'showCustomDiceInput',
               type: 'checkbox',
               label: 'Show Manual Input Field'
-            }
-          ]
-        };
-      case 'NOTEPAD':
-        return {
-          title: 'Notepad Settings',
-          fields: [
-            {
-              key: 'fileName',
-              type: 'readonly-text',
-              label: 'Current File'
-            },
-            {
-              key: 'openFileButton',
-              type: 'file-button',
-              label: 'Open Different File',
-              buttonText: 'Open File',
-              accept: 'text/plain'
-            },
-            {
-              key: 'createFileButton',
-              type: 'file-button',
-              label: 'Create New File',
-              buttonText: 'Create New File',
-              accept: 'text/plain'
             }
           ]
         };
