@@ -310,17 +310,6 @@ describe('WorkspaceComponent', () => {
       expect(component.activeTabId).toBe('t1');
     });
 
-    it('should stop event propagation when event provided', () => {
-      component.tabs = [
-        { id: 't1', name: 'Tab 1', widgets: [] },
-        { id: 't2', name: 'Tab 2', widgets: [] },
-      ];
-      const event = { stopPropagation: jest.fn() } as any;
-
-      component.removeTab('t2', event);
-
-      expect(event.stopPropagation).toHaveBeenCalled();
-    });
   });
 
   describe('addWidget', () => {
@@ -426,26 +415,22 @@ describe('WorkspaceComponent', () => {
     });
   });
 
-  describe('finishEditingTab', () => {
+  describe('renameTab', () => {
     it('should rename tab and save', () => {
       component.tabs = [{ id: 't1', name: 'Old', widgets: [] }];
       component.activeTabId = 't1';
-      component.editingTabId = 't1';
-      component.tempTabName = '  New Name  ';
 
-      component.finishEditingTab();
+      component.renameTab({ id: 't1', name: 'New Name' });
 
       expect(component.tabs[0].name).toBe('New Name');
-      expect(component.editingTabId).toBeNull();
       expect(component.isDirty).toBe(true);
     });
 
-    it('should not rename if temp name is blank', () => {
+    it('should do nothing for unknown tab id', () => {
       component.tabs = [{ id: 't1', name: 'Original', widgets: [] }];
-      component.editingTabId = 't1';
-      component.tempTabName = '   ';
+      component.activeTabId = 't1';
 
-      component.finishEditingTab();
+      component.renameTab({ id: 'unknown', name: 'New' });
 
       expect(component.tabs[0].name).toBe('Original');
     });
