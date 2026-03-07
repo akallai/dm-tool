@@ -1,0 +1,57 @@
+<div class="header-bar">
+  <!-- Tabs section -->
+  <div class="tabs-section">
+    <div *ngFor="let tab of tabs; trackBy: trackByTabId"
+         class="tab"
+         [class.active]="tab.id === activeTabId"
+         [class.editing]="editingTabId === tab.id"
+         (click)="tabSwitch.emit(tab.id)"
+         (dblclick)="startEditingTab(tab.id, $event)">
+
+      <span *ngIf="editingTabId !== tab.id" class="tab-name">{{ tab.name }}</span>
+
+      <input *ngIf="editingTabId === tab.id"
+             [id]="'tab-name-input-' + tab.id"
+             class="tab-name-input"
+             [(ngModel)]="tempTabName"
+             (blur)="finishEditingTab()"
+             (keydown.enter)="finishEditingTab()"
+             (keydown.escape)="editingTabId = null"
+             (click)="$event.stopPropagation()">
+
+      <button *ngIf="tabs.length > 1 && editingTabId !== tab.id"
+              class="tab-close-btn"
+              (click)="onRemoveTab(tab.id, $event)"
+              matTooltip="Close tab">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Add tab button -->
+    <button class="toolbar-btn" (click)="tabAdd.emit()" matTooltip="Add new tab">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider"></div>
+
+  <!-- Actions section -->
+  <div class="actions-section">
+    <button class="toolbar-btn" (click)="openBackground.emit()" matTooltip="Change background">
+      <mat-icon>palette</mat-icon>
+    </button>
+
+    <button class="toolbar-btn" (click)="openWidgetSelector.emit()" matTooltip="Add new widget">
+      <mat-icon>extension</mat-icon>
+    </button>
+
+    <button class="toolbar-btn"
+            [class.dirty]="isDirty"
+            [class.saving]="isSaving"
+            (click)="save.emit()"
+            [matTooltip]="isDirty ? 'Save changes (Ctrl+S)' : 'All changes saved'">
+      <mat-icon>{{ isSaving ? 'sync' : 'save' }}</mat-icon>
+    </button>
+  </div>
+</div>

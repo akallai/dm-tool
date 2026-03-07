@@ -7,8 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { FormsModule } from '@angular/forms';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
+import { WorkspaceHeaderComponent } from './workspace-header/workspace-header.component';
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 import { MediaService } from '../services/media.service';
@@ -37,12 +37,12 @@ export interface WidgetInstance {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
     MatTooltipModule,
-    WidgetContainerComponent
+    WidgetContainerComponent,
+    WorkspaceHeaderComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -58,8 +58,6 @@ export class WorkspaceComponent implements OnInit {
     '/backgrounds/glass_zombie.png'
   ];
   currentBackgroundIndex: number = 0;
-  editingTabId: string | null = null;
-  tempTabName: string = '';
   saveError: string | null = null;
   isDirty = false;
   isSaving = false;
@@ -259,56 +257,22 @@ export class WorkspaceComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  removeTab(tabId: string, event?: MouseEvent) {
-    if (event) {
-      event.stopPropagation();
-    }
-    
-    // Don't allow removing the last tab
-    if (this.tabs.length <= 1) {
-      return;
-    }
-    
+  removeTab(tabId: string) {
+    if (this.tabs.length <= 1) return;
     this.tabs = this.tabs.filter(tab => tab.id !== tabId);
-    
-    // If we removed the active tab, switch to the first tab
     if (this.activeTabId === tabId) {
       this.activeTabId = this.tabs[0].id;
     }
-    
     this.saveTabs();
     this.cdr.markForCheck();
   }
 
-  startEditingTab(tabId: string, event: MouseEvent) {
-    event.stopPropagation();
-    const tab = this.tabs.find(t => t.id === tabId);
+  renameTab(event: { id: string; name: string }) {
+    const tab = this.tabs.find(t => t.id === event.id);
     if (tab) {
-      this.editingTabId = tabId;
-      this.tempTabName = tab.name;
-      this.cdr.markForCheck();
-      
-      // Focus the input field after it's rendered
-      setTimeout(() => {
-        const inputElement = document.getElementById(`tab-name-input-${tabId}`);
-        if (inputElement) {
-          inputElement.focus();
-        }
-      }, 0);
+      tab.name = event.name;
+      this.saveTabs();
     }
-  }
-
-  finishEditingTab() {
-    if (this.editingTabId) {
-      const tab = this.tabs.find(t => t.id === this.editingTabId);
-      if (tab && this.tempTabName.trim()) {
-        tab.name = this.tempTabName.trim();
-        this.saveTabs();
-      }
-    }
-
-    this.editingTabId = null;
-    this.cdr.markForCheck();
   }
 
   openBackgroundSelector() {
@@ -337,14 +301,8 @@ export class WorkspaceComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // Track widgets by ID for better performance with ngFor
   trackByWidgetId(index: number, widget: WidgetInstance): string {
     return widget.id;
-  }
-  
-  // Track tabs by ID for better performance with ngFor
-  trackByTabId(index: number, tab: Tab): string {
-    return tab.id;
   }
 
   // Keyboard shortcuts for background cycling
