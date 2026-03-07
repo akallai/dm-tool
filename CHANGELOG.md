@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Native dialogs** — replaced all browser-native `prompt()`/`confirm()` calls with Angular Material dialogs for visual consistency (#8)
 
 ### Changed
+- **Header refactor** — extracted workspace header into standalone `WorkspaceHeaderComponent` with grouped toolbar layout, unified button styling, and reduced height (52px to 44px) for more workspace real estate
 - **LLM Chat widget** — API requests now proxy through `/api/chat` backend instead of direct OpenAI calls; switched provider to OpenRouter; API key moved to server-side environment variable
 
 ### Removed
