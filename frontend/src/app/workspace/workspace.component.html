@@ -4,62 +4,19 @@
 </div>
 
 <div class="workspace" [ngStyle]="{'background-image': 'url(' + currentBackground + ')'}">
-  <!-- Tabs bar at the top -->
-  <div class="tabs-bar vertical">
-    <div class="tabs-container">
-      <div *ngFor="let tab of tabs; trackBy: trackByTabId"
-           class="tab"
-           [class.active]="tab.id === activeTabId"
-           [class.editing]="editingTabId === tab.id"
-           (click)="switchTab(tab.id)"
-           (dblclick)="startEditingTab(tab.id, $event)">
-        <!-- Tab name display -->
-        <span *ngIf="editingTabId !== tab.id" class="tab-name">{{ tab.name }}</span>
-
-        <!-- Tab name input when editing -->
-        <input *ngIf="editingTabId === tab.id"
-               [id]="'tab-name-input-' + tab.id"
-               class="tab-name-input"
-               [(ngModel)]="tempTabName"
-               (blur)="finishEditingTab()"
-               (keydown.enter)="finishEditingTab()"
-               (keydown.escape)="editingTabId = null"
-               (click)="$event.stopPropagation()">
-
-        <!-- Close button on hover (only shown if more than one tab) -->
-        <button *ngIf="tabs.length > 1 && editingTabId !== tab.id"
-                class="tab-close-btn"
-                (click)="removeTab(tab.id, $event)"
-                matTooltip="Close tab">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <!-- Add new tab button -->
-      <button class="add-tab-btn" (click)="addTab()" matTooltip="Add new tab">
-        <mat-icon>add</mat-icon>
-      </button>
-
-      <!-- Background selector button -->
-      <button class="bg-selector-btn" (click)="openBackgroundSelector()" matTooltip="Change background">
-        <mat-icon>palette</mat-icon>
-      </button>
-
-      <!-- Add widget button -->
-      <button class="add-widget-btn" (click)="openWidgetSelector()" matTooltip="Add new widget">
-        <mat-icon>extension</mat-icon>
-      </button>
-
-      <!-- Save button -->
-      <button class="save-btn"
-              [class.dirty]="isDirty"
-              [class.saving]="isSaving"
-              (click)="saveToServer()"
-              [matTooltip]="isDirty ? 'Save changes (Ctrl+S)' : 'All changes saved'">
-        <mat-icon>{{ isSaving ? 'sync' : 'save' }}</mat-icon>
-      </button>
-    </div>
-  </div>
+  <app-workspace-header
+    [tabs]="tabs"
+    [activeTabId]="activeTabId"
+    [isDirty]="isDirty"
+    [isSaving]="isSaving"
+    (tabSwitch)="switchTab($event)"
+    (tabAdd)="addTab()"
+    (tabRemove)="removeTab($event)"
+    (tabRenameFinish)="renameTab($event)"
+    (openBackground)="openBackgroundSelector()"
+    (openWidgetSelector)="openWidgetSelector()"
+    (save)="saveToServer()">
+  </app-workspace-header>
 
   <!-- Render all widget containers with trackBy for improved performance -->
   <ng-container *ngFor="let widget of widgets; trackBy: trackByWidgetId">
