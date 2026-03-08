@@ -839,6 +839,10 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     this.editor?.chain().focus().splitCell().run();
   }
 
+  isInTable(): boolean {
+    return this.editor?.can().deleteTable() ?? false;
+  }
+
   // Table capability checks
   canAddColumnBefore(): boolean {
     return this.editor?.can().addColumnBefore() ?? false;

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Legacy data migration script** — Python script to import wikis and random tables from old localStorage exports into the Azure-backed system; supports batch import, dry-run mode, and auto-detects connection string from `local.settings.json`
 - **3D dice rolling animation** — dice rolls now trigger a full-screen 3D physics-based animation overlay using `@3d-dice/dice-box`; dice tumble across the screen with realistic physics, then results display in the widget; click the overlay to dismiss early; supports all standard polyhedral dice (d4, d6, d8, d10, d12, d20, d100)
 - **Music widget inline slot management** — add and remove track slots directly from the mixer UI without opening settings; double-click track labels to rename inline
 - **Wiki image resizing** — drag-to-resize handle on selected wiki images; aspect ratio locked, minimum 50px width, size persisted across sessions
@@ -14,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **Wiki toolbar** — compact grouped layout with smaller buttons; table editing tools now only appear when the cursor is inside a table
 - **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 
 ### Fixed

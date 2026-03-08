@@ -59,68 +59,75 @@
 
         <!-- Editor Toolbar -->
         <div *ngIf="currentArticle" class="editor-toolbar">
-          <button mat-icon-button (click)="toggleBold()" [class.active]="editor?.isActive('bold')" matTooltip="Bold">
-            <mat-icon>format_bold</mat-icon>
-          </button>
-          <button mat-icon-button (click)="toggleItalic()" [class.active]="editor?.isActive('italic')" matTooltip="Italic">
-            <mat-icon>format_italic</mat-icon>
-          </button>
-          <div class="toolbar-divider"></div>
-          <button mat-icon-button (click)="toggleHeading(1)" [class.active]="editor?.isActive('heading', { level: 1 })" matTooltip="Heading 1">
-            <mat-icon>title</mat-icon>
-          </button>
-          <button mat-icon-button (click)="toggleHeading(2)" [class.active]="editor?.isActive('heading', { level: 2 })" matTooltip="Heading 2">
-            <span class="heading-label">H2</span>
-          </button>
-          <button mat-icon-button (click)="toggleHeading(3)" [class.active]="editor?.isActive('heading', { level: 3 })" matTooltip="Heading 3">
-            <span class="heading-label">H3</span>
-          </button>
-          <div class="toolbar-divider"></div>
-          <button mat-icon-button (click)="toggleBulletList()" [class.active]="editor?.isActive('bulletList')" matTooltip="Bullet List">
-            <mat-icon>format_list_bulleted</mat-icon>
-          </button>
-          <button mat-icon-button (click)="toggleOrderedList()" [class.active]="editor?.isActive('orderedList')" matTooltip="Numbered List">
-            <mat-icon>format_list_numbered</mat-icon>
-          </button>
-          <div class="toolbar-divider"></div>
-          <button mat-icon-button (click)="toggleBlockquote()" [class.active]="editor?.isActive('blockquote')" matTooltip="Blockquote">
-            <mat-icon>format_quote</mat-icon>
-          </button>
-          <button mat-icon-button (click)="toggleCodeBlock()" [class.active]="editor?.isActive('codeBlock')" matTooltip="Code Block">
-            <mat-icon>code</mat-icon>
-          </button>
-          <div class="toolbar-divider"></div>
-          <button mat-icon-button (click)="insertWikiLink()" matTooltip="Insert Wiki Link">
-            <mat-icon>link</mat-icon>
-          </button>
-          <button mat-icon-button (click)="insertImage()" matTooltip="Insert Image">
-            <mat-icon>image</mat-icon>
-          </button>
-          <div class="toolbar-divider"></div>
-          <button mat-icon-button (click)="insertTable()" matTooltip="Insert Table">
-            <mat-icon>table_chart</mat-icon>
-          </button>
-          <button mat-icon-button (click)="addColumnBefore()" matTooltip="Add Column Before" [disabled]="!canAddColumnBefore()">
-            <mat-icon>first_page</mat-icon>
-          </button>
-          <button mat-icon-button (click)="addColumnAfter()" matTooltip="Add Column After" [disabled]="!canAddColumnAfter()">
-            <mat-icon>last_page</mat-icon>
-          </button>
-          <button mat-icon-button (click)="addRowBefore()" matTooltip="Add Row Before" [disabled]="!canAddRowBefore()">
-            <mat-icon>vertical_align_top</mat-icon>
-          </button>
-          <button mat-icon-button (click)="addRowAfter()" matTooltip="Add Row After" [disabled]="!canAddRowAfter()">
-            <mat-icon>vertical_align_bottom</mat-icon>
-          </button>
-          <button mat-icon-button (click)="deleteColumn()" matTooltip="Delete Column" [disabled]="!canDeleteColumn()">
-            <mat-icon>view_week</mat-icon>
-          </button>
-          <button mat-icon-button (click)="deleteRow()" matTooltip="Delete Row" [disabled]="!canDeleteRow()">
-            <mat-icon>view_day</mat-icon>
-          </button>
-          <button mat-icon-button (click)="deleteTable()" matTooltip="Delete Table" [disabled]="!canDeleteTable()">
-            <mat-icon>delete</mat-icon>
-          </button>
+          <div class="toolbar-group">
+            <button mat-icon-button (click)="toggleBold()" [class.active]="editor?.isActive('bold')" matTooltip="Bold">
+              <mat-icon>format_bold</mat-icon>
+            </button>
+            <button mat-icon-button (click)="toggleItalic()" [class.active]="editor?.isActive('italic')" matTooltip="Italic">
+              <mat-icon>format_italic</mat-icon>
+            </button>
+          </div>
+          <div class="toolbar-group">
+            <button mat-icon-button (click)="toggleHeading(1)" [class.active]="editor?.isActive('heading', { level: 1 })" matTooltip="Heading 1">
+              <span class="heading-label">H1</span>
+            </button>
+            <button mat-icon-button (click)="toggleHeading(2)" [class.active]="editor?.isActive('heading', { level: 2 })" matTooltip="Heading 2">
+              <span class="heading-label">H2</span>
+            </button>
+            <button mat-icon-button (click)="toggleHeading(3)" [class.active]="editor?.isActive('heading', { level: 3 })" matTooltip="Heading 3">
+              <span class="heading-label">H3</span>
+            </button>
+          </div>
+          <div class="toolbar-group">
+            <button mat-icon-button (click)="toggleBulletList()" [class.active]="editor?.isActive('bulletList')" matTooltip="Bullet List">
+              <mat-icon>format_list_bulleted</mat-icon>
+            </button>
+            <button mat-icon-button (click)="toggleOrderedList()" [class.active]="editor?.isActive('orderedList')" matTooltip="Numbered List">
+              <mat-icon>format_list_numbered</mat-icon>
+            </button>
+          </div>
+          <div class="toolbar-group">
+            <button mat-icon-button (click)="toggleBlockquote()" [class.active]="editor?.isActive('blockquote')" matTooltip="Blockquote">
+              <mat-icon>format_quote</mat-icon>
+            </button>
+            <button mat-icon-button (click)="toggleCodeBlock()" [class.active]="editor?.isActive('codeBlock')" matTooltip="Code Block">
+              <mat-icon>code</mat-icon>
+            </button>
+          </div>
+          <div class="toolbar-group">
+            <button mat-icon-button (click)="insertWikiLink()" matTooltip="Insert Wiki Link">
+              <mat-icon>link</mat-icon>
+            </button>
+            <button mat-icon-button (click)="insertImage()" matTooltip="Insert Image">
+              <mat-icon>image</mat-icon>
+            </button>
+            <button mat-icon-button (click)="insertTable()" matTooltip="Insert Table">
+              <mat-icon>table_chart</mat-icon>
+            </button>
+          </div>
+          <div class="toolbar-group" *ngIf="isInTable()">
+            <button mat-icon-button (click)="addColumnBefore()" matTooltip="Add Column Before">
+              <mat-icon>first_page</mat-icon>
+            </button>
+            <button mat-icon-button (click)="addColumnAfter()" matTooltip="Add Column After">
+              <mat-icon>last_page</mat-icon>
+            </button>
+            <button mat-icon-button (click)="addRowBefore()" matTooltip="Add Row Before">
+              <mat-icon>vertical_align_top</mat-icon>
+            </button>
+            <button mat-icon-button (click)="addRowAfter()" matTooltip="Add Row After">
+              <mat-icon>vertical_align_bottom</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteColumn()" matTooltip="Delete Column">
+              <mat-icon>view_week</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteRow()" matTooltip="Delete Row">
+              <mat-icon>view_day</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteTable()" matTooltip="Delete Table" class="danger-btn">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
         </div>
 
         <!-- TipTap Editor Container -->

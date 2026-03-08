@@ -248,18 +248,18 @@
 .article-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 4px;
+  padding: 6px 8px;
   flex-shrink: 0;
 
   .title-input {
     flex: 1;
-    padding: 8px;
+    padding: 5px 8px;
     background: var(--input-bg);
     border: var(--input-border);
     color: var(--text-primary);
     border-radius: 4px;
-    font-size: 1em;
+    font-size: 0.95em;
 
     &:focus {
       outline: none;
@@ -271,17 +271,47 @@
 // Editor toolbar
 .editor-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: var(--glass-bg);
   border-bottom: var(--glass-border);
   flex-shrink: 0;
 
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 0 2px;
+    position: relative;
+
+    // Divider between groups via border
+    &:not(:last-child)::after {
+      content: '';
+      width: 1px;
+      height: 18px;
+      background: var(--text-muted);
+      opacity: 0.25;
+      margin-left: 2px;
+    }
+  }
+
   button {
     color: var(--text-secondary);
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+
+    .mat-mdc-button-touch-target {
+      display: none;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
 
     &:hover:not(:disabled) {
       color: var(--text-primary);
@@ -290,25 +320,22 @@
     &.active {
       color: var(--accent-color);
       background: rgba(var(--accent-color-rgb, 66, 165, 245), 0.15);
+      border-radius: 4px;
     }
 
     &:disabled {
       opacity: 0.3;
       cursor: not-allowed;
     }
-  }
 
-  .toolbar-divider {
-    width: 1px;
-    height: 20px;
-    background: var(--text-muted);
-    margin: 0 4px;
-    opacity: 0.3;
+    &.danger-btn:hover {
+      color: #f44336;
+    }
   }
 
   .heading-label {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
   }
 }
 
