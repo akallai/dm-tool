@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../dialogs/media-browser-dialog/media-browser-dialog.component';
 import { MediaService } from '../../services/media.service';
 import { AudioStorageService } from '../../services/audio-storage.service';
@@ -979,40 +978,20 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
 
   removeSlot(mapping: MusicMapping, event: Event): void {
     event.stopPropagation();
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Remove Track',
-        message: `Remove "${mapping.key}"? Any audio files in this slot will be deleted.`,
-        confirmText: 'Remove',
-        warn: true
-      }
-    });
-    dialogRef.afterClosed().subscribe(async (confirmed) => {
-      if (!confirmed) return;
 
-      // Stop playback if playing
-      if (this.widgetId && (this.isPlaying(mapping) || this.isPaused(mapping))) {
-        this.playbackService.stop(this.widgetId, this.getMappingId(mapping));
-      }
+    // Stop playback if playing
+    if (this.widgetId && (this.isPlaying(mapping) || this.isPaused(mapping))) {
+      this.playbackService.stop(this.widgetId, this.getMappingId(mapping));
+    }
 
-      // Delete audio files from storage
-      if (this.widgetId) {
-        try {
-          await this.audioStorage.deleteAudioFilesForMapping(this.getMappingId(mapping), this.widgetId);
-        } catch (error) {
-          console.error('Error deleting audio files for mapping:', error);
-        }
-      }
+    // Remove from array
+    const index = this.mappings.indexOf(mapping);
+    if (index >= 0) {
+      this.mappings.splice(index, 1);
+    }
 
-      // Remove from array
-      const index = this.mappings.indexOf(mapping);
-      if (index >= 0) {
-        this.mappings.splice(index, 1);
-      }
-
-      this.saveSettings();
-      this.cdr.markForCheck();
-    });
+    this.saveSettings();
+    this.cdr.markForCheck();
   }
 
   startEditLabel(mapping: MusicMapping): void {

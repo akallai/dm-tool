@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 
 ### Fixed
+- **Music widget track removal** — removed unnecessary confirmation dialog when removing a track slot, since custom audio files are not deleted with the slot
 - **Wiki image cleanup** — wiki images are now deleted from cloud storage when removed from articles, when articles are deleted, or when the wiki widget is deleted
 - **Loading spinners** — Music Widget now shows a spinner while audio files download; Image/PDF Viewer uses `mat-spinner` instead of plain text "Loading..." (#10)
 - **Wiki sidebar scroll** — replaced broken CDK virtual scroll with native scrolling to fix scroll position miscalculations with nested articles (#6)
