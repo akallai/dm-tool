@@ -45,15 +45,15 @@ type EditMode = 'select' | 'paint' | 'path';
       <div class="toolbar">
         <mat-button-toggle-group [(ngModel)]="editMode" (change)="onModeChange()">
           <mat-button-toggle value="select">
-            <mat-icon>touch_app</mat-icon>
+            <mat-icon class="toggle-icon">touch_app</mat-icon>
             <span class="toggle-label">Select</span>
           </mat-button-toggle>
           <mat-button-toggle value="paint">
-            <mat-icon>brush</mat-icon>
+            <mat-icon class="toggle-icon">brush</mat-icon>
             <span class="toggle-label">Paint</span>
           </mat-button-toggle>
           <mat-button-toggle value="path">
-            <mat-icon>timeline</mat-icon>
+            <mat-icon class="toggle-icon">timeline</mat-icon>
             <span class="toggle-label">Path</span>
           </mat-button-toggle>
         </mat-button-toggle-group>
@@ -258,6 +258,12 @@ type EditMode = 'select' | 'paint' | 'path';
       height: 36px;
     }
 
+    .toggle-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
     .toggle-label {
       font-size: 12px;
       font-weight: 500;
@@ -293,6 +299,9 @@ type EditMode = 'select' | 'paint' | 'path';
     .eraser-btn {
       width: 32px;
       height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--text-secondary, rgba(255, 255, 255, 0.7));
     }
 
@@ -403,7 +412,16 @@ type EditMode = 'select' | 'paint' | 'path';
     .edit-header button {
       width: 24px;
       height: 24px;
-      line-height: 24px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-header .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
 
     .edit-fields {

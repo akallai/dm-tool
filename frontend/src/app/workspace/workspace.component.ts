@@ -162,7 +162,7 @@ export class WorkspaceComponent implements OnInit {
         return { width: 350, height: 250 };
       case 'NAME_GENERATOR':
         return { width: 300, height: 350 };
-      case 'COUNTDOWN':
+      case 'COUNTDOWN_WIDGET':
         return { width: 250, height: 200 };
       default:
         return { width: 300, height: 200 };

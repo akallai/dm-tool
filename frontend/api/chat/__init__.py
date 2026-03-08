@@ -37,6 +37,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     temperature = body.get("temperature")
     if temperature is not None:
         payload["temperature"] = temperature
+    reasoning = body.get("reasoning")
+    if reasoning is not None:
+        payload["reasoning"] = reasoning
 
     try:
         resp = requests.post(

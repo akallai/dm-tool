@@ -63,6 +63,13 @@ body {
 }
 
 /* Global Material Overrides for Dark Theme */
+
+/* Fix mat-icon clipping: Material sets overflow:hidden which cuts off icons at small sizes */
+.mat-icon {
+  overflow: visible !important;
+  line-height: 1 !important;
+}
+
 /* Buttons */
 .mat-mdc-button, .mat-mdc-outlined-button, .mat-mdc-icon-button {
   color: var(--text-primary) !important;

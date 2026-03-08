@@ -12,6 +12,7 @@ export interface ChatCompletionRequest {
   model: string;
   messages: ChatMessage[];
   temperature?: number;
+  reasoning?: { effort: string };
 }
 
 @Injectable({
@@ -22,7 +23,7 @@ export class ChatService {
 
   constructor(private http: HttpClient) {}
 
-  chat(messages: ChatMessage[], model: string, temperature?: number): Observable<any> {
+  chat(messages: ChatMessage[], model: string, temperature?: number, reasoningEffort?: string): Observable<any> {
     const body: ChatCompletionRequest = {
       model,
       messages
@@ -30,6 +31,10 @@ export class ChatService {
 
     if (temperature !== undefined && temperature !== null) {
       body.temperature = temperature;
+    }
+
+    if (reasoningEffort) {
+      body.reasoning = { effort: reasoningEffort };
     }
 
     return this.http.post(this.apiUrl, body).pipe(

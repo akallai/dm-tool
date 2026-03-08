@@ -211,11 +211,6 @@ export class LlmChatComponent implements OnInit {
   async sendMessage() {
     if (!this.newMessage.trim() || this.isLoading) return;
 
-    if (!this.settings?.model) {
-      this.errorMessage = 'Please configure a model in settings';
-      return;
-    }
-
     this.errorMessage = '';
     const messages: ChatMessage[] = [];
 
@@ -240,8 +235,9 @@ export class LlmChatComponent implements OnInit {
       const response = await this.chatService
         .chat(
           messages,
-          this.settings.model,
-          this.settings.temperature
+          'openai/gpt-oss-20b',
+          this.settings.temperature,
+          'high'
         )
         .toPromise();
 

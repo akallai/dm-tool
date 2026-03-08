@@ -276,14 +276,6 @@ export class WidgetContainerComponent {
           title: 'LLM Chat Settings',
           fields: [
             {
-              key: 'model',
-              type: 'text',
-              label: 'Model',
-              placeholder: 'Enter the model name',
-              required: true,
-              defaultValue: 'stepfun/step-3.5-flash:free'
-            },
-            {
               key: 'temperature',
               type: 'number',
               label: 'Temperature (leave empty for default)',

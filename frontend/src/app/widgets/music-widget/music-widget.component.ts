@@ -1,10 +1,14 @@
-import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, NgZone, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
+import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../dialogs/media-browser-dialog/media-browser-dialog.component';
+import { MediaService } from '../../services/media.service';
 import { AudioStorageService } from '../../services/audio-storage.service';
 import { MusicPlaybackService } from '../../services/music-playback.service';
 import { Subscription } from 'rxjs';
@@ -74,7 +78,20 @@ export interface MusicMapping {
           [class.playing]="isPlaying(mapping)"
           [class.paused]="isPaused(mapping)"
         >
-          <div class="channel-label" [matTooltip]="mapping.key">{{ mapping.key }}</div>
+          <button class="remove-btn" (click)="removeSlot(mapping, $event)" matTooltip="Remove Track">
+            <mat-icon>close</mat-icon>
+          </button>
+          <div class="channel-label"
+               *ngIf="editingMapping !== mapping"
+               (dblclick)="startEditLabel(mapping)"
+               [matTooltip]="mapping.key">{{ mapping.key }}</div>
+          <input class="channel-label-input"
+                 #labelInput
+                 *ngIf="editingMapping === mapping"
+                 [(ngModel)]="editLabelValue"
+                 (blur)="finishEditLabel(mapping)"
+                 (keydown.enter)="finishEditLabel(mapping)"
+                 (keydown.escape)="cancelEditLabel()">
 
           <div class="fader-well"
                [class.disabled]="!mapping.files || mapping.files.length === 0"
@@ -152,6 +169,16 @@ export interface MusicMapping {
             >
               <mat-icon>skip_next</mat-icon>
             </button>
+
+            <!-- Browse files button -->
+            <button
+              mat-icon-button
+              (click)="browseFiles(mapping)"
+              class="action-btn browse-btn"
+              matTooltip="Add Audio Files"
+            >
+              <mat-icon>library_music</mat-icon>
+            </button>
           </div>
 
           <div class="channel-value">{{ getTrackVolume(mapping) }}%</div>
@@ -164,9 +191,14 @@ export interface MusicMapping {
           </div>
         </div>
 
+        <div class="add-channel-strip" (click)="addSlot()" matTooltip="Add Track">
+          <mat-icon>add</mat-icon>
+        </div>
+
         <div *ngIf="!mappings || mappings.length === 0" class="empty-channels">
-          <mat-icon>settings</mat-icon>
+          <mat-icon>library_music</mat-icon>
           <span>No Tracks</span>
+          <span class="empty-hint">Click + to add a track</span>
         </div>
       </div>
     </div>
@@ -299,8 +331,10 @@ export interface MusicMapping {
     .action-btn {
       width: 24px !important;
       height: 24px !important;
-      line-height: 24px !important;
       padding: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
       background: var(--header-bg) !important;
       border: 1px solid rgba(255, 255, 255, 0.1) !important;
       border-radius: 4px !important;
@@ -432,9 +466,100 @@ export interface MusicMapping {
       width: 24px;
       opacity: 0.5;
     }
+
+    .empty-hint {
+      font-size: 9px;
+      opacity: 0.5;
+    }
+
+    .add-channel-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      min-width: 36px;
+      flex-shrink: 0;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      opacity: 0.4;
+    }
+
+    .add-channel-strip:hover {
+      border-color: var(--accent-color);
+      background: rgba(100, 255, 218, 0.05);
+      opacity: 1;
+    }
+
+    .add-channel-strip mat-icon {
+      color: var(--text-secondary);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .add-channel-strip:hover mat-icon {
+      color: var(--accent-color);
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.3;
+      transition: all 0.2s ease;
+      z-index: 1;
+    }
+
+    .channel-strip:hover .remove-btn {
+      opacity: 0.7;
+    }
+
+    .remove-btn:hover {
+      opacity: 1 !important;
+      background: rgba(244, 67, 54, 0.2);
+    }
+
+    .remove-btn mat-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+      color: var(--text-secondary);
+    }
+
+    .remove-btn:hover mat-icon {
+      color: var(--danger-color);
+    }
+
+    .channel-label-input {
+      font-size: 9px;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--accent-color);
+      border-radius: 2px;
+      color: var(--text-secondary);
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 4px;
+      padding: 0 2px;
+    }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule, MatTooltipModule]
+  imports: [CommonModule, FormsModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule, MatTooltipModule, MatDialogModule]
 })
 export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   @Input() settings: any = {};
@@ -443,6 +568,8 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
 
   mappings: MusicMapping[] = [];
   loadingAudio = false;
+  editingMapping: MusicMapping | null = null;
+  editLabelValue: string = '';
   private audioLoaded = false;
   masterVolume: number = 100;
   masterMuted: boolean = false;
@@ -461,7 +588,9 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private audioStorage: AudioStorageService,
-    private playbackService: MusicPlaybackService
+    private playbackService: MusicPlaybackService,
+    private dialog: MatDialog,
+    private mediaService: MediaService
   ) {}
 
   async ngOnInit() {
@@ -827,6 +956,128 @@ export class MusicWidgetComponent implements OnInit, OnChanges, OnDestroy {
   stopAllSounds() {
     if (!this.widgetId) return;
     this.playbackService.stopAllForWidget(this.widgetId);
+  }
+
+  addSlot(): void {
+    const existingNumbers = this.mappings
+      .map(m => m.key)
+      .filter(k => /^Track \d+$/.test(k))
+      .map(k => parseInt(k.replace('Track ', ''), 10));
+    const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+
+    const newMapping: MusicMapping = {
+      key: `Track ${nextNumber}`,
+      id: this.generateUniqueId(),
+      files: [],
+      volume: 100,
+      loop: false,
+      randomOrder: false
+    };
+    this.mappings.push(newMapping);
+    this.saveSettings();
+  }
+
+  removeSlot(mapping: MusicMapping, event: Event): void {
+    event.stopPropagation();
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Remove Track',
+        message: `Remove "${mapping.key}"? Any audio files in this slot will be deleted.`,
+        confirmText: 'Remove',
+        warn: true
+      }
+    });
+    dialogRef.afterClosed().subscribe(async (confirmed) => {
+      if (!confirmed) return;
+
+      // Stop playback if playing
+      if (this.widgetId && (this.isPlaying(mapping) || this.isPaused(mapping))) {
+        this.playbackService.stop(this.widgetId, this.getMappingId(mapping));
+      }
+
+      // Delete audio files from storage
+      if (this.widgetId) {
+        try {
+          await this.audioStorage.deleteAudioFilesForMapping(this.getMappingId(mapping), this.widgetId);
+        } catch (error) {
+          console.error('Error deleting audio files for mapping:', error);
+        }
+      }
+
+      // Remove from array
+      const index = this.mappings.indexOf(mapping);
+      if (index >= 0) {
+        this.mappings.splice(index, 1);
+      }
+
+      this.saveSettings();
+      this.cdr.markForCheck();
+    });
+  }
+
+  startEditLabel(mapping: MusicMapping): void {
+    this.editingMapping = mapping;
+    this.editLabelValue = mapping.key;
+    this.cdr.markForCheck();
+    // Focus input after render
+    setTimeout(() => {
+      const input = document.querySelector('.channel-label-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    });
+  }
+
+  finishEditLabel(mapping: MusicMapping): void {
+    if (this.editingMapping !== mapping) return;
+    const trimmed = this.editLabelValue.trim();
+    if (trimmed) {
+      mapping.key = trimmed;
+      this.saveSettings();
+    }
+    this.editingMapping = null;
+    this.cdr.markForCheck();
+  }
+
+  cancelEditLabel(): void {
+    this.editingMapping = null;
+    this.cdr.markForCheck();
+  }
+
+  browseFiles(mapping: MusicMapping): void {
+    const browseRef = this.dialog.open(MediaBrowserDialogComponent, {
+      data: { filter: 'audio', multiple: true },
+      width: '600px',
+      maxHeight: '80vh',
+    });
+
+    browseRef.afterClosed().subscribe((result: MediaBrowserResult | MediaBrowserResult[] | undefined) => {
+      if (!result) return;
+
+      const results = Array.isArray(result) ? result : [result];
+      if (!mapping.files) mapping.files = [];
+
+      let remaining = results.length;
+      for (const item of results) {
+        this.mediaService.downloadFile(item.path, item.scope).subscribe(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            mapping.files!.push({
+              fileName: item.fileName,
+              fileDataUrl: reader.result as string,
+            });
+            remaining--;
+            if (remaining === 0) {
+              this.saveAudioToStorage(mapping);
+              this.saveSettings();
+              this.cdr.markForCheck();
+            }
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+    });
   }
 
   private saveSettings(): void {

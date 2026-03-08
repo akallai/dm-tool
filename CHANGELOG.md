@@ -7,9 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Music widget inline slot management** — add and remove track slots directly from the mixer UI without opening settings; double-click track labels to rename inline
 - **Wiki image resizing** — drag-to-resize handle on selected wiki images; aspect ratio locked, minimum 50px width, size persisted across sessions
 - **Unit test suite** — 129 Jest tests covering 12 services and WorkspaceComponent (save/tab-switch logic, widget CRUD, reset, edge cases); replaced Karma with Jest + jest-preset-angular
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
+
+### Changed
+- **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 
 ### Fixed
 - **Wiki image cleanup** — wiki images are now deleted from cloud storage when removed from articles, when articles are deleted, or when the wiki widget is deleted
