@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **3D dice rolling animation** — dice rolls now trigger a full-screen 3D physics-based animation overlay using `@3d-dice/dice-box`; dice tumble across the screen with realistic physics, then results display in the widget; click the overlay to dismiss early; supports all standard polyhedral dice (d4, d6, d8, d10, d12, d20, d100)
 - **Music widget inline slot management** — add and remove track slots directly from the mixer UI without opening settings; double-click track labels to rename inline
 - **Wiki image resizing** — drag-to-resize handle on selected wiki images; aspect ratio locked, minimum 50px width, size persisted across sessions
 - **Unit test suite** — 129 Jest tests covering 12 services and WorkspaceComponent (save/tab-switch logic, widget CRUD, reset, edge cases); replaced Karma with Jest + jest-preset-angular

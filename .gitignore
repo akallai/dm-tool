@@ -45,6 +45,7 @@ Thumbs.db
 
 # Frontend specific
 frontend/public/music
+frontend/public/assets/dice-box
 
 # Backend specific (future)
 backend/.env

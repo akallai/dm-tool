@@ -1,10 +1,11 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { DiceRollerService } from '../../services/dice-roller.service';
 
 interface DiceButton {
   label: string;
@@ -23,6 +24,7 @@ interface DiceButton {
           *ngFor="let btn of availableButtons"
           (click)="rollFormula(btn.formula)"
           class="dice-button"
+          [class.rolling]="isRolling"
           [attr.title]="btn.label + ' (' + btn.formula + ')'"
         >
           <img
@@ -35,12 +37,12 @@ interface DiceButton {
         </button>
         <div class="custom-dice-cell" *ngIf="settings.showCustomDiceInput">
           <input matInput [(ngModel)]="customDiceInput" (keydown.enter)="rollCustomInput()" placeholder="3d6+2" class="custom-dice-input">
-          <button mat-icon-button class="custom-dice-btn" (click)="rollCustomInput()">
+          <button mat-icon-button class="custom-dice-btn" (click)="rollCustomInput()" [disabled]="isRolling">
             <mat-icon>casino</mat-icon>
           </button>
         </div>
       </div>
-      <div *ngIf="finalResult" class="result-container">
+      <div *ngIf="finalResult" class="result-container" [class.fresh]="resultFresh">
         <p class="result-text">{{ finalResult }}</p>
       </div>
     </div>
@@ -74,7 +76,7 @@ interface DiceButton {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.05); /* Slight glass fill */
+      background: rgba(255, 255, 255, 0.05);
       transition: all 0.2s;
       overflow: hidden;
 
@@ -83,13 +85,18 @@ interface DiceButton {
         border-color: var(--accent-color);
         box-shadow: 0 0 10px rgba(64, 196, 255, 0.2);
       }
+
+      &.rolling {
+        pointer-events: none;
+        opacity: 0.5;
+      }
     }
 
     .dice-image {
       width: 48px;
       height: 48px;
       object-fit: contain;
-      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); /* Add depth to dice images */
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
     }
 
     .dice-text {
@@ -159,6 +166,12 @@ interface DiceButton {
       margin-top: auto;
       text-align: center;
       backdrop-filter: var(--glass-backdrop);
+      transition: border-color 0.5s ease;
+    }
+
+    .result-container.fresh {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 15px rgba(64, 196, 255, 0.3);
     }
 
     .result-text {
@@ -171,13 +184,16 @@ interface DiceButton {
     }
   `],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, MatIconModule]
+  imports: [CommonModule, MatButtonModule, FormsModule, MatFormFieldModule, MatInputModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DiceToolComponent implements OnInit {
   @Input() settings: any;
 
   finalResult: string = '';
   customDiceInput: string = '';
+  isRolling = false;
+  resultFresh = false;
 
   standardDice: DiceButton[] = [
     { label: 'd4', formula: '1d4', image: '/images/d4.png', settingKey: 'enableD4' },
@@ -189,8 +205,12 @@ export class DiceToolComponent implements OnInit {
     { label: 'd100', formula: '1d100', image: '/images/d100.png', settingKey: 'enableD100' }
   ];
 
+  constructor(
+    private diceRoller: DiceRollerService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
   ngOnInit() {
-    // Set default values for standard dice if not present in settings
     this.standardDice.forEach(dice => {
       if (dice.settingKey && this.settings[dice.settingKey] === undefined) {
         this.settings[dice.settingKey] = true;
@@ -205,14 +225,12 @@ export class DiceToolComponent implements OnInit {
   get availableButtons(): DiceButton[] {
     const buttons: DiceButton[] = [];
 
-    // Add enabled standard dice
     this.standardDice.forEach(dice => {
       if (dice.settingKey && this.settings[dice.settingKey]) {
         buttons.push(dice);
       }
     });
 
-    // Add custom buttons
     if (Array.isArray(this.settings.customButtons)) {
         this.settings.customButtons.forEach((item: {key: string, value: string}) => {
             buttons.push({
@@ -225,41 +243,51 @@ export class DiceToolComponent implements OnInit {
     return buttons;
   }
 
-  rollFormula(formula: string) {
+  async rollFormula(formula: string) {
+    if (this.isRolling) return;
+
     const input = formula.trim();
-    // Regex to match custom dice notation: optional count, "w" or "d", sides, optional modifier
-    // e.g. "d6", "3d6", "1d20+5", "2w10-1"
     const regex = /^(\d+)?[wd](\d+)([+-]\d+)?$/i;
     const match = input.match(regex);
 
     if (!match) {
-        this.finalResult = `Invalid notation: ${formula}`;
-        return;
+      this.finalResult = `Invalid notation: ${formula}`;
+      this.cdr.markForCheck();
+      return;
     }
 
-    const count = match[1] ? parseInt(match[1], 10) : 1;
-    const sides = parseInt(match[2], 10);
-    const modifier = match[3] ? parseInt(match[3], 10) : 0;
+    this.isRolling = true;
+    this.cdr.markForCheck();
 
-    const rolls: number[] = [];
-    for (let i = 0; i < count; i++) {
-      rolls.push(Math.floor(Math.random() * sides) + 1);
+    // Normalize 'w' notation to 'd' for the roller service
+    const normalized = formula.replace(/[wW]/, 'd');
+    const result = await this.diceRoller.roll(normalized);
+
+    this.isRolling = false;
+
+    if (result) {
+      let resultText = `Roll: ${formula}\n[${result.rolls.join(', ')}]`;
+      if (result.modifier !== 0) {
+        resultText += ` ${result.modifier > 0 ? '+' : ''}${result.modifier}`;
+      }
+      resultText += ` = ${result.total}`;
+      this.finalResult = resultText;
+
+      // Flash the result container
+      this.resultFresh = true;
+      this.cdr.markForCheck();
+      setTimeout(() => {
+        this.resultFresh = false;
+        this.cdr.markForCheck();
+      }, 1500);
+    } else {
+      this.finalResult = `Invalid notation: ${formula}`;
+      this.cdr.markForCheck();
     }
-
-    const sum = rolls.reduce((a, b) => a + b, 0);
-    const total = sum + modifier;
-
-    let resultText = `Roll: ${formula}\n[${rolls.join(', ')}]`;
-    if (modifier !== 0) {
-      resultText += ` ${modifier > 0 ? '+' : ''}${modifier}`;
-    }
-    resultText += ` = ${total}`;
-
-    this.finalResult = resultText;
   }
 
   rollCustomInput() {
-    if (this.customDiceInput) {
+    if (this.customDiceInput && !this.isRolling) {
       this.rollFormula(this.customDiceInput);
     }
   }
