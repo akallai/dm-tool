@@ -23,7 +23,7 @@ All frontend commands should be run from the `frontend/` directory:
 cd frontend
 npm start              # Start development server on http://localhost:4200
 npm run build          # Build for production (outputs to dist/dm-tool/browser)
-npm test               # Run unit tests with Karma
+npm test               # Run unit tests with Jest
 ```
 
 ### Full Stack Local Development
