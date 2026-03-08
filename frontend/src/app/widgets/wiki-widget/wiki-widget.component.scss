@@ -507,16 +507,49 @@
 }
 
 // Wiki image styling
-.tiptap-editor .ProseMirror img[data-wiki-image] {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  margin: 0.5em 0;
-  display: block;
+.tiptap-editor .ProseMirror {
+  .wiki-image-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 0.5em 0;
+    line-height: 0;
 
-  &.ProseMirror-selectednode {
-    outline: 2px solid var(--accent-color);
-    outline-offset: 2px;
+    &.ProseMirror-selectednode {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+
+      .wiki-image-resize-handle {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    &.wiki-image-resizing .wiki-image-resize-handle {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .wiki-image-resize-handle {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    cursor: nwse-resize;
+    border-radius: 2px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  img[data-wiki-image] {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    display: block;
   }
 }
 

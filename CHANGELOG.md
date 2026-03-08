@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Wiki image resizing** — drag-to-resize handle on selected wiki images; aspect ratio locked, minimum 50px width, size persisted across sessions
 - **Unit test suite** — 129 Jest tests covering 12 services and WorkspaceComponent (save/tab-switch logic, widget CRUD, reset, edge cases); replaced Karma with Jest + jest-preset-angular
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 

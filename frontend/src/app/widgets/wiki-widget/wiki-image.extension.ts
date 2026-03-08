@@ -69,11 +69,15 @@ export const WikiImage = Node.create<WikiImageOptions>({
   addNodeView() {
     const resolveImageUrl = this.options.resolveImageUrl;
 
-    return ({ node, HTMLAttributes }) => {
+    return ({ node, getPos, editor }) => {
+      // Container wrapping the image and resize handle
+      const container = document.createElement('div');
+      container.classList.add('wiki-image-container');
+
       const img = document.createElement('img');
 
       // Merge attributes
-      const attrs = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+      const attrs = mergeAttributes(this.options.HTMLAttributes, {}, {
         'data-wiki-image': 'true',
       });
 
@@ -86,8 +90,11 @@ export const WikiImage = Node.create<WikiImageOptions>({
       // Set alt and title from node attrs
       if (node.attrs['alt']) img.setAttribute('alt', node.attrs['alt']);
       if (node.attrs['title']) img.setAttribute('title', node.attrs['title']);
-      if (node.attrs['width']) img.setAttribute('width', node.attrs['width']);
-      if (node.attrs['height']) img.setAttribute('height', node.attrs['height']);
+
+      // Apply saved width
+      if (node.attrs['width']) {
+        img.style.width = node.attrs['width'] + 'px';
+      }
 
       // Handle wiki-image:// URLs
       const src = node.attrs['src'] as string | null;
@@ -110,8 +117,48 @@ export const WikiImage = Node.create<WikiImageOptions>({
         img.src = src;
       }
 
+      container.appendChild(img);
+
+      // Resize handle
+      const handle = document.createElement('div');
+      handle.classList.add('wiki-image-resize-handle');
+      container.appendChild(handle);
+
+      handle.addEventListener('mousedown', (startEvent: MouseEvent) => {
+        startEvent.preventDefault();
+        startEvent.stopPropagation();
+
+        const startX = startEvent.clientX;
+        const startWidth = img.getBoundingClientRect().width;
+        container.classList.add('wiki-image-resizing');
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+          const newWidth = Math.max(50, startWidth + (moveEvent.clientX - startX));
+          img.style.width = newWidth + 'px';
+        };
+
+        const onMouseUp = () => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          container.classList.remove('wiki-image-resizing');
+
+          const finalWidth = Math.round(img.getBoundingClientRect().width);
+          const pos = getPos();
+          if (pos !== undefined && editor && editor.view) {
+            const tr = editor.view.state.tr.setNodeMarkup(pos, undefined, {
+              ...node.attrs,
+              width: String(finalWidth),
+            });
+            editor.view.dispatch(tr);
+          }
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+
       return {
-        dom: img,
+        dom: container,
       };
     };
   },
