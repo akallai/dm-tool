@@ -9,6 +9,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { WidgetContainerComponent } from '../workspace/widget-container/widget-container.component';
 import { WorkspaceHeaderComponent } from './workspace-header/workspace-header.component';
+import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 import { MediaService } from '../services/media.service';
@@ -114,15 +115,11 @@ export class WorkspaceComponent implements OnInit {
   }
 
   openWidgetSelector() {
-    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, { width: '680px' });
-    dialogRef.afterClosed().subscribe((result: { action: string, type?: WidgetType }) => {
-      if (result) {
-        if (result.action === 'add' && result.type) {
-          this.addWidget(result.type);
-        } else if (result.action === 'reset') {
-          this.resetWorkspace();
-        }
-        this.cdr.markForCheck(); // Trigger change detection
+    const dialogRef = this.dialog.open(WidgetSelectorDialogComponent, { width: '960px', maxWidth: '95vw', maxHeight: '95vh' });
+    dialogRef.afterClosed().subscribe((type: WidgetType) => {
+      if (type) {
+        this.addWidget(type);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -197,14 +194,29 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
+  confirmResetWorkspace() {
+    const confirmRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Reset Workspace',
+        message: 'Are you sure you want to reset the workspace? All widgets will be closed.',
+        confirmText: 'Reset',
+        warn: true,
+      },
+    });
+    confirmRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.resetWorkspace();
+      }
+    });
+  }
+
   resetWorkspace() {
-    // Find the active tab
     const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
     if (!activeTab) return;
-    
+
     activeTab.widgets = [];
     this.saveTabs();
-    this.cdr.markForCheck(); // Trigger change detection
+    this.cdr.markForCheck();
   }
 
   saveTabs() {

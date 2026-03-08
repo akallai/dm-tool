@@ -46,6 +46,10 @@
       <mat-icon>extension</mat-icon>
     </button>
 
+    <button class="toolbar-btn" (click)="resetWorkspace.emit()" matTooltip="Reset workspace">
+      <mat-icon>refresh</mat-icon>
+    </button>
+
     <button class="toolbar-btn"
             [class.dirty]="isDirty"
             [class.saving]="isSaving"

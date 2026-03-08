@@ -25,6 +25,7 @@ export class WorkspaceHeaderComponent {
   @Output() tabRenameFinish = new EventEmitter<{ id: string; name: string }>();
   @Output() openBackground = new EventEmitter<void>();
   @Output() openWidgetSelector = new EventEmitter<void>();
+  @Output() resetWorkspace = new EventEmitter<void>();
   @Output() save = new EventEmitter<void>();
 
   editingTabId: string | null = null;

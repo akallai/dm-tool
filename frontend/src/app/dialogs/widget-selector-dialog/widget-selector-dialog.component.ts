@@ -1,10 +1,9 @@
-import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogRef } from '@angular/material/dialog';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 export type WidgetType = 'IMAGE_PDF' | 'RANDOM_GENERATOR' | 'DICE_TOOL' | 'MUSIC_WIDGET' | 'WIKI_WIDGET' | 'COMBAT_TRACKER' | 'DAYTIME_TRACKER' | 'LLM_CHAT' | 'HEX_MAP' | 'NAME_GENERATOR' | 'COUNTDOWN_WIDGET';
 
@@ -20,6 +19,9 @@ interface WidgetOption {
   template: `
     <div class="dialog-header">
       <h2 mat-dialog-title>Add a Widget</h2>
+      <button mat-icon-button mat-dialog-close class="close-btn" aria-label="Close">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
     <mat-dialog-content class="dialog-content">
       <div class="widget-grid">
@@ -38,48 +40,46 @@ interface WidgetOption {
           </div>
         </div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="reset-section">
-        <button
-          mat-stroked-button
-          color="warn"
-          class="reset-button"
-          (click)="reset()"
-        >
-          <mat-icon>refresh</mat-icon>
-          Reset Workspace
-        </button>
-      </div>
     </mat-dialog-content>
   `,
   styles: [`
     .dialog-header {
-      padding: 24px 24px 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px 0 24px;
     }
 
     h2 {
       margin: 0;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 500;
       color: var(--text-primary);
       letter-spacing: -0.5px;
     }
 
+    .close-btn {
+      color: var(--text-muted);
+      transition: color 0.2s ease;
+    }
+
+    .close-btn:hover {
+      color: var(--text-primary);
+    }
+
     .dialog-content {
-      padding: 16px 24px 24px 24px;
-      min-width: 640px;
+      padding: 8px 24px 16px 24px;
       width: 100%;
       box-sizing: border-box;
+      max-height: unset;
+      overflow-y: auto;
     }
 
     /* Widget Grid */
     .widget-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
     }
 
     /* Widget Card */
@@ -88,153 +88,109 @@ interface WidgetOption {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 20px 16px;
-      border-radius: 16px;
+      padding: 10px 8px 8px;
+      border-radius: 12px;
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
       border: 1px solid rgba(255, 255, 255, 0.08);
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       text-align: center;
     }
 
     .widget-card:hover {
       background: linear-gradient(135deg, rgba(64, 196, 255, 0.15) 0%, rgba(64, 196, 255, 0.05) 100%);
       border-color: rgba(64, 196, 255, 0.4);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(64, 196, 255, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(64, 196, 255, 0.2);
     }
 
     .widget-card:active {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     /* Widget Icon */
     .widget-icon {
-      width: 56px;
-      height: 56px;
+      width: 96px;
+      height: 96px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.08);
-      margin-bottom: 12px;
-      transition: all 0.3s ease;
+      margin-bottom: 6px;
+      transition: transform 0.2s ease;
     }
 
     .widget-card:hover .widget-icon {
-      background: rgba(64, 196, 255, 0.2);
       transform: scale(1.08);
     }
 
     .widget-icon img {
-      width: 40px;
-      height: 40px;
+      width: 96px;
+      height: 96px;
       object-fit: contain;
-      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
     }
 
     /* Widget Info */
     .widget-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
     .widget-label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       color: var(--text-primary);
       line-height: 1.3;
     }
 
     .widget-description {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
-    /* Divider */
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-      margin: 16px 0 20px 0;
+    /* Responsive: laptops / smaller desktops */
+    @media (max-width: 1024px) {
+      .widget-icon,
+      .widget-icon img {
+        width: 72px;
+        height: 72px;
+      }
     }
 
-    /* Reset Section */
-    .reset-section {
-      display: flex;
-      justify-content: center;
+    /* Responsive: tablets */
+    @media (max-width: 768px) {
+      .widget-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .widget-icon,
+      .widget-icon img {
+        width: 64px;
+        height: 64px;
+      }
     }
 
-    .reset-button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 24px;
-      border-color: rgba(255, 82, 82, 0.4) !important;
-      color: var(--danger-color) !important;
-      background: rgba(255, 82, 82, 0.08) !important;
-      transition: all 0.2s ease;
-    }
-
-    .reset-button:hover {
-      background: rgba(255, 82, 82, 0.15) !important;
-      border-color: rgba(255, 82, 82, 0.6) !important;
-      box-shadow: 0 4px 12px rgba(255, 82, 82, 0.2);
-    }
-
-    /* Custom scrollbar for dialog content */
-    .dialog-content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .dialog-content::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
-    }
-
-    .dialog-content::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-    }
-
-    .dialog-content::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
+    /* Responsive: mobile */
+    @media (max-width: 500px) {
       .widget-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 6px;
       }
 
-      .widget-card {
-        padding: 16px 12px;
-      }
-
-      .widget-icon {
+      .widget-icon,
+      .widget-icon img {
         width: 48px;
         height: 48px;
       }
 
-      .widget-icon img {
-        width: 32px;
-        height: 32px;
-      }
-
       .widget-label {
-        font-size: 12px;
+        font-size: 11px;
       }
 
       .widget-description {
-        font-size: 10px;
-      }
-    }
-
-    @media (max-width: 400px) {
-      .widget-grid {
-        grid-template-columns: 1fr;
+        display: none;
       }
     }
   `],
@@ -248,42 +204,24 @@ interface WidgetOption {
 })
 export class WidgetSelectorDialogComponent {
   widgetTypes: WidgetOption[] = [
-    { type: 'IMAGE_PDF', label: 'Image/PDF Viewer', icon: 'image.png', description: 'View images & PDFs' },
-{ type: 'RANDOM_GENERATOR', label: 'Random Generator', icon: 'random_generator.png', description: 'Random tables' },
-    { type: 'DICE_TOOL', label: 'Dice Tool', icon: 'dice.png', description: 'Roll dice' },
-    { type: 'MUSIC_WIDGET', label: 'Music Widget', icon: 'note.png', description: 'Play tracks' },
-    { type: 'WIKI_WIDGET', label: 'Wiki', icon: 'wiki.png', description: 'Knowledge base' },
-    { type: 'COMBAT_TRACKER', label: 'Combat Tracker', icon: 'combat.png', description: 'Battle manager' },
-    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'moon.png', description: 'Time of day' },
-    { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI assistant' },
-    { type: 'HEX_MAP', label: 'Hex Map', icon: 'hex.svg', description: 'Hex grid map' },
-    { type: 'NAME_GENERATOR', label: 'Name Generator', icon: 'name.svg', description: 'Generate names' },
-    { type: 'COUNTDOWN_WIDGET', label: 'Countdown', icon: 'countdown.svg', description: 'Timer countdown' }
+    { type: 'IMAGE_PDF', label: 'Image/PDF Viewer', icon: 'image_pdf_viewer.png', description: 'Display images & PDF files' },
+    { type: 'RANDOM_GENERATOR', label: 'Random Generator', icon: 'random_table.png', description: 'Roll on custom tables' },
+    { type: 'DICE_TOOL', label: 'Dice Tool', icon: 'dice.png', description: 'Roll any dice combination' },
+    { type: 'MUSIC_WIDGET', label: 'Music Widget', icon: 'music.png', description: 'Ambient music & SFX' },
+    { type: 'WIKI_WIDGET', label: 'Wiki', icon: 'wiki.png', description: 'Campaign knowledge base' },
+    { type: 'COMBAT_TRACKER', label: 'Combat Tracker', icon: 'combat.png', description: 'Track initiative & HP' },
+    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'daytime.png', description: 'Track time of day' },
+    { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI-powered assistant' },
+    { type: 'HEX_MAP', label: 'Hex Map', icon: 'hexmap.png', description: 'Hex grid exploration map' },
+    { type: 'NAME_GENERATOR', label: 'Name Generator', icon: 'name_generator.png', description: 'Fantasy & cultural names' },
+    { type: 'COUNTDOWN_WIDGET', label: 'Countdown', icon: 'timer.png', description: 'Countdown timer' }
   ];
-
 
   constructor(
     private dialogRef: MatDialogRef<WidgetSelectorDialogComponent>,
-    private dialog: MatDialog,
   ) {}
 
   select(type: WidgetType) {
-    this.dialogRef.close({ action: 'add', type });
-  }
-
-  reset() {
-    const confirmRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Reset Workspace',
-        message: 'Are you sure you want to reset the workspace? All widgets will be closed.',
-        confirmText: 'Reset',
-        warn: true,
-      },
-    });
-    confirmRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) {
-        this.dialogRef.close({ action: 'reset' });
-      }
-    });
+    this.dialogRef.close(type);
   }
 }
