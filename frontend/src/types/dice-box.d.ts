@@ -5,9 +5,9 @@ declare module '@3d-dice/dice-box' {
     themeColor?: string;
     scale?: number;
     gravity?: number;
+    delay?: number;
     enableShadows?: boolean;
     lightIntensity?: number;
-    settleTimeout?: number;
     id?: string;
     onBeforeRoll?: (parsedNotation: any) => void;
     onDieComplete?: (dieResult: any) => void;

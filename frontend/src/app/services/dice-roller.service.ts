@@ -62,7 +62,7 @@ export class DiceRollerService {
       const total = sum + parsed.modifier;
 
       // Show dice for a moment, or until user clicks/presses Escape
-      await this.waitForDismissOrTimeout(1800);
+      await this.waitForDismissOrTimeout(0);
       this.diceBox.clear();
       this.hideOverlay();
 
@@ -156,10 +156,10 @@ export class DiceRollerService {
         theme: 'default',
         themeColor: '#000000',
         scale: 14,
-        gravity: 2,
+        gravity: 8,
+        delay: 5,
         enableShadows: true,
         lightIntensity: 1,
-        settleTimeout: 3000,
       });
 
       await this.ngZone.runOutsideAngular(() => this.diceBox.init());
