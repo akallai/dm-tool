@@ -74,6 +74,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
   // TipTap editor instance
   editor: Editor | null = null;
   private editorInitialized = false;
+  private previousImageIds = new Set<string>();
   private wikiLinkClickHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(
@@ -360,6 +361,17 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       onSelectionUpdate: () => {
         this.cdr.markForCheck();
       },
+      onTransaction: ({ editor }) => {
+        const currentIds = this.collectImageIds(editor.state.doc);
+
+        for (const id of this.previousImageIds) {
+          if (!currentIds.has(id)) {
+            this.imageStorage.deleteImage(id).catch(() => {});
+          }
+        }
+
+        this.previousImageIds = currentIds;
+      },
     });
 
     // Handle wiki link clicks via event delegation
@@ -424,6 +436,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     );
 
     this.editor.commands.setContent(content);
+    this.previousImageIds = this.collectImageIds(this.editor.state.doc);
     // Note: wiki-image:// URLs are resolved by the WikiImage NodeView automatically
     this.cdr.markForCheck();
   }
@@ -608,6 +621,16 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       }
       return result;
     }, []);
+  }
+
+  private collectImageIds(doc: any): Set<string> {
+    const ids = new Set<string>();
+    doc.descendants((node: any) => {
+      if (node.type.name === 'wikiImage' && node.attrs.src?.startsWith('wiki-image://')) {
+        ids.add(node.attrs.src.replace('wiki-image://', ''));
+      }
+    });
+    return ids;
   }
 
   // Handler for wiki link clicks
