@@ -131,17 +131,42 @@ export class WorkspaceComponent implements OnInit {
     // Find the active tab
     const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
     if (!activeTab) return;
-    
+
     const newWidget: WidgetInstance = {
       id: Date.now().toString(),
       type,
       position: { x: 100, y: 100 },
-      size: { width: 300, height: 200 },
+      size: this.getDefaultSize(type),
       settings: {}
     };
-    
+
     activeTab.widgets.push(newWidget);
     this.saveTabs();
+  }
+
+  private getDefaultSize(type: WidgetType): { width: number; height: number } {
+    switch (type) {
+      case 'WIKI_WIDGET':
+        return { width: 600, height: 500 };
+      case 'LLM_CHAT':
+        return { width: 400, height: 500 };
+      case 'HEX_MAP':
+        return { width: 600, height: 500 };
+      case 'COMBAT_TRACKER':
+        return { width: 350, height: 400 };
+      case 'IMAGE_PDF':
+        return { width: 400, height: 350 };
+      case 'RANDOM_GENERATOR':
+        return { width: 350, height: 300 };
+      case 'MUSIC_WIDGET':
+        return { width: 350, height: 250 };
+      case 'NAME_GENERATOR':
+        return { width: 300, height: 350 };
+      case 'COUNTDOWN':
+        return { width: 250, height: 200 };
+      default:
+        return { width: 300, height: 200 };
+    }
   }
 
   removeWidget(id: string) {
