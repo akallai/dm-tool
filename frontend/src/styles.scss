@@ -145,6 +145,11 @@ input::placeholder, textarea::placeholder {
   color: #fff !important;
 }
 
+/* Ensure dialogs always appear above maximized widgets (z-index: 9999) */
+.cdk-overlay-container {
+  z-index: 10001 !important;
+}
+
 /* Global Dialog Overrides for Glass Theme */
 .mat-mdc-dialog-container {
   --mdc-dialog-container-color: transparent !important;
