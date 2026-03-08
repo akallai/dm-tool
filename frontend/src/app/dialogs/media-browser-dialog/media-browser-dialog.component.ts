@@ -355,7 +355,8 @@ export class MediaBrowserDialogComponent implements OnInit {
     prefixes.forEach(prefix => {
       this.mediaService.listFiles(prefix).subscribe({
         next: files => {
-          allFiles.push(...files);
+          const filtered = files.filter(f => this.matchesFilter(f));
+          allFiles.push(...filtered);
           completed++;
           if (completed === prefixes.length) {
             this.myFiles = allFiles;
@@ -432,6 +433,13 @@ export class MediaBrowserDialogComponent implements OnInit {
       });
     });
     this.dialogRef.close(results);
+  }
+
+  private matchesFilter(file: FileMetadata): boolean {
+    const ct = file.content_type || '';
+    if (this.filter === 'audio') return ct.startsWith('audio/');
+    if (this.filter === 'image-pdf') return ct.startsWith('image/') || ct === 'application/pdf';
+    return true;
   }
 
   getDisplayName(name: string): string {
