@@ -46,11 +46,12 @@ function getHandle(element: HTMLElement): HTMLElement {
 function getNodeAttrs(editor: Editor) {
   const { doc } = editor.state;
   let attrs: Record<string, any> | null = null;
-  doc.descendants((node) => {
+  doc.descendants((node): boolean => {
     if (node.type.name === 'wikiImage') {
       attrs = { ...node.attrs };
       return false;
     }
+    return true;
   });
   return attrs;
 }
