@@ -361,7 +361,9 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       onSelectionUpdate: () => {
         this.cdr.markForCheck();
       },
-      onTransaction: ({ editor }) => {
+      onTransaction: ({ editor, transaction }) => {
+        if (!transaction.docChanged) return;
+
         const currentIds = this.collectImageIds(editor.state.doc);
 
         for (const id of this.previousImageIds) {
@@ -435,6 +437,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       }
     );
 
+    this.previousImageIds = new Set<string>();
     this.editor.commands.setContent(content);
     this.previousImageIds = this.collectImageIds(this.editor.state.doc);
     // Note: wiki-image:// URLs are resolved by the WikiImage NodeView automatically
@@ -486,6 +489,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     this.currentArticle = newArticle;
 
     if (this.editor) {
+      this.previousImageIds = new Set<string>();
       this.editor.commands.setContent('');
       setTimeout(() => this.editor?.commands.focus(), 0);
     } else {
@@ -516,6 +520,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     this.currentArticle = newArticle;
 
     if (this.editor) {
+      this.previousImageIds = new Set<string>();
       this.editor.commands.setContent('');
       setTimeout(() => this.editor?.commands.focus(), 0);
     }
@@ -543,6 +548,7 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
       if (this.currentArticle) {
         this.loadArticleContent(this.currentArticle);
       } else {
+        this.previousImageIds = new Set<string>();
         this.editor?.commands.setContent('');
       }
     }
