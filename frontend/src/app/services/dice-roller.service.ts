@@ -62,7 +62,7 @@ export class DiceRollerService {
       const total = sum + parsed.modifier;
 
       // Show dice for a moment, or until user clicks/presses Escape
-      await this.waitForDismissOrTimeout(0);
+      await this.waitForDismissOrTimeout(400);
       this.diceBox.clear();
       this.hideOverlay();
 
