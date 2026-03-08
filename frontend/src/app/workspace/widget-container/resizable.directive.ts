@@ -7,7 +7,7 @@ import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2, OnInit, 
 export class ResizableDirective implements OnInit, OnChanges {
   @Input() resizableWidth = 300;
   @Input() resizableHeight = 200;
-  @Output() resizeEnd = new EventEmitter<{ width: number, height: number }>();
+  @Output() resizeEnd = new EventEmitter<{ width: number, height: number, offsetLeft: number, offsetTop: number }>();
 
   private dragging = false;
   private currentHandle: string = '';
@@ -17,6 +17,8 @@ export class ResizableDirective implements OnInit, OnChanges {
   private startHeight = 0;
   private startLeft = 0;
   private startTop = 0;
+  private startVisualX = 0;
+  private startVisualY = 0;
   private handleSize = 6;
   private viewportWidth: number = window.innerWidth;
   private viewportHeight: number = window.innerHeight;
@@ -94,6 +96,12 @@ export class ResizableDirective implements OnInit, OnChanges {
     this.startLeft = this.el.nativeElement.offsetLeft;
     this.startTop = this.el.nativeElement.offsetTop;
 
+    // getBoundingClientRect includes CSS transforms (CDK drag's translate3d),
+    // giving the actual visual position for accurate boundary constraints.
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    this.startVisualX = rect.left;
+    this.startVisualY = rect.top;
+
     document.addEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mouseup', this.onMouseUp);
   }
@@ -150,52 +158,48 @@ export class ResizableDirective implements OnInit, OnChanges {
     const minWidth = 100;
     const minHeight = 100;
 
-    // Constraint 1: Ensure widget doesn't exceed viewport bounds
-    const maxWidth = this.viewportWidth;
-    const maxHeight = this.viewportHeight;
-    
-    // Constraint 2: When adjusting width from left edge, don't allow going off left side
+    // Calculate actual visual position (accounts for CDK drag transform)
+    let visualX = this.startVisualX + (newLeft - this.startLeft);
+    let visualY = this.startVisualY + (newTop - this.startTop);
+
+    // Constraint: Don't allow left edge to go off-screen
     if (['w', 'nw', 'sw'].includes(this.currentHandle)) {
-      if (newLeft < 0) {
-        const offset = -newLeft;
-        newLeft = 0;
-        newWidth -= offset;
+      if (visualX < 0) {
+        const excess = -visualX;
+        newLeft += excess;
+        newWidth -= excess;
+        visualX = 0;
       }
     }
-    
-    // Constraint 3: When adjusting height from top edge, don't allow going off top edge
+
+    // Constraint: Don't allow top edge to go off-screen
     if (['n', 'ne', 'nw'].includes(this.currentHandle)) {
-      if (newTop < 0) {
-        const offset = -newTop;
-        newTop = 0;
-        newHeight -= offset;
+      if (visualY < 0) {
+        const excess = -visualY;
+        newTop += excess;
+        newHeight -= excess;
+        visualY = 0;
       }
     }
-    
-    // Constraint 4: Don't allow widget to extend beyond right edge of viewport
-    if (newLeft + newWidth > maxWidth) {
+
+    // Constraint: Don't allow right edge to go off-screen
+    if (visualX + newWidth > this.viewportWidth) {
       if (['e', 'ne', 'se'].includes(this.currentHandle)) {
-        // If dragging right edge, cap the width
-        newWidth = maxWidth - newLeft;
+        newWidth = this.viewportWidth - visualX;
       } else {
-        // If dragging left edge, cap the left position
-        const rightEdge = newLeft + newWidth;
-        const overflow = rightEdge - maxWidth;
+        const overflow = visualX + newWidth - this.viewportWidth;
         if (overflow > 0) {
           newWidth -= overflow;
         }
       }
     }
-    
-    // Constraint 5: Don't allow widget to extend beyond bottom edge of viewport
-    if (newTop + newHeight > maxHeight) {
+
+    // Constraint: Don't allow bottom edge to go off-screen
+    if (visualY + newHeight > this.viewportHeight) {
       if (['s', 'se', 'sw'].includes(this.currentHandle)) {
-        // If dragging bottom edge, cap the height
-        newHeight = maxHeight - newTop;
+        newHeight = this.viewportHeight - visualY;
       } else {
-        // If dragging top edge, cap the top position
-        const bottomEdge = newTop + newHeight;
-        const overflow = bottomEdge - maxHeight;
+        const overflow = visualY + newHeight - this.viewportHeight;
         if (overflow > 0) {
           newHeight -= overflow;
         }
@@ -203,14 +207,14 @@ export class ResizableDirective implements OnInit, OnChanges {
     }
 
     // Apply the final dimensions and position
-    if (newWidth >= minWidth && newWidth <= maxWidth) {
+    if (newWidth >= minWidth && newWidth <= this.viewportWidth) {
       this.renderer.setStyle(this.el.nativeElement, 'width', `${newWidth}px`);
       if (['w', 'nw', 'sw'].includes(this.currentHandle)) {
         this.renderer.setStyle(this.el.nativeElement, 'left', `${newLeft}px`);
       }
     }
 
-    if (newHeight >= minHeight && newHeight <= maxHeight) {
+    if (newHeight >= minHeight && newHeight <= this.viewportHeight) {
       this.renderer.setStyle(this.el.nativeElement, 'height', `${newHeight}px`);
       if (['n', 'ne', 'nw'].includes(this.currentHandle)) {
         this.renderer.setStyle(this.el.nativeElement, 'top', `${newTop}px`);
@@ -223,7 +227,15 @@ export class ResizableDirective implements OnInit, OnChanges {
       this.dragging = false;
       const newWidth = this.el.nativeElement.offsetWidth;
       const newHeight = this.el.nativeElement.offsetHeight;
-      this.resizeEnd.emit({ width: newWidth, height: newHeight });
+
+      // Capture top/left offsets set during edge resize, then clear them.
+      // These must be folded into the CDK drag position by the parent.
+      const offsetTop = parseInt(this.el.nativeElement.style.top, 10) || 0;
+      const offsetLeft = parseInt(this.el.nativeElement.style.left, 10) || 0;
+      this.renderer.removeStyle(this.el.nativeElement, 'top');
+      this.renderer.removeStyle(this.el.nativeElement, 'left');
+
+      this.resizeEnd.emit({ width: newWidth, height: newHeight, offsetLeft, offsetTop });
       document.removeEventListener('mousemove', this.onMouseMove);
       document.removeEventListener('mouseup', this.onMouseUp);
     }

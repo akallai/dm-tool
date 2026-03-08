@@ -58,11 +58,11 @@ export class WidgetContainerComponent {
   @ViewChild(RandomGeneratorComponent) randomGeneratorWidget?: RandomGeneratorComponent;
 
   isMaximized = false;
-  private previousPosition!: { x: number, y: number };
-  private previousSize!: { width: number, height: number };
+  readonly maximizedPosition = { x: 0, y: 44 };
+  maximizedSize = { width: window.innerWidth, height: window.innerHeight - 44 };
   private viewportWidth: number = window.innerWidth;
   private viewportHeight: number = window.innerHeight;
-  private readonly TAB_BAR_HEIGHT = 52;
+  private readonly TAB_BAR_HEIGHT = 44;
 
   constructor(
     private settingsService: SettingsService,
@@ -75,7 +75,8 @@ export class WidgetContainerComponent {
   onResize() {
     this.viewportWidth = window.innerWidth;
     this.viewportHeight = window.innerHeight;
-    
+    this.maximizedSize = { width: this.viewportWidth, height: this.viewportHeight - this.TAB_BAR_HEIGHT };
+
     // Ensure widget is still visible after resize
     if (!this.isMaximized) {
       this.ensureWidgetIsVisible();
@@ -335,6 +336,8 @@ export class WidgetContainerComponent {
   }
 
   onDragEnd(event: CdkDragEnd) {
+    if (this.isMaximized) return;
+
     const dragDistance = event.distance;
 
     // Calculate new position
@@ -365,12 +368,23 @@ export class WidgetContainerComponent {
     this.update.emit();
   }
 
-  onResizeEnd(event: { width: number, height: number }) {
-    this.widgetData.size = event;
-    
+  onResizeEnd(event: { width: number, height: number, offsetLeft: number, offsetTop: number }) {
+    if (this.isMaximized) return;
+
+    this.widgetData.size = { width: event.width, height: event.height };
+
+    // The resizable directive sets top/left CSS during edge resizes (N, W, NW, NE, SW).
+    // These offsets must be folded into the CDK drag position so boundaries stay correct.
+    if (event.offsetLeft || event.offsetTop) {
+      this.widgetData.position = {
+        x: this.widgetData.position.x + event.offsetLeft,
+        y: this.widgetData.position.y + event.offsetTop
+      };
+    }
+
     // After resizing, ensure the widget is still visible
     this.ensureWidgetIsVisible();
-    
+
     this.update.emit();
   }
 
@@ -422,20 +436,7 @@ export class WidgetContainerComponent {
 
   toggleMaximize(event: MouseEvent) {
     event.stopPropagation();
-    if (!this.isMaximized) {
-      this.previousPosition = { ...this.widgetData.position };
-      this.previousSize = { ...this.widgetData.size };
-      // Maximize below the tab bar
-      this.widgetData.position = { x: 0, y: this.TAB_BAR_HEIGHT };
-      this.widgetData.size = { width: this.viewportWidth, height: this.viewportHeight - this.TAB_BAR_HEIGHT };
-    } else {
-      this.widgetData.position = { ...this.previousPosition };
-      this.widgetData.size = { ...this.previousSize };
-      // Ensure restored widget is visible
-      this.ensureWidgetIsVisible();
-    }
     this.isMaximized = !this.isMaximized;
-    this.update.emit();
   }
 
   close(event: MouseEvent) {

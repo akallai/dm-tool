@@ -2,11 +2,12 @@
   class="widget-container"
   [class.maximized]="isMaximized"
   cdkDrag
-  [cdkDragFreeDragPosition]="widgetData.position"
+  [cdkDragFreeDragPosition]="isMaximized ? maximizedPosition : widgetData.position"
+  [cdkDragDisabled]="isMaximized"
   (cdkDragEnded)="onDragEnd($event)"
   appResizable
-  [resizableWidth]="widgetData.size.width"
-  [resizableHeight]="widgetData.size.height"
+  [resizableWidth]="isMaximized ? maximizedSize.width : widgetData.size.width"
+  [resizableHeight]="isMaximized ? maximizedSize.height : widgetData.size.height"
   (resizeEnd)="onResizeEnd($event)">
 
   <!-- Header as drag handle -->

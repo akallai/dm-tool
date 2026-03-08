@@ -16,9 +16,20 @@
     cursor: grabbing;
   }
 
-  // When maximized, raise the z-index so the widget appears on top
+  // When maximized, raise the z-index and disable interaction cues
   &.maximized {
     z-index: 9999;
+
+    .widget-header {
+      cursor: default;
+      &:active {
+        cursor: default;
+      }
+    }
+
+    .resize-handle {
+      display: none;
+    }
   }
 }
 
