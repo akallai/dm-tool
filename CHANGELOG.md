@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **Fixed background** — removed background selector from header; workspace now always uses a single cosmic background image
 - **Wiki toolbar** — compact grouped layout with smaller buttons; table editing tools now only appear when the cursor is inside a table
 - **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 

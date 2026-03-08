@@ -62,14 +62,12 @@ describe('WorkspaceComponent', () => {
       const state: WorkspaceState = {
         tabs: [{ id: 't1', name: 'Tab 1', widgets: [] }],
         activeTabId: 't1',
-        backgroundIndex: 2,
       };
       component.initialState = state;
       component.ngOnInit();
 
       expect(component.tabs).toEqual(state.tabs);
       expect(component.activeTabId).toBe('t1');
-      expect(component.currentBackgroundIndex).toBe(2);
       expect(workspaceServiceSpy.updateWorkspace).toHaveBeenCalledWith(state.tabs, 't1');
     });
 
@@ -80,17 +78,6 @@ describe('WorkspaceComponent', () => {
       expect(component.tabs.length).toBe(1);
       expect(component.tabs[0].name).toBe('Main Tab');
       expect(component.activeTabId).toBe(component.tabs[0].id);
-    });
-
-    it('should default backgroundIndex to 0 when missing', () => {
-      component.initialState = {
-        tabs: [{ id: 't1', name: 'Tab 1', widgets: [] }],
-        activeTabId: 't1',
-        backgroundIndex: undefined as any,
-      };
-      component.ngOnInit();
-
-      expect(component.currentBackgroundIndex).toBe(0);
     });
 
     it('should subscribe to saveError$ and update component state', () => {
@@ -155,7 +142,6 @@ describe('WorkspaceComponent', () => {
     it('should set isSaving and call persistence.saveWorkspace', async () => {
       component.tabs = [{ id: 't1', name: 'T1', widgets: [] }];
       component.activeTabId = 't1';
-      component.currentBackgroundIndex = 1;
 
       await component.saveToServer();
 
@@ -163,7 +149,6 @@ describe('WorkspaceComponent', () => {
       expect(persistenceSpy.saveWorkspace).toHaveBeenCalledWith({
         tabs: component.tabs,
         activeTabId: 't1',
-        backgroundIndex: 1,
       });
     });
 
@@ -362,34 +347,6 @@ describe('WorkspaceComponent', () => {
 
       expect(component.tabs[0].widgets.length).toBe(0);
       expect(component.isDirty).toBe(true);
-    });
-  });
-
-  describe('background cycling', () => {
-    beforeEach(() => {
-      component.currentBackgroundIndex = 0;
-    });
-
-    it('should cycle to next background', () => {
-      component.nextBackground();
-      expect(component.currentBackgroundIndex).toBe(1);
-    });
-
-    it('should wrap around to first background', () => {
-      component.currentBackgroundIndex = component.backgrounds.length - 1;
-      component.nextBackground();
-      expect(component.currentBackgroundIndex).toBe(0);
-    });
-
-    it('should cycle to previous background', () => {
-      component.currentBackgroundIndex = 1;
-      component.previousBackground();
-      expect(component.currentBackgroundIndex).toBe(0);
-    });
-
-    it('should wrap around to last background', () => {
-      component.previousBackground();
-      expect(component.currentBackgroundIndex).toBe(component.backgrounds.length - 1);
     });
   });
 

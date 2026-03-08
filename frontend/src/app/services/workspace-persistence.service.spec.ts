@@ -11,7 +11,6 @@ function makeState(overrides: Partial<WorkspaceState> = {}): WorkspaceState {
       widgets: []
     }],
     activeTabId: 't1',
-    backgroundIndex: 0,
     ...overrides
   };
 }

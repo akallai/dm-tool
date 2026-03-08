@@ -3,7 +3,7 @@
   <span>{{ saveError }}</span>
 </div>
 
-<div class="workspace" [ngStyle]="{'background-image': 'url(' + currentBackground + ')'}">
+<div class="workspace">
   <app-workspace-header
     [tabs]="tabs"
     [activeTabId]="activeTabId"
@@ -13,7 +13,6 @@
     (tabAdd)="addTab()"
     (tabRemove)="removeTab($event)"
     (tabRenameFinish)="renameTab($event)"
-    (openBackground)="openBackgroundSelector()"
     (openWidgetSelector)="openWidgetSelector()"
     (resetWorkspace)="confirmResetWorkspace()"
     (save)="saveToServer()">

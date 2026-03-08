@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, ViewChildren, QueryList } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { WidgetSelectorDialogComponent, WidgetType } from '../dialogs/widget-selector-dialog/widget-selector-dialog.component';
-import { BackgroundSelectorDialogComponent } from '../dialogs/background-selector-dialog/background-selector-dialog.component';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -53,12 +52,6 @@ export class WorkspaceComponent implements OnInit {
 
   tabs: Tab[] = [];
   activeTabId: string = '';
-  backgrounds: string[] = [
-    '/backgrounds/glass.png',
-    '/backgrounds/glass_dragon.png',
-    '/backgrounds/glass_zombie.png'
-  ];
-  currentBackgroundIndex: number = 0;
   saveError: string | null = null;
   isDirty = false;
   isSaving = false;
@@ -67,10 +60,6 @@ export class WorkspaceComponent implements OnInit {
   get widgets(): WidgetInstance[] {
     const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
     return activeTab?.widgets || [];
-  }
-
-  get currentBackground(): string {
-    return this.backgrounds[this.currentBackgroundIndex];
   }
 
   constructor(
@@ -87,7 +76,6 @@ export class WorkspaceComponent implements OnInit {
     if (this.initialState) {
       this.tabs = this.initialState.tabs;
       this.activeTabId = this.initialState.activeTabId;
-      this.currentBackgroundIndex = this.initialState.backgroundIndex ?? 0;
     } else {
       const defaultTab: Tab = {
         id: Date.now().toString(),
@@ -96,7 +84,6 @@ export class WorkspaceComponent implements OnInit {
       };
       this.tabs = [defaultTab];
       this.activeTabId = defaultTab.id;
-      this.currentBackgroundIndex = 0;
     }
     this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
 
@@ -266,7 +253,6 @@ export class WorkspaceComponent implements OnInit {
     this.persistence.saveWorkspace({
       tabs: this.tabs,
       activeTabId: this.activeTabId,
-      backgroundIndex: this.currentBackgroundIndex
     });
   }
 
@@ -312,47 +298,8 @@ export class WorkspaceComponent implements OnInit {
     }
   }
 
-  openBackgroundSelector() {
-    const dialogRef = this.dialog.open(BackgroundSelectorDialogComponent, {
-      data: this.currentBackgroundIndex,
-      panelClass: 'background-selector-dialog'
-    });
-    dialogRef.afterClosed().subscribe((index: number) => {
-      if (index !== undefined && index !== null) {
-        this.currentBackgroundIndex = index;
-        this.saveTabs();
-        this.cdr.markForCheck();
-      }
-    });
-  }
-
-  nextBackground() {
-    this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgrounds.length;
-    this.saveTabs();
-    this.cdr.markForCheck();
-  }
-
-  previousBackground() {
-    this.currentBackgroundIndex = (this.currentBackgroundIndex - 1 + this.backgrounds.length) % this.backgrounds.length;
-    this.saveTabs();
-    this.cdr.markForCheck();
-  }
-
   trackByWidgetId(index: number, widget: WidgetInstance): string {
     return widget.id;
-  }
-
-  // Keyboard shortcuts for background cycling
-  @HostListener('window:keydown.alt.arrowleft', ['$event'])
-  cyclePrevious(event: KeyboardEvent) {
-    event.preventDefault();
-    this.previousBackground();
-  }
-
-  @HostListener('window:keydown.alt.arrowright', ['$event'])
-  cycleNext(event: KeyboardEvent) {
-    event.preventDefault();
-    this.nextBackground();
   }
 
   @HostListener('window:keydown', ['$event'])

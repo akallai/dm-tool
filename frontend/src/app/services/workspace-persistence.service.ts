@@ -6,7 +6,6 @@ import { Tab } from '../workspace/workspace.component';
 export interface WorkspaceState {
   tabs: Tab[];
   activeTabId: string;
-  backgroundIndex: number;
 }
 
 const WORKSPACE_BLOB_PATH = 'workspace/state.json';
