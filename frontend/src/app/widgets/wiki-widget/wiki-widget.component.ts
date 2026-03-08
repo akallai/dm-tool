@@ -530,6 +530,13 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
     if (event) {
       event.stopPropagation();
     }
+
+    // Clean up images from deleted article and its children
+    const imageIds = this.collectArticleImageIds(article);
+    for (const id of imageIds) {
+      this.imageStorage.deleteImage(id).catch(() => {});
+    }
+
     this.wikiData.articles = this.removeArticle(this.wikiData.articles, article.id);
     if (this.currentArticle?.id === article.id) {
       this.currentArticle = this.wikiData.articles.length ? this.wikiData.articles[0] : null;
@@ -630,6 +637,26 @@ export class WikiWidgetComponent implements OnInit, AfterViewInit, AfterViewChec
         ids.add(node.attrs.src.replace('wiki-image://', ''));
       }
     });
+    return ids;
+  }
+
+  private extractImageIdsFromHtml(html: string): string[] {
+    const ids: string[] = [];
+    const regex = /wiki-image:\/\/([a-f0-9-]+)/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      ids.push(match[1]);
+    }
+    return ids;
+  }
+
+  private collectArticleImageIds(article: WikiArticle): string[] {
+    const ids = this.extractImageIdsFromHtml(article.content || '');
+    if (article.children) {
+      for (const child of article.children) {
+        ids.push(...this.collectArticleImageIds(child));
+      }
+    }
     return ids;
   }
 
