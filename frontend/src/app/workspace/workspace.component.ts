@@ -160,13 +160,13 @@ export class WorkspaceComponent implements OnInit {
       case 'RANDOM_GENERATOR':
         return { width: 350, height: 300 };
       case 'MUSIC_WIDGET':
-        return { width: 350, height: 250 };
+        return { width: 350, height: 350 };
       case 'NAME_GENERATOR':
         return { width: 300, height: 350 };
       case 'COUNTDOWN_WIDGET':
-        return { width: 250, height: 200 };
+        return { width: 350, height: 280 };
       default:
-        return { width: 300, height: 200 };
+        return { width: 300, height: 280 };
     }
   }
 
