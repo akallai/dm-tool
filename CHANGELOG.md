@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 
 ### Fixed
+- **Music widget My Files leak** — preset sounds added to music slots no longer appear in the "My Files" tab of the media browser
 - **Dialog z-index in fullscreen** — confirmation prompts and all dialogs now always appear above maximized widgets instead of opening behind them
 - **Music widget track removal** — removed unnecessary confirmation dialog when removing a track slot, since custom audio files are not deleted with the slot
 - **Wiki image cleanup** — wiki images are now deleted from cloud storage when removed from articles, when articles are deleted, or when the wiki widget is deleted

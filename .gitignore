@@ -51,6 +51,9 @@ frontend/public/assets/dice-box
 backend/.env
 backend/.env.local
 
+# Azure Functions local settings
+**/local.settings.json
+
 # Infrastructure specific (future)
 infrastructure/.terraform
 infrastructure/*.tfstate
