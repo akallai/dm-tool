@@ -1,14 +1,26 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+
+const DEFAULT_WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 @Component({
   selector: 'app-daytime-tracker',
   template: `
     <div class="daytime-tracker" [class.is-night]="isNight()">
+      <div class="info-row">
+        <span class="badge" [style.background-color]="getCurrentBackgroundColor()" [style.color]="getTextColor()" [style.box-shadow]="getGlow()">
+          Day {{ dayCount }}
+        </span>
+        <span class="badge" [style.background-color]="getCurrentBackgroundColor()" [style.color]="getTextColor()" [style.box-shadow]="getGlow()">
+          {{ getCurrentWeekday() }}
+        </span>
+        <div class="spacer"></div>
+        <mat-icon class="status-icon">{{ isNight() ? 'bedtime' : 'wb_sunny' }}</mat-icon>
+      </div>
+
       <div class="main-row">
-        
         <div class="time-readout-container">
            <span class="current-time" [style.background-color]="getCurrentBackgroundColor()" [style.color]="getTextColor()" [style.box-shadow]="getGlow()">
              {{ formatTime() }}
@@ -17,21 +29,32 @@ import { MatIconModule } from '@angular/material/icon';
 
         <div class="slider-container">
           <div class="track-background"></div>
-          <input 
-            type="range" 
-            class="time-slider" 
-            min="0" 
-            max="23" 
-            step="1" 
-            [(ngModel)]="currentHour" 
+          <input
+            type="range"
+            class="time-slider"
+            min="0"
+            max="23"
+            step="1"
+            [(ngModel)]="currentHour"
             (ngModelChange)="onTimeChange()"
             [style.--thumb-color]="getThumbColor()"
             [style.--thumb-glow]="getThumbGlow()"
           />
         </div>
-        
+
+        <div class="play-container">
+          <button
+            class="play-btn"
+            [class.playing]="isPlaying"
+            (click)="togglePlay()"
+            [title]="isPlaying ? 'Pause' : 'Play'"
+          >
+            <mat-icon>{{ isPlaying ? 'pause' : 'play_arrow' }}</mat-icon>
+          </button>
+          <span class="speed-label" *ngIf="isPlaying">1h/{{ getSecondsPerHour() }}s</span>
+        </div>
       </div>
-      
+
       <div class="button-row">
         <button class="glass-btn" (click)="adjustTime(-5)" title="Minus 5 Hours">
             <mat-icon>keyboard_double_arrow_left</mat-icon>
@@ -41,9 +64,7 @@ import { MatIconModule } from '@angular/material/icon';
             <mat-icon>keyboard_arrow_left</mat-icon>
             <span class="btn-text">1h</span>
         </button>
-        
-        <div class="spacer"></div>
-        <mat-icon class="status-icon">{{ isNight() ? 'bedtime' : 'wb_sunny' }}</mat-icon>
+
         <div class="spacer"></div>
 
         <button class="glass-btn" (click)="adjustTime(1)" title="Plus 1 Hour">
@@ -74,6 +95,22 @@ import { MatIconModule } from '@angular/material/icon';
 
   .daytime-tracker.is-night {
     background: rgba(10, 12, 16, 0.7);
+  }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge {
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    transition: background-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
   }
 
   .main-row {
@@ -168,13 +205,59 @@ import { MatIconModule } from '@angular/material/icon';
     cursor: pointer;
   }
 
+  .play-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .play-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary, #fff);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+  }
+
+  .play-btn mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .play-btn:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+  }
+
+  .play-btn.playing {
+    border-color: rgba(76, 175, 80, 0.6);
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+    background: rgba(76, 175, 80, 0.15);
+  }
+
+  .speed-label {
+    font-size: 0.65em;
+    opacity: 0.6;
+    white-space: nowrap;
+  }
+
   .button-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 8px;
   }
-  
+
   .spacer {
     flex: 1;
   }
@@ -231,7 +314,7 @@ import { MatIconModule } from '@angular/material/icon';
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   }
-  
+
   .glass-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -245,36 +328,104 @@ import { MatIconModule } from '@angular/material/icon';
     MatIconModule
   ]
 })
-export class DaytimeTrackerComponent {
+export class DaytimeTrackerComponent implements OnInit, OnDestroy {
   @Input() settings: any;
   @Output() settingsChange = new EventEmitter<void>();
 
   currentHour: number = 12;
+  dayCount: number = 1;
+  weekdayIndex: number = 0;
+  isPlaying: boolean = false;
+
   readonly DAY_COLOR = '#FFD700';
-  readonly NIGHT_COLOR = '#1a2233'; // Slightly lighter than black for UI elements
-  readonly DAWN_DUSK_COLOR = '#ff8c00'; // Orange for transitions
+  readonly NIGHT_COLOR = '#1a2233';
+  readonly DAWN_DUSK_COLOR = '#ff8c00';
+
+  private intervalId: ReturnType<typeof setInterval> | null = null;
+  private accumulatedSeconds: number = 0;
+  private lastTickTime: number = 0;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    if (this.settings?.hour !== undefined) {
-      this.currentHour = this.settings.hour;
+    if (this.settings) {
+      this.currentHour = this.settings.hour ?? 12;
+      this.dayCount = this.settings.dayCount ?? 1;
+      this.weekdayIndex = this.settings.weekdayIndex ?? 0;
+      this.isPlaying = this.settings.isPlaying ?? false;
+
+      if (this.isPlaying && this.getSecondsPerHour()) {
+        this.catchUp();
+        this.saveState();
+        this.startTimer();
+      }
     }
   }
 
-  onTimeChange() {
-    // Ensure it's treated as a number
-    this.currentHour = Number(this.currentHour);
-    if (this.settings) {
+  ngOnDestroy() {
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    // Stamp current state into settings so that:
+    // 1) Tab switch → catch-up uses a fresh timestamp on return
+    // 2) Ctrl+S → the persisted state reflects the latest time
+    if (this.isPlaying && this.settings) {
       this.settings.hour = this.currentHour;
+      this.settings.dayCount = this.dayCount;
+      this.settings.weekdayIndex = this.weekdayIndex;
+      this.settings.isPlaying = this.isPlaying;
+      this.settings.lastTickTimestamp = Date.now();
       this.settingsChange.emit();
     }
   }
 
+  togglePlay() {
+    this.isPlaying = !this.isPlaying;
+    if (this.isPlaying) {
+      this.accumulatedSeconds = 0;
+      this.lastTickTime = Date.now();
+      this.startTimer();
+    } else {
+      this.stopTimer();
+    }
+    this.saveState();
+  }
+
+  onTimeChange() {
+    this.currentHour = Number(this.currentHour);
+    this.accumulatedSeconds = 0;
+    this.lastTickTime = Date.now();
+    this.saveState();
+  }
+
   adjustTime(hours: number) {
-    let newHour = Number(this.currentHour) + hours;
-    // Wrap around 24-hour cycle
-    newHour = ((newHour % 24) + 24) % 24;
+    const oldHour = Number(this.currentHour);
+    let newHour = oldHour + hours;
+
+    // Count midnight crossings
+    if (hours > 0) {
+      // Forward: count how many times we cross from 23→0
+      let crossings = 0;
+      if (newHour >= 24) {
+        crossings = Math.floor(newHour / 24);
+      }
+      newHour = ((newHour % 24) + 24) % 24;
+      this.advanceDays(crossings);
+    } else {
+      // Backward: count how many times we cross from 0→23
+      let crossings = 0;
+      if (newHour < 0) {
+        crossings = Math.ceil(Math.abs(newHour) / 24);
+      }
+      newHour = ((newHour % 24) + 24) % 24;
+      this.rewindDays(crossings);
+    }
+
     this.currentHour = newHour;
-    this.onTimeChange();
+    this.accumulatedSeconds = 0;
+    this.lastTickTime = Date.now();
+    this.saveState();
   }
 
   formatTime(): string {
@@ -283,6 +434,24 @@ export class DaytimeTrackerComponent {
 
   isNight(): boolean {
     return this.currentHour >= 20 || this.currentHour <= 4;
+  }
+
+  getSecondsPerHour(): number {
+    return this.settings?.secondsPerHour || 60;
+  }
+
+  getWeekdayNames(): string[] {
+    const custom = this.settings?.weekdayNames;
+    if (custom && typeof custom === 'string' && custom.trim()) {
+      const names = custom.split('\n').map((n: string) => n.trim()).filter((n: string) => n.length > 0);
+      if (names.length > 0) return names;
+    }
+    return DEFAULT_WEEKDAYS;
+  }
+
+  getCurrentWeekday(): string {
+    const names = this.getWeekdayNames();
+    return names[this.weekdayIndex % names.length];
   }
 
   getCurrentBackgroundColor(): string {
@@ -305,7 +474,7 @@ export class DaytimeTrackerComponent {
 
     return this.DAY_COLOR;
   }
-  
+
   getGlow(): string {
     const bg = this.getCurrentBackgroundColor();
     return `0 0 15px ${bg}80`;
@@ -332,6 +501,83 @@ export class DaytimeTrackerComponent {
   getTextColor(): string {
     const backgroundColor = this.getCurrentBackgroundColor();
     return this.isColorDark(backgroundColor) ? '#FFFFFF' : '#000000';
+  }
+
+  private startTimer() {
+    if (this.intervalId !== null) return;
+    this.lastTickTime = Date.now();
+    this.intervalId = setInterval(() => this.tick(), 200);
+  }
+
+  private stopTimer() {
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  private tick() {
+    const now = Date.now();
+    const elapsed = (now - this.lastTickTime) / 1000;
+    this.lastTickTime = now;
+    this.accumulatedSeconds += elapsed;
+
+    const sph = this.getSecondsPerHour();
+    if (this.accumulatedSeconds >= sph) {
+      const hoursToAdvance = Math.floor(this.accumulatedSeconds / sph);
+      this.accumulatedSeconds -= hoursToAdvance * sph;
+      this.advanceHours(hoursToAdvance);
+      this.saveState();
+      this.cdr.markForCheck();
+    }
+  }
+
+  private advanceHours(count: number) {
+    const oldHour = this.currentHour;
+    const totalHour = oldHour + count;
+    const crossings = Math.floor(totalHour / 24);
+    this.currentHour = totalHour % 24;
+    this.advanceDays(crossings);
+  }
+
+  private advanceDays(crossings: number) {
+    if (crossings <= 0) return;
+    this.dayCount += crossings;
+    const names = this.getWeekdayNames();
+    this.weekdayIndex = (this.weekdayIndex + crossings) % names.length;
+  }
+
+  private rewindDays(crossings: number) {
+    if (crossings <= 0) return;
+    this.dayCount = Math.max(1, this.dayCount - crossings);
+    const names = this.getWeekdayNames();
+    this.weekdayIndex = ((this.weekdayIndex - crossings) % names.length + names.length) % names.length;
+  }
+
+  private catchUp() {
+    const lastTimestamp = this.settings?.lastTickTimestamp;
+    if (!lastTimestamp) return;
+
+    const elapsedSeconds = (Date.now() - lastTimestamp) / 1000;
+    if (elapsedSeconds <= 0) return;
+
+    const sph = this.getSecondsPerHour();
+    const hoursToAdvance = Math.floor(elapsedSeconds / sph);
+    this.accumulatedSeconds = elapsedSeconds - hoursToAdvance * sph;
+
+    if (hoursToAdvance > 0) {
+      this.advanceHours(hoursToAdvance);
+    }
+  }
+
+  private saveState() {
+    if (!this.settings) return;
+    this.settings.hour = this.currentHour;
+    this.settings.dayCount = this.dayCount;
+    this.settings.weekdayIndex = this.weekdayIndex;
+    this.settings.isPlaying = this.isPlaying;
+    this.settings.lastTickTimestamp = Date.now();
+    this.settingsChange.emit();
   }
 
   private interpolateColor(color1: string, color2: string, progress: number): string {

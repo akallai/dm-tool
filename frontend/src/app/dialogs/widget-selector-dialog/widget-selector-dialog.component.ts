@@ -210,7 +210,7 @@ export class WidgetSelectorDialogComponent {
     { type: 'MUSIC_WIDGET', label: 'Music Widget', icon: 'music.png', description: 'Ambient music & SFX' },
     { type: 'WIKI_WIDGET', label: 'Wiki', icon: 'wiki.png', description: 'Campaign knowledge base' },
     { type: 'COMBAT_TRACKER', label: 'Combat Tracker', icon: 'combat.png', description: 'Track initiative & HP' },
-    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'daytime.png', description: 'Track time of day' },
+    { type: 'DAYTIME_TRACKER', label: 'Daytime Tracker', icon: 'daytime.png', description: 'Game clock with auto-progression & day tracking' },
     { type: 'LLM_CHAT', label: 'LLM Chat', icon: 'llm.png', description: 'AI-powered assistant' },
     { type: 'HEX_MAP', label: 'Hex Map', icon: 'hexmap.png', description: 'Hex grid exploration map' },
     { type: 'NAME_GENERATOR', label: 'Name Generator', icon: 'name_generator.png', description: 'Fantasy & cultural names' },

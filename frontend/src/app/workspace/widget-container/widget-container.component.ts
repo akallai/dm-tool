@@ -270,6 +270,25 @@ export class WidgetContainerComponent {
             }
           ]
         };
+      case 'DAYTIME_TRACKER':
+        return {
+          title: 'Daytime Tracker Settings',
+          fields: [
+            {
+              key: 'secondsPerHour',
+              type: 'number',
+              label: 'Real seconds per in-game hour',
+              defaultValue: 60,
+              min: 1
+            },
+            {
+              key: 'weekdayNames',
+              type: 'textarea',
+              label: 'Custom weekday names (one per line)',
+              placeholder: 'Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday'
+            }
+          ]
+        };
       case 'WIKI_WIDGET':
         return null;
         case 'LLM_CHAT':
