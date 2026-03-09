@@ -1,8 +1,7 @@
-import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-daytime-tracker',
@@ -21,7 +20,6 @@ import { MatButtonModule } from '@angular/material/button';
           <input 
             type="range" 
             class="time-slider" 
-            #timeSlider
             min="0" 
             max="23" 
             step="1" 
@@ -63,10 +61,10 @@ import { MatButtonModule } from '@angular/material/button';
   .daytime-tracker {
     padding: 16px;
     border-radius: 12px;
-    background: var(--glass-bg);
-    color: var(--text-primary);
-    border: var(--glass-border);
-    backdrop-filter: var(--glass-backdrop);
+    background: var(--glass-bg, rgba(30, 30, 30, 0.6));
+    color: var(--text-primary, #fff);
+    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.1));
+    backdrop-filter: var(--glass-backdrop, blur(10px));
     transition: background-color 0.5s ease;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     display: flex;
@@ -75,7 +73,7 @@ import { MatButtonModule } from '@angular/material/button';
   }
 
   .daytime-tracker.is-night {
-      background: rgba(10, 12, 16, 0.7);
+    background: rgba(10, 12, 16, 0.7);
   }
 
   .main-row {
@@ -85,10 +83,10 @@ import { MatButtonModule } from '@angular/material/button';
   }
 
   .time-readout-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .current-time {
@@ -112,26 +110,25 @@ import { MatButtonModule } from '@angular/material/button';
   }
 
   .track-background {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 8px;
-      transform: translateY(-50%);
-      border-radius: 4px;
-      /* Night -> Dawn -> Day -> Dusk -> Night */
-      background: linear-gradient(90deg, 
-        #0a0c10 0%, 
-        #0a0c10 16%, 
-        #4a3728 25%, 
-        #FFD700 37%, 
-        #FFD700 70%, 
-        #4a3728 83%, 
-        #0a0c10 91%, 
-        #0a0c10 100%
-      );
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.1);
-      pointer-events: none;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 8px;
+    transform: translateY(-50%);
+    border-radius: 4px;
+    background: linear-gradient(90deg,
+      #0a0c10 0%,
+      #0a0c10 16%,
+      #4a3728 25%,
+      #FFD700 37%,
+      #FFD700 70%,
+      #4a3728 83%,
+      #0a0c10 91%,
+      #0a0c10 100%
+    );
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.1);
+    pointer-events: none;
   }
 
   .time-slider {
@@ -179,26 +176,26 @@ import { MatButtonModule } from '@angular/material/button';
   }
   
   .spacer {
-      flex: 1;
+    flex: 1;
   }
-  
+
   .status-icon {
-      color: var(--text-primary);
-      opacity: 0.8;
-      transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    color: var(--text-primary);
+    opacity: 0.8;
+    transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .daytime-tracker:not(.is-night) .status-icon {
-      color: #FFD700;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
   }
-  
+
   .daytime-tracker.is-night .status-icon {
-      color: #b0c4de;
-      text-shadow: 0 0 10px rgba(176, 196, 222, 0.4);
+    color: #b0c4de;
+    text-shadow: 0 0 10px rgba(176, 196, 222, 0.4);
   }
 
   .glass-btn {
@@ -217,15 +214,15 @@ import { MatButtonModule } from '@angular/material/button';
   }
 
   .glass-btn mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 
   .glass-btn .btn-text {
-      font-size: 0.85em;
-      font-weight: 500;
-      margin: 0 2px;
+    font-size: 0.85em;
+    font-weight: 500;
+    margin: 0 2px;
   }
 
   .glass-btn:hover {
@@ -236,16 +233,16 @@ import { MatButtonModule } from '@angular/material/button';
   }
   
   .glass-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
   `],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
-    MatIconModule,
-    MatButtonModule
+    MatIconModule
   ]
 })
 export class DaytimeTrackerComponent {
@@ -285,7 +282,7 @@ export class DaytimeTrackerComponent {
   }
 
   isNight(): boolean {
-      return this.currentHour >= 20 || this.currentHour <= 5;
+    return this.currentHour >= 20 || this.currentHour <= 4;
   }
 
   getCurrentBackgroundColor(): string {
@@ -298,11 +295,11 @@ export class DaytimeTrackerComponent {
       const progress = (hour - 5) / 2;
       return this.interpolateColor(this.NIGHT_COLOR, this.DAY_COLOR, progress);
     }
-    if (hour >= 8 && hour <= 17) {
+    if (hour >= 8 && hour <= 16) {
       return this.DAY_COLOR;
     }
-    if (hour >= 18 && hour <= 19) {
-      const progress = (hour - 18) / 1; // 1 hr transition
+    if (hour >= 17 && hour <= 19) {
+      const progress = (hour - 17) / 2;
       return this.interpolateColor(this.DAY_COLOR, this.NIGHT_COLOR, progress);
     }
 
@@ -310,27 +307,26 @@ export class DaytimeTrackerComponent {
   }
   
   getGlow(): string {
-      const bg = this.getCurrentBackgroundColor();
-      return `0 0 15px ${bg}80`; // Add 50% opacity hex
+    const bg = this.getCurrentBackgroundColor();
+    return `0 0 15px ${bg}80`;
   }
 
   getThumbColor(): string {
-      const hour = this.currentHour;
-      // Make the thumb moon-colored at night, sun-colored in day, orange at dusk/dawn
-      if (hour >= 20 || hour <= 4) return '#e6e6fa'; // Light lavender moon
-      if (hour >= 5 && hour <= 7) return this.DAWN_DUSK_COLOR;
-      if (hour >= 8 && hour <= 17) return '#ffffff'; // Blazing sun
-      if (hour >= 18 && hour <= 19) return this.DAWN_DUSK_COLOR;
-      return '#ffffff';
+    const hour = this.currentHour;
+    if (hour >= 20 || hour <= 4) return '#e6e6fa';
+    if (hour >= 5 && hour <= 7) return this.DAWN_DUSK_COLOR;
+    if (hour >= 8 && hour <= 16) return '#ffffff';
+    if (hour >= 17 && hour <= 19) return this.DAWN_DUSK_COLOR;
+    return '#ffffff';
   }
 
   getThumbGlow(): string {
-      const hour = this.currentHour;
-      if (hour >= 20 || hour <= 4) return `0 0 12px rgba(230, 230, 250, 0.6)`;
-      if (hour >= 5 && hour <= 7) return `0 0 15px rgba(255, 140, 0, 0.8)`;
-      if (hour >= 8 && hour <= 17) return `0 0 20px rgba(255, 215, 0, 0.9)`;
-      if (hour >= 18 && hour <= 19) return `0 0 15px rgba(255, 140, 0, 0.8)`;
-      return 'none';
+    const hour = this.currentHour;
+    if (hour >= 20 || hour <= 4) return '0 0 12px rgba(230, 230, 250, 0.6)';
+    if (hour >= 5 && hour <= 7) return '0 0 15px rgba(255, 140, 0, 0.8)';
+    if (hour >= 8 && hour <= 16) return '0 0 20px rgba(255, 215, 0, 0.9)';
+    if (hour >= 17 && hour <= 19) return '0 0 15px rgba(255, 140, 0, 0.8)';
+    return 'none';
   }
 
   getTextColor(): string {
