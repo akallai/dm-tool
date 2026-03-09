@@ -25,6 +25,7 @@ yarn-error.log
 !.vscode/settings.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/tasks.json
 .history/*
 
 # Miscellaneous
@@ -53,6 +54,9 @@ backend/.env.local
 
 # Azure Functions local settings
 **/local.settings.json
+
+# Local environment files
+frontend/.env
 
 # Infrastructure specific (future)
 infrastructure/.terraform
