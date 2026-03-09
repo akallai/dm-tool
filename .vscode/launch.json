@@ -3,11 +3,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Full Stack (SWA)",
+      "name": "Full Stack",
       "type": "chrome",
       "request": "launch",
-      "preLaunchTask": "swa: start",
-      "url": "http://localhost:4280/"
+      "preLaunchTask": "full-stack: start",
+      "url": "http://localhost:4200/"
     },
     {
       "name": "ng test",

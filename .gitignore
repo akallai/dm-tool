@@ -57,6 +57,7 @@ backend/.env.local
 
 # Local environment files
 frontend/.env
+frontend/proxy.conf.json
 
 # Infrastructure specific (future)
 infrastructure/.terraform
