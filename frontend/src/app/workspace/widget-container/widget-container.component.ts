@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CdkDragEnd } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -50,10 +50,13 @@ import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dia
     MatDialogModule
   ]
 })
-export class WidgetContainerComponent {
+export class WidgetContainerComponent implements AfterViewInit, OnDestroy {
   @Input() widgetData!: WidgetInstance;
   @Output() closeEvent = new EventEmitter<void>();
   @Output() update = new EventEmitter<void>();
+  @Output() bringToFront = new EventEmitter<void>();
+
+  private mousedownListener = () => this.bringToFront.emit();
   @ViewChild(WikiWidgetComponent) wikiWidget?: WikiWidgetComponent;
   @ViewChild(RandomGeneratorComponent) randomGeneratorWidget?: RandomGeneratorComponent;
 
@@ -70,6 +73,14 @@ export class WidgetContainerComponent {
     private musicPlaybackService: MusicPlaybackService,
     private dialog: MatDialog,
   ) {}
+
+  ngAfterViewInit() {
+    this.elementRef.nativeElement.addEventListener('mousedown', this.mousedownListener, true);
+  }
+
+  ngOnDestroy() {
+    this.elementRef.nativeElement.removeEventListener('mousedown', this.mousedownListener, true);
+  }
 
   @HostListener('window:resize', ['$event'])
   onResize() {

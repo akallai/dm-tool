@@ -1,6 +1,7 @@
 <div
   class="widget-container"
   [class.maximized]="isMaximized"
+  [style.z-index]="isMaximized ? 9999 : (widgetData.zIndex ?? 2)"
   cdkDrag
   [cdkDragFreeDragPosition]="isMaximized ? maximizedPosition : widgetData.position"
   [cdkDragDisabled]="isMaximized"

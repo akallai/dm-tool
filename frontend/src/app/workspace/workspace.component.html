@@ -23,7 +23,8 @@
     <app-widget-container
       [widgetData]="widget"
       (closeEvent)="removeWidget(widget.id)"
-      (update)="saveWidgets()">
+      (update)="saveWidgets()"
+      (bringToFront)="bringWidgetToFront(widget)">
     </app-widget-container>
   </ng-container>
 </div>

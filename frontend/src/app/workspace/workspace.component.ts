@@ -28,6 +28,7 @@ export interface WidgetInstance {
   position: { x: number, y: number };
   size: { width: number, height: number };
   settings: any;
+  zIndex?: number;
 }
 
 @Component({
@@ -55,6 +56,7 @@ export class WorkspaceComponent implements OnInit {
   saveError: string | null = null;
   isDirty = false;
   isSaving = false;
+  private nextZIndex = 10;
 
   // Helper getter to access the widgets of the active tab
   get widgets(): WidgetInstance[] {
@@ -86,6 +88,12 @@ export class WorkspaceComponent implements OnInit {
       this.activeTabId = defaultTab.id;
     }
     this.workspaceService.updateWorkspace(this.tabs, this.activeTabId);
+
+    // Initialize nextZIndex from existing widget z-indices
+    const allZIndices = this.tabs.flatMap(t => t.widgets.map(w => w.zIndex ?? 2));
+    if (allZIndices.length > 0) {
+      this.nextZIndex = Math.max(10, ...allZIndices) + 1;
+    }
 
     this.persistence.saveError$.subscribe(error => {
       this.saveError = error;
@@ -121,11 +129,20 @@ export class WorkspaceComponent implements OnInit {
       type,
       position: { x: 100, y: 100 },
       size: this.getDefaultSize(type),
-      settings: {}
+      settings: {},
+      zIndex: this.nextZIndex++
     };
-
     activeTab.widgets.push(newWidget);
     this.saveTabs();
+  }
+
+  bringWidgetToFront(widget: WidgetInstance) {
+    // Skip if already the topmost widget
+    if (widget.zIndex === this.nextZIndex - 1) return;
+
+    widget.zIndex = this.nextZIndex++;
+    this.saveTabs();
+    this.cdr.markForCheck();
   }
 
   private getDefaultSize(type: WidgetType): { width: number; height: number } {
