@@ -346,7 +346,6 @@ export class MediaBrowserDialogComponent implements OnInit {
 
     const prefixes: string[] = [];
     if (this.filter === 'image-pdf' || this.filter === 'all') prefixes.push('files/');
-    if (this.filter === 'audio' || this.filter === 'all') prefixes.push('audio/');
     prefixes.push('uploads/');
 
     let completed = 0;
