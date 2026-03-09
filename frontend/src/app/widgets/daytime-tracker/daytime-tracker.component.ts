@@ -1,198 +1,249 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatSliderModule } from '@angular/material/slider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-daytime-tracker',
   template: `
-    <div class="daytime-tracker">
+    <div class="daytime-tracker" [class.is-night]="isNight()">
       <div class="main-row">
-        <mat-icon class="time-icon">wb_sunny</mat-icon>
-        <div class="slider-container">
-          <div class="time-periods">
-            <div class="period night" style="width: 25%"></div>
-            <div class="period dawn" style="width: 12.5%"></div>
-            <div class="period day" style="width: 37.5%"></div>
-            <div class="period dusk" style="width: 12.5%"></div>
-            <div class="period night" style="width: 12.5%"></div>
-          </div>
-          <mat-slider
-            class="time-slider"
-            [min]="0"
-            [max]="23"
-            [step]="1"
-            [discrete]="true"
-            [showTickMarks]="true">
-            <input matSliderThumb [(ngModel)]="currentHour" (ngModelChange)="onTimeChange()">
-          </mat-slider>
+        
+        <div class="time-readout-container">
+           <span class="current-time" [style.background-color]="getCurrentBackgroundColor()" [style.color]="getTextColor()" [style.box-shadow]="getGlow()">
+             {{ formatTime() }}
+           </span>
         </div>
-        <span class="current-time" [style.background-color]="getCurrentBackgroundColor()" [style.color]="getTextColor()">
-          {{ formatTime() }}
-        </span>
-        <mat-icon class="time-icon">bedtime</mat-icon>
+
+        <div class="slider-container">
+          <div class="track-background"></div>
+          <input 
+            type="range" 
+            class="time-slider" 
+            #timeSlider
+            min="0" 
+            max="23" 
+            step="1" 
+            [(ngModel)]="currentHour" 
+            (ngModelChange)="onTimeChange()"
+            [style.--thumb-color]="getThumbColor()"
+            [style.--thumb-glow]="getThumbGlow()"
+          />
+        </div>
+        
       </div>
+      
       <div class="button-row">
-        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(-5)">-5</button>
-        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(-1)">-1</button>
-        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(1)">+1</button>
-        <button mat-stroked-button class="time-adjust-btn" (click)="adjustTime(5)">+5</button>
+        <button class="glass-btn" (click)="adjustTime(-5)" title="Minus 5 Hours">
+            <mat-icon>keyboard_double_arrow_left</mat-icon>
+            <span class="btn-text">5h</span>
+        </button>
+        <button class="glass-btn" (click)="adjustTime(-1)" title="Minus 1 Hour">
+            <mat-icon>keyboard_arrow_left</mat-icon>
+            <span class="btn-text">1h</span>
+        </button>
+        
+        <div class="spacer"></div>
+        <mat-icon class="status-icon">{{ isNight() ? 'bedtime' : 'wb_sunny' }}</mat-icon>
+        <div class="spacer"></div>
+
+        <button class="glass-btn" (click)="adjustTime(1)" title="Plus 1 Hour">
+             <span class="btn-text">1h</span>
+             <mat-icon>keyboard_arrow_right</mat-icon>
+        </button>
+        <button class="glass-btn" (click)="adjustTime(5)" title="Plus 5 Hours">
+            <span class="btn-text">5h</span>
+            <mat-icon>keyboard_double_arrow_right</mat-icon>
+        </button>
       </div>
     </div>
   `,
   styles: [`
   .daytime-tracker {
-    padding: 8px;
-    border-radius: 4px;
-    background: transparent; /* Rely on container background */
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--glass-bg);
     color: var(--text-primary);
+    border: var(--glass-border);
+    backdrop-filter: var(--glass-backdrop);
+    transition: background-color 0.5s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .daytime-tracker.is-night {
+      background: rgba(10, 12, 16, 0.7);
   }
 
   .main-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 32px;
+    gap: 16px;
+  }
+
+  .time-readout-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+  }
+
+  .current-time {
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
+    min-width: 60px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
   .slider-container {
     position: relative;
     flex: 1;
-    min-width: 0;
-  }
-
-  .time-periods {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 0;
-    right: 0;
-    height: 10px;
     display: flex;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: 5px;
-    overflow: hidden;
-    opacity: 0.8; /* Slight transparency for blending */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    align-items: center;
+    height: 32px;
   }
 
-  .period {
-    height: 100%;
-  }
-
-  .period.night {
-    background: #0d1117; /* Dark blue-black instead of pure black */
-  }
-
-  .period.dawn {
-    background: linear-gradient(90deg, #0d1117 0%, #FFD700 100%);
-  }
-
-  .period.day {
-    background: #FFD700;
-  }
-
-  .period.dusk {
-    background: linear-gradient(90deg, #FFD700 0%, #0d1117 100%);
+  .track-background {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 8px;
+      transform: translateY(-50%);
+      border-radius: 4px;
+      /* Night -> Dawn -> Day -> Dusk -> Night */
+      background: linear-gradient(90deg, 
+        #0a0c10 0%, 
+        #0a0c10 16%, 
+        #4a3728 25%, 
+        #FFD700 37%, 
+        #FFD700 70%, 
+        #4a3728 83%, 
+        #0a0c10 91%, 
+        #0a0c10 100%
+      );
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.1);
+      pointer-events: none;
   }
 
   .time-slider {
-    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
+    background: transparent;
+    outline: none;
+    margin: 0;
     z-index: 1;
+    cursor: pointer;
   }
 
-  .time-icon {
-    color: var(--text-primary);
-    font-size: 20px;
+  /* WebKit Thumb */
+  .time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
     width: 20px;
     height: 20px;
-    opacity: 0.8;
+    border-radius: 50%;
+    background-color: var(--thumb-color, #FFF);
+    box-shadow: var(--thumb-glow, 0 0 10px rgba(255,255,255,0.5)), 0 2px 4px rgba(0,0,0,0.5);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
   }
 
-  .current-time {
-    font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    min-width: 52px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  /* Mozilla Thumb */
+  .time-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--thumb-color, #FFF);
+    box-shadow: var(--thumb-glow, 0 0 10px rgba(255,255,255,0.5)), 0 2px 4px rgba(0,0,0,0.5);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
   }
 
   .button-row {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
     gap: 8px;
-    margin-top: 8px;
+  }
+  
+  .spacer {
+      flex: 1;
+  }
+  
+  .status-icon {
+      color: var(--text-primary);
+      opacity: 0.8;
+      transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
   }
 
-  .time-adjust-btn {
-    min-width: 40px;
-    padding: 0 8px;
-    font-size: 0.85em;
-    height: 28px;
-    line-height: 28px;
-    border-color: var(--text-primary);
+  .daytime-tracker:not(.is-night) .status-icon {
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  }
+  
+  .daytime-tracker.is-night .status-icon {
+      color: #b0c4de;
+      text-shadow: 0 0 10px rgba(176, 196, 222, 0.4);
+  }
+
+  .glass-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 32px;
+    min-width: 48px;
   }
 
-  .time-adjust-btn:hover {
-    opacity: 1;
+  .glass-btn mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
   }
 
-  /* Override MDC slider CSS variables */
-  :host {
-    --mdc-slider-track-active-color: transparent;
-    --mdc-slider-active-track-color: transparent;
-    --mdc-slider-handle-color: var(--text-primary);
-    --mdc-slider-focus-handle-color: var(--accent-color);
-    --mdc-slider-hover-handle-color: var(--text-primary);
+  .glass-btn .btn-text {
+      font-size: 0.85em;
+      font-weight: 500;
+      margin: 0 2px;
   }
 
-  /* Deep overrides to adjust slider appearance */
-  :host ::ng-deep {
-    /* Ensure thumb container stays centered */
-    .mat-mdc-slider-thumb-container,
-    .mdc-slider__thumb-container {
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-    }
-
-    /* Ensure track container is centered */
-    .mat-mdc-slider-track-container,
-    .mdc-slider__track-container {
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-    }
-
-    /* Hide the active (blue) track fill entirely */
-    .mat-mdc-slider-track-active,
-    .mdc-slider__track--active {
-      display: none !important;
-      background: none !important;
-      background-color: transparent !important;
-      box-shadow: none !important;
-    }
-
-    /* Thumb Styling */
-    .mdc-slider__thumb-knn {
-      background-color: var(--text-primary) !important;
-      border: 2px solid var(--glass-bg) !important;
-    }
+  .glass-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  .glass-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
   `],
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
-    MatSliderModule,
     MatIconModule,
     MatButtonModule
   ]
@@ -203,7 +254,8 @@ export class DaytimeTrackerComponent {
 
   currentHour: number = 12;
   readonly DAY_COLOR = '#FFD700';
-  readonly NIGHT_COLOR = '#0d1117'; // Updated to match CSS
+  readonly NIGHT_COLOR = '#1a2233'; // Slightly lighter than black for UI elements
+  readonly DAWN_DUSK_COLOR = '#ff8c00'; // Orange for transitions
 
   ngOnInit() {
     if (this.settings?.hour !== undefined) {
@@ -212,6 +264,8 @@ export class DaytimeTrackerComponent {
   }
 
   onTimeChange() {
+    // Ensure it's treated as a number
+    this.currentHour = Number(this.currentHour);
     if (this.settings) {
       this.settings.hour = this.currentHour;
       this.settingsChange.emit();
@@ -219,7 +273,7 @@ export class DaytimeTrackerComponent {
   }
 
   adjustTime(hours: number) {
-    let newHour = this.currentHour + hours;
+    let newHour = Number(this.currentHour) + hours;
     // Wrap around 24-hour cycle
     newHour = ((newHour % 24) + 24) % 24;
     this.currentHour = newHour;
@@ -230,25 +284,53 @@ export class DaytimeTrackerComponent {
     return `${this.currentHour.toString().padStart(2, '0')}:00`;
   }
 
+  isNight(): boolean {
+      return this.currentHour >= 20 || this.currentHour <= 5;
+  }
+
   getCurrentBackgroundColor(): string {
     const hour = this.currentHour;
 
-    if (hour >= 20 || hour < 5) {
+    if (hour >= 20 || hour <= 4) {
       return this.NIGHT_COLOR;
     }
-    if (hour >= 5 && hour < 8) {
-      const progress = (hour - 5) / 3;
+    if (hour >= 5 && hour <= 7) {
+      const progress = (hour - 5) / 2;
       return this.interpolateColor(this.NIGHT_COLOR, this.DAY_COLOR, progress);
     }
-    if (hour >= 8 && hour < 17) {
+    if (hour >= 8 && hour <= 17) {
       return this.DAY_COLOR;
     }
-    if (hour >= 17 && hour < 20) {
-      const progress = (hour - 17) / 3;
+    if (hour >= 18 && hour <= 19) {
+      const progress = (hour - 18) / 1; // 1 hr transition
       return this.interpolateColor(this.DAY_COLOR, this.NIGHT_COLOR, progress);
     }
 
     return this.DAY_COLOR;
+  }
+  
+  getGlow(): string {
+      const bg = this.getCurrentBackgroundColor();
+      return `0 0 15px ${bg}80`; // Add 50% opacity hex
+  }
+
+  getThumbColor(): string {
+      const hour = this.currentHour;
+      // Make the thumb moon-colored at night, sun-colored in day, orange at dusk/dawn
+      if (hour >= 20 || hour <= 4) return '#e6e6fa'; // Light lavender moon
+      if (hour >= 5 && hour <= 7) return this.DAWN_DUSK_COLOR;
+      if (hour >= 8 && hour <= 17) return '#ffffff'; // Blazing sun
+      if (hour >= 18 && hour <= 19) return this.DAWN_DUSK_COLOR;
+      return '#ffffff';
+  }
+
+  getThumbGlow(): string {
+      const hour = this.currentHour;
+      if (hour >= 20 || hour <= 4) return `0 0 12px rgba(230, 230, 250, 0.6)`;
+      if (hour >= 5 && hour <= 7) return `0 0 15px rgba(255, 140, 0, 0.8)`;
+      if (hour >= 8 && hour <= 17) return `0 0 20px rgba(255, 215, 0, 0.9)`;
+      if (hour >= 18 && hour <= 19) return `0 0 15px rgba(255, 140, 0, 0.8)`;
+      return 'none';
   }
 
   getTextColor(): string {
