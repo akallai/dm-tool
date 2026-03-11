@@ -18,6 +18,7 @@ export interface TableBlobData {
 export interface TableRef {
   tableId: string;
   tableName: string;
+  scope?: 'user' | 'shared';
 }
 
 @Injectable({
@@ -58,13 +59,21 @@ export class RandomTableStorageService {
   }
 
   async listTables(): Promise<TableMeta[]> {
-    const files = await firstValueFrom(this.media.listFiles('random-tables/'));
+    return this.listTablesWithScope('user');
+  }
+
+  async listSharedTables(): Promise<TableMeta[]> {
+    return this.listTablesWithScope('shared');
+  }
+
+  private async listTablesWithScope(scope: 'user' | 'shared'): Promise<TableMeta[]> {
+    const files = await firstValueFrom(this.media.listFiles('random-tables/', scope));
     const metaFiles = files.filter(f => f.name.endsWith('/meta.json'));
 
     const tables: TableMeta[] = [];
     for (const file of metaFiles) {
       try {
-        const blob = await firstValueFrom(this.media.downloadFile(file.name));
+        const blob = await firstValueFrom(this.media.downloadFile(file.name, scope));
         const text = await blob.text();
         const meta = JSON.parse(text) as { name: string; createdAt: number };
         const parts = file.name.split('/');
@@ -79,9 +88,9 @@ export class RandomTableStorageService {
     return tables;
   }
 
-  async loadTable(tableId: string): Promise<TableBlobData | null> {
+  async loadTable(tableId: string, scope?: 'user' | 'shared'): Promise<TableBlobData | null> {
     try {
-      const blob = await firstValueFrom(this.media.downloadFile(this.dataPath(tableId)));
+      const blob = await firstValueFrom(this.media.downloadFile(this.dataPath(tableId), scope));
       const text = await blob.text();
       return JSON.parse(text) as TableBlobData;
     } catch {

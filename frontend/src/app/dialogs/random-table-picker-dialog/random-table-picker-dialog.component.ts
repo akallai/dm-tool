@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -9,34 +10,63 @@ import { RandomTableStorageService, TableMeta, TableRef } from '../../services/r
 @Component({
   selector: 'app-random-table-picker-dialog',
   template: `
-    <h2 mat-dialog-title>My Table Collections</h2>
+    <h2 mat-dialog-title>Table Collections</h2>
     <mat-dialog-content class="dialog-content">
-      <div *ngIf="loading" class="loading-state">
-        <mat-spinner diameter="32"></mat-spinner>
-      </div>
-      <div *ngIf="!loading && tables.length === 0" class="empty-state">
-        No table collections found.
-      </div>
-      <div *ngIf="!loading && tables.length > 0" class="table-list">
-        <div *ngFor="let table of tables; let i = index" class="table-row" (click)="selectTable(table)">
-          <mat-icon class="table-icon">casino</mat-icon>
-          <span class="table-name">{{ table.name }}</span>
-          <ng-container *ngIf="deletingIndex !== i">
-            <button mat-icon-button color="warn" (click)="confirmDelete(i); $event.stopPropagation()">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </ng-container>
-          <ng-container *ngIf="deletingIndex === i">
-            <span class="delete-confirm">Delete?</span>
-            <button mat-icon-button color="warn" (click)="deleteTable(table, i); $event.stopPropagation()">
-              <mat-icon>check</mat-icon>
-            </button>
-            <button mat-icon-button (click)="cancelDelete(); $event.stopPropagation()">
-              <mat-icon>close</mat-icon>
-            </button>
-          </ng-container>
-        </div>
-      </div>
+      <mat-tab-group (selectedTabChange)="onTabChange()">
+        <!-- Shared Tables tab -->
+        <mat-tab label="Shared Tables">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <div *ngIf="sharedLoading" class="loading-state">
+                <mat-spinner diameter="32"></mat-spinner>
+              </div>
+              <div *ngIf="!sharedLoading && sharedTables.length === 0" class="empty-state">
+                No shared tables available.
+              </div>
+              <div *ngIf="!sharedLoading && sharedTables.length > 0" class="table-list">
+                <div *ngFor="let table of sharedTables" class="table-row" (click)="selectTable(table, 'shared')">
+                  <mat-icon class="table-icon">casino</mat-icon>
+                  <span class="table-name">{{ table.name }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+
+        <!-- My Tables tab -->
+        <mat-tab label="My Tables">
+          <ng-template matTabContent>
+            <div class="tab-content">
+              <div *ngIf="myLoading" class="loading-state">
+                <mat-spinner diameter="32"></mat-spinner>
+              </div>
+              <div *ngIf="!myLoading && tables.length === 0" class="empty-state">
+                No table collections found.
+              </div>
+              <div *ngIf="!myLoading && tables.length > 0" class="table-list">
+                <div *ngFor="let table of tables; let i = index" class="table-row" (click)="selectTable(table)">
+                  <mat-icon class="table-icon">casino</mat-icon>
+                  <span class="table-name">{{ table.name }}</span>
+                  <ng-container *ngIf="deletingIndex !== i">
+                    <button mat-icon-button color="warn" (click)="confirmDelete(i); $event.stopPropagation()">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </ng-container>
+                  <ng-container *ngIf="deletingIndex === i">
+                    <span class="delete-confirm">Delete?</span>
+                    <button mat-icon-button color="warn" (click)="deleteTable(table, i); $event.stopPropagation()">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="cancelDelete(); $event.stopPropagation()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">Cancel</button>
@@ -44,9 +74,12 @@ import { RandomTableStorageService, TableMeta, TableRef } from '../../services/r
   `,
   styles: [`
     .dialog-content {
-      min-width: 400px;
-      min-height: 200px;
+      min-width: 500px;
+      min-height: 400px;
       max-height: 70vh;
+    }
+    .tab-content {
+      padding: 16px 0;
     }
     .loading-state {
       display: flex;
@@ -96,6 +129,7 @@ import { RandomTableStorageService, TableMeta, TableRef } from '../../services/r
   imports: [
     CommonModule,
     MatDialogModule,
+    MatTabsModule,
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
@@ -103,7 +137,9 @@ import { RandomTableStorageService, TableMeta, TableRef } from '../../services/r
 })
 export class RandomTablePickerDialogComponent implements OnInit {
   tables: TableMeta[] = [];
-  loading = false;
+  sharedTables: TableMeta[] = [];
+  sharedLoading = false;
+  myLoading = false;
   deletingIndex = -1;
 
   constructor(
@@ -112,23 +148,40 @@ export class RandomTablePickerDialogComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadTables();
+    this.loadSharedTables();
+    this.loadMyTables();
   }
 
-  private async loadTables() {
-    this.loading = true;
+  private async loadSharedTables() {
+    this.sharedLoading = true;
+    try {
+      this.sharedTables = await this.tableStorage.listSharedTables();
+    } catch (err) {
+      console.error('Failed to load shared tables:', err);
+      this.sharedTables = [];
+    } finally {
+      this.sharedLoading = false;
+    }
+  }
+
+  private async loadMyTables() {
+    this.myLoading = true;
     try {
       this.tables = await this.tableStorage.listTables();
     } catch (err) {
       console.error('Failed to load table collections:', err);
       this.tables = [];
     } finally {
-      this.loading = false;
+      this.myLoading = false;
     }
   }
 
-  selectTable(table: TableMeta) {
-    const result: TableRef = { tableId: table.tableId, tableName: table.name };
+  onTabChange() {
+    this.deletingIndex = -1;
+  }
+
+  selectTable(table: TableMeta, scope?: 'shared') {
+    const result: TableRef = { tableId: table.tableId, tableName: table.name, scope };
     this.dialogRef.close(result);
   }
 

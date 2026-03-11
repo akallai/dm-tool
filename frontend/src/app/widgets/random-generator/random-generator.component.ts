@@ -35,6 +35,10 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
   tableDirty = false;
   loading = false;
 
+  get isSharedTable(): boolean {
+    return this.tableRef?.scope === 'shared';
+  }
+
   constructor(
     private tableStorage: RandomTableStorageService,
     private dialog: MatDialog,
@@ -51,7 +55,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
 
     if (this.settings.tableRef) {
       this.tableRef = this.settings.tableRef;
-      await this.loadTableFromBlob(this.tableRef!.tableId);
+      await this.loadTableFromBlob(this.tableRef!.tableId, this.tableRef!.scope);
     } else if (this.settings.mappings?.length > 0) {
       await this.migrateFromSettings();
     }
@@ -61,12 +65,14 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     if (changes['settings'] && this.tableLoaded) {
       this.mappings = this.settings?.mappings || [];
       this.applyCategoriesFromSettings();
-      this.tableDirty = true;
+      if (!this.isSharedTable) {
+        this.tableDirty = true;
+      }
     }
   }
 
   ngOnDestroy() {
-    if (this.tableRef && this.tableLoaded) {
+    if (this.tableRef && this.tableLoaded && !this.isSharedTable) {
       this.settings._unsavedMappings = this.mappings;
       this.settings._unsavedMappingCategories = this.settings.mappingCategories;
       this.settings._unsavedUseWeightedSelection = this.settings.useWeightedSelection;
@@ -74,7 +80,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private async loadTableFromBlob(tableId: string) {
+  private async loadTableFromBlob(tableId: string, scope?: 'user' | 'shared') {
     // Restore from in-memory cache (tab switch case)
     if (this.settings?._unsavedMappings) {
       this.settings.mappings = this.settings._unsavedMappings;
@@ -97,7 +103,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     this.cdr.markForCheck();
 
     try {
-      const data = await this.tableStorage.loadTable(tableId);
+      const data = await this.tableStorage.loadTable(tableId, scope);
       if (data) {
         this.settings.mappings = data.mappings || [];
         this.settings.mappingCategories = data.mappingCategories || [];
@@ -185,7 +191,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
 
   openExistingTable() {
     const dialogRef = this.dialog.open(RandomTablePickerDialogComponent, {
-      width: '500px',
+      width: '600px',
       maxHeight: '80vh',
     });
     dialogRef.afterClosed().subscribe(async (result: TableRef) => {
@@ -193,13 +199,13 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
         this.tableRef = result;
         this.settings.tableRef = result;
         this.settingsChange.emit();
-        await this.loadTableFromBlob(result.tableId);
+        await this.loadTableFromBlob(result.tableId, result.scope);
       }
     });
   }
 
   async saveTableToServer(): Promise<void> {
-    if (this.tableRef && this.tableLoaded) {
+    if (this.tableRef && this.tableLoaded && !this.isSharedTable) {
       const blobData: TableBlobData = {
         name: this.tableRef.tableName,
         mappings: this.settings.mappings || [],

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Shared random tables** — pre-built table collections available to all users via the table picker; shared tables are read-only (no editing, no settings gear, no unsaved-changes prompt)
 - **Click-to-foreground widgets** — clicking any widget brings it to the front; stacking order persists across reloads
 - **Daytime Tracker auto-progression** — play/pause button auto-advances in-game time at configurable speed (real seconds per in-game hour); tracks day count and weekday with support for custom weekday names (e.g. fantasy calendars); catches up elapsed time across tab switches and page reloads
 - **Legacy data migration script** — Python script to import wikis and random tables from old localStorage exports into the Azure-backed system; supports batch import, dry-run mode, and auto-detects connection string from `local.settings.json`

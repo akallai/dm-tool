@@ -95,6 +95,9 @@ export class WidgetContainerComponent implements AfterViewInit, OnDestroy {
   }
 
   get hasSettings(): boolean {
+    if (this.widgetData.type === 'RANDOM_GENERATOR' && this.widgetData.settings?.tableRef?.scope === 'shared') {
+      return false;
+    }
     return !!this.getWidgetSettingsConfig(this.widgetData.type);
   }
 
@@ -501,13 +504,15 @@ export class WidgetContainerComponent implements AfterViewInit, OnDestroy {
     if (this.wikiWidget) {
       await this.wikiWidget.saveWikiToServer();
     }
-    if (this.randomGeneratorWidget) {
+    if (this.randomGeneratorWidget && this.widgetData.settings?.tableRef?.scope !== 'shared') {
       await this.randomGeneratorWidget.saveTableToServer();
     }
   }
 
   hasUnsavedChanges(): boolean {
-    return (this.wikiWidget?.wikiDirty ?? false) || (this.randomGeneratorWidget?.tableDirty ?? false);
+    const randomDirty = this.randomGeneratorWidget?.tableDirty ?? false;
+    const isSharedRandom = this.widgetData.settings?.tableRef?.scope === 'shared';
+    return (this.wikiWidget?.wikiDirty ?? false) || (randomDirty && !isSharedRandom);
   }
 
   onSettingsChange() {

@@ -15,8 +15,12 @@
   </ng-container>
 
   <ng-container *ngIf="!loading && tableLoaded">
+    <div *ngIf="isSharedTable" class="shared-indicator">
+      <mat-icon>public</mat-icon>
+      <span>{{ tableRef?.tableName }}</span>
+    </div>
     <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
-      No lists yet. Add lists in Settings.
+      {{ isSharedTable ? 'This shared table has no lists.' : 'No lists yet. Add lists in Settings.' }}
     </div>
     <div *ngIf="mappings.length > 0" class="content-wrapper">
       <!-- Display categorized mappings -->
