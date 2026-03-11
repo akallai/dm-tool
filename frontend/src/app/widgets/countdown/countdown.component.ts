@@ -44,7 +44,7 @@ import { CountdownService } from './countdown.service';
       </div>
 
       <div class="label-input" *ngIf="!isRunning && totalSeconds === 0">
-        <mat-form-field appearance="outline" class="label-field">
+        <mat-form-field appearance="outline" floatLabel="always" class="label-field">
           <mat-label>Timer Label</mat-label>
           <input matInput [(ngModel)]="timerLabel" placeholder="e.g., Rest break">
         </mat-form-field>
