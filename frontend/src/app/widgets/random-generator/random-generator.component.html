@@ -58,7 +58,7 @@
           <div class="category-section" *ngIf="getFilteredMappingsByCategory(category).length > 0">
             <div class="category-header">{{ category }}</div>
             <div class="button-grid">
-              <button mat-raised-button
+              <button class="table-btn"
                       *ngFor="let mapping of getFilteredMappingsByCategory(category)"
                       (click)="randomize(mapping)"
                       [disabled]="!hasItems(mapping)">
@@ -71,7 +71,7 @@
         <!-- Display uncategorized mappings -->
         <div class="uncategorized-section" *ngIf="getFilteredUncategorizedMappings().length > 0">
           <div class="button-grid">
-            <button mat-raised-button
+            <button class="table-btn"
                     *ngFor="let mapping of getFilteredUncategorizedMappings()"
                     (click)="randomize(mapping)"
                     [disabled]="!hasItems(mapping)">

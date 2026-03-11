@@ -219,33 +219,75 @@
   font-style: italic;
 }
 
-/* Update buttons to match modern glass theme */
-::ng-deep .mat-mdc-outlined-button {
+.table-btn {
   width: 100%;
-  height: auto !important;
-  min-height: 40px !important;
-  line-height: 1.4 !important;
-  padding: 8px 16px !important;
-  white-space: normal !important;
+  min-height: 40px;
+  padding: 8px 16px;
+  white-space: normal;
+  line-height: 1.4;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: linear-gradient(
+    135deg,
+    rgba(64, 196, 255, 0.06) 0%,
+    rgba(64, 196, 255, 0.02) 100%
+  );
+  border: 1px solid rgba(64, 196, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 
-  /* Glass Button Style Overrides */
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  --mdc-outlined-button-label-text-color: var(--text-primary) !important;
-  --mdc-outlined-button-outline-color: rgba(255, 255, 255, 0.15) !important;
-  border-radius: 6px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    background: radial-gradient(
+      circle at center,
+      rgba(64, 196, 255, 0.15) 0%,
+      transparent 70%
+    );
+    transition: opacity 0.3s ease;
+  }
 
   &:hover:not([disabled]) {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: var(--accent-color) !important;
+    background: linear-gradient(
+      135deg,
+      rgba(64, 196, 255, 0.12) 0%,
+      rgba(64, 196, 255, 0.04) 100%
+    );
+    border-color: rgba(64, 196, 255, 0.4);
+    box-shadow:
+      0 0 12px rgba(64, 196, 255, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    --mdc-outlined-button-outline-color: var(--accent-color) !important;
+
+    &::before {
+      opacity: 1;
+    }
   }
 
   &:active:not([disabled]) {
     transform: translateY(0);
-    background: rgba(64, 196, 255, 0.1) !important;
+    background: linear-gradient(
+      135deg,
+      rgba(64, 196, 255, 0.18) 0%,
+      rgba(64, 196, 255, 0.08) 100%
+    );
+    border-color: rgba(64, 196, 255, 0.5);
+    box-shadow: 0 0 16px rgba(64, 196, 255, 0.15);
+  }
+
+  &[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
   }
 }
