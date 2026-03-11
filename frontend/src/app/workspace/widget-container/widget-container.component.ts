@@ -323,7 +323,7 @@ export class WidgetContainerComponent implements AfterViewInit, OnDestroy {
               label: 'Prompt',
               placeholder: 'Enter your prompt here',
               required: true,
-              defaultValue: 'You are an very experience DM. I\'m running a mutant year zero campaign. My current campaign notes include details about people, locations, scenes and more. I\'m looking for fresh ideas to enhance the story. Please help me the during my dm session, which I am currently holding, with questions where i might need inspiration or have other questions.'
+              defaultValue: 'You are an very experience DM. Right now I am running a campaign. Your job is to be helpful assistant to me as the DM.'
             }
           ]
         };
