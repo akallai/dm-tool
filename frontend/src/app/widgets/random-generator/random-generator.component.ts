@@ -297,16 +297,26 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
 
   private matchesFilter(mapping: RandomMapping): boolean {
     if (!this.filterText) return true;
-    return mapping.key.toLowerCase().includes(this.filterText.toLowerCase());
+    const filter = this.filterText.toLowerCase();
+    return mapping.key.toLowerCase().includes(filter)
+      || (!!mapping.category && mapping.category.toLowerCase().includes(filter));
+  }
+
+  private categoryMatchesFilter(category: string): boolean {
+    if (!this.filterText) return true;
+    return category.toLowerCase().includes(this.filterText.toLowerCase());
   }
 
   get filteredCategories(): string[] {
     return this.uniqueCategories.filter(cat =>
-      this.getFilteredMappingsByCategory(cat).length > 0
+      this.categoryMatchesFilter(cat) || this.getFilteredMappingsByCategory(cat).length > 0
     );
   }
 
   getFilteredMappingsByCategory(category: string): RandomMapping[] {
+    if (this.categoryMatchesFilter(category)) {
+      return this.getMappingsByCategory(category);
+    }
     return this.getMappingsByCategory(category).filter(m => this.matchesFilter(m));
   }
 
