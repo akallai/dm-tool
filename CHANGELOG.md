@@ -18,11 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **Random table widget layout overhaul** — result display pinned at top (always visible without scrolling); search filter appears when there are many tables for quick lookup; only the button area scrolls; table name and swap button always visible at the top for easy switching between tables
 - **Fixed background** — removed background selector from header; workspace now always uses a single cosmic background image
 - **Wiki toolbar** — compact grouped layout with smaller buttons; table editing tools now only appear when the cursor is inside a table
 - **LLM Chat model** — hardcoded model to `openai/gpt-oss-20b` with high reasoning effort, removed model selection from settings
 
 ### Fixed
+- **Random table result spacing** — fixed missing space between label and value in the result display (e.g. "Key:Value" → "Key: Value")
 - **Music widget My Files leak** — preset sounds added to music slots no longer appear in the "My Files" tab of the media browser
 - **Dialog z-index in fullscreen** — confirmation prompts and all dialogs now always appear above maximized widgets instead of opening behind them
 - **Music widget track removal** — removed unnecessary confirmation dialog when removing a track slot, since custom audio files are not deleted with the slot

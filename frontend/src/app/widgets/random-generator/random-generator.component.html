@@ -15,44 +15,76 @@
   </ng-container>
 
   <ng-container *ngIf="!loading && tableLoaded">
-    <div *ngIf="isSharedTable" class="shared-indicator">
-      <mat-icon>public</mat-icon>
-      <span>{{ tableRef?.tableName }}</span>
+    <div class="table-header">
+      <div class="table-name">
+        <mat-icon *ngIf="isSharedTable">public</mat-icon>
+        <span>{{ tableRef?.tableName }}</span>
+      </div>
+      <button class="switch-table-btn" (click)="switchTable()" title="Switch table">
+        <mat-icon>swap_horiz</mat-icon>
+      </button>
     </div>
     <div *ngIf="!mappings || mappings.length === 0" class="empty-message">
       {{ isSharedTable ? 'This shared table has no lists.' : 'No lists yet. Add lists in Settings.' }}
     </div>
-    <div *ngIf="mappings.length > 0" class="content-wrapper">
-      <!-- Display categorized mappings -->
-      <ng-container *ngFor="let category of uniqueCategories">
-        <div class="category-section">
-          <div class="category-header">{{ category }}</div>
+    <ng-container *ngIf="mappings.length > 0">
+      <!-- Result pinned at top -->
+      <div class="result" [class.has-result]="lastResult">
+        <ng-container *ngIf="lastResult">
+          <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
+        </ng-container>
+        <span *ngIf="!lastResult" class="result-placeholder">Roll a table to see the result</span>
+      </div>
+
+      <!-- Search filter (shown when many buttons) -->
+      <div class="filter-bar" *ngIf="mappings.length > 6">
+        <mat-icon class="filter-icon">search</mat-icon>
+        <input
+          type="text"
+          class="filter-input"
+          placeholder="Filter tables..."
+          [value]="filterText"
+          (input)="filterText = $any($event.target).value"
+        />
+        <button *ngIf="filterText" class="filter-clear" (click)="filterText = ''">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Scrollable button area -->
+      <div class="button-scroll-area">
+        <!-- Display categorized mappings -->
+        <ng-container *ngFor="let category of filteredCategories">
+          <div class="category-section" *ngIf="getFilteredMappingsByCategory(category).length > 0">
+            <div class="category-header">{{ category }}</div>
+            <div class="button-grid">
+              <button mat-raised-button
+                      *ngFor="let mapping of getFilteredMappingsByCategory(category)"
+                      (click)="randomize(mapping)"
+                      [disabled]="!hasItems(mapping)">
+                {{ mapping.key || 'No Key' }}
+              </button>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Display uncategorized mappings -->
+        <div class="uncategorized-section" *ngIf="getFilteredUncategorizedMappings().length > 0">
           <div class="button-grid">
             <button mat-raised-button
-                    *ngFor="let mapping of getMappingsByCategory(category)"
+                    *ngFor="let mapping of getFilteredUncategorizedMappings()"
                     (click)="randomize(mapping)"
                     [disabled]="!hasItems(mapping)">
               {{ mapping.key || 'No Key' }}
             </button>
           </div>
         </div>
-      </ng-container>
 
-      <!-- Display uncategorized mappings -->
-      <div class="uncategorized-section" *ngIf="getUncategorizedMappings().length > 0">
-        <div class="button-grid">
-          <button mat-raised-button
-                  *ngFor="let mapping of getUncategorizedMappings()"
-                  (click)="randomize(mapping)"
-                  [disabled]="!hasItems(mapping)">
-            {{ mapping.key || 'No Key' }}
-          </button>
+        <!-- No filter results -->
+        <div *ngIf="filterText && filteredMappingsCount === 0" class="no-filter-results">
+          No tables matching "{{ filterText }}"
         </div>
       </div>
-
-      <div *ngIf="lastResult" class="result">
-        <strong>{{ lastKey || 'Result' }}:</strong> {{ lastResult }}
-      </div>
-    </div>
+    </ng-container>
   </ng-container>
 </div>

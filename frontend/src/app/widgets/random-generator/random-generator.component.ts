@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RandomTableStorageService, TableRef, TableBlobData } from '../../services/random-table-storage.service';
 import { RandomTablePickerDialogComponent } from '../../dialogs/random-table-picker-dialog/random-table-picker-dialog.component';
 import { PromptDialogComponent } from '../../dialogs/prompt-dialog/prompt-dialog.component';
+import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 
 interface RandomMapping {
   key: string;
@@ -29,6 +30,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
   mappings: RandomMapping[] = [];
   lastResult: string = '';
   lastKey: string = '';
+  filterText: string = '';
 
   tableRef: TableRef | null = null;
   tableLoaded = false;
@@ -189,6 +191,47 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     });
   }
 
+  switchTable() {
+    if (this.tableDirty && !this.isSharedTable) {
+      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Unsaved Changes',
+          message: 'You have unsaved changes. What would you like to do?',
+          confirmText: 'Save & Switch',
+          secondaryText: 'Discard & Switch',
+          cancelText: 'Cancel',
+        },
+      });
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result === true) {
+          try {
+            await this.saveTableToServer();
+          } catch (error) {
+            console.error('Error saving table before switch:', error);
+            return;
+          }
+          this.openExistingTable();
+        } else if (result === 'secondary') {
+          this.tableDirty = false;
+          this.openExistingTable();
+        }
+        // Cancel: do nothing
+      });
+    } else {
+      this.openExistingTable();
+    }
+  }
+
+  private clearResultAndFilter() {
+    this.lastResult = '';
+    this.lastKey = '';
+    this.filterText = '';
+    delete this.settings.lastResult;
+    delete this.settings.lastKey;
+    this.settingsChange.emit();
+  }
+
   openExistingTable() {
     const dialogRef = this.dialog.open(RandomTablePickerDialogComponent, {
       width: '600px',
@@ -196,6 +239,7 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
     });
     dialogRef.afterClosed().subscribe(async (result: TableRef) => {
       if (result) {
+        this.clearResultAndFilter();
         this.tableRef = result;
         this.settings.tableRef = result;
         this.settingsChange.emit();
@@ -249,6 +293,29 @@ export class RandomGeneratorComponent implements OnInit, OnChanges, OnDestroy {
 
   getUncategorizedMappings(): RandomMapping[] {
     return this.mappings.filter(mapping => !mapping.category || mapping.category.trim() === '');
+  }
+
+  private matchesFilter(mapping: RandomMapping): boolean {
+    if (!this.filterText) return true;
+    return mapping.key.toLowerCase().includes(this.filterText.toLowerCase());
+  }
+
+  get filteredCategories(): string[] {
+    return this.uniqueCategories.filter(cat =>
+      this.getFilteredMappingsByCategory(cat).length > 0
+    );
+  }
+
+  getFilteredMappingsByCategory(category: string): RandomMapping[] {
+    return this.getMappingsByCategory(category).filter(m => this.matchesFilter(m));
+  }
+
+  getFilteredUncategorizedMappings(): RandomMapping[] {
+    return this.getUncategorizedMappings().filter(m => this.matchesFilter(m));
+  }
+
+  get filteredMappingsCount(): number {
+    return this.mappings.filter(m => this.matchesFilter(m)).length;
   }
 
   private parseItem(item: string): { text: string, weight: number } {

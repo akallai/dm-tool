@@ -8,6 +8,7 @@ export interface ConfirmDialogData {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  secondaryText?: string;
   warn?: boolean;
 }
 
@@ -20,6 +21,9 @@ export interface ConfirmDialogData {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button (click)="dialogRef.close()">{{ data.cancelText || 'Cancel' }}</button>
+      <button *ngIf="data.secondaryText" mat-button (click)="dialogRef.close('secondary')">
+        {{ data.secondaryText }}
+      </button>
       <button mat-flat-button [color]="data.warn ? 'warn' : 'primary'" (click)="dialogRef.close(true)">
         {{ data.confirmText || 'Confirm' }}
       </button>
