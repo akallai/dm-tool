@@ -46,6 +46,10 @@
       <mat-icon>refresh</mat-icon>
     </button>
 
+    <button class="toolbar-btn" (click)="toggleFullscreen()" [matTooltip]="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+      <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+    </button>
+
     <button class="toolbar-btn"
             [class.dirty]="isDirty"
             [class.saving]="isSaving"
