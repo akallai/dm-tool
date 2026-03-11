@@ -12,6 +12,7 @@ import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog
 import { WorkspaceService } from '../services/workspace.service';
 import { WorkspacePersistenceService, WorkspaceState } from '../services/workspace-persistence.service';
 import { MediaService } from '../services/media.service';
+import { FileCacheService } from '../services/file-cache.service';
 import { WikiStorageService, WikiBlobData } from '../services/wiki-storage.service';
 import { RandomTableStorageService, TableBlobData } from '../services/random-table-storage.service';
 import { firstValueFrom } from 'rxjs';
@@ -69,6 +70,7 @@ export class WorkspaceComponent implements OnInit {
     private persistence: WorkspacePersistenceService,
     private workspaceService: WorkspaceService,
     private media: MediaService,
+    private fileCache: FileCacheService,
     private wikiStorage: WikiStorageService,
     private tableStorage: RandomTableStorageService,
     private cdr: ChangeDetectorRef
@@ -185,6 +187,11 @@ export class WorkspaceComponent implements OnInit {
   }
 
   private async cleanupWidgetBlobs(widget: WidgetInstance) {
+    // Evict file cache for deleted IMAGE_PDF widgets
+    if (widget.type === 'IMAGE_PDF') {
+      this.fileCache.evict(this.fileCache.fileStorageKey(widget.id));
+    }
+
     try {
       const prefixes = [`files/${widget.id}/`, `audio/${widget.id}/`];
       for (const prefix of prefixes) {

@@ -10,6 +10,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FileStorageService } from '../../services/file-storage.service';
 import { MediaService } from '../../services/media.service';
+import { FileCacheService } from '../../services/file-cache.service';
 import { MediaBrowserDialogComponent, MediaBrowserResult } from '../../dialogs/media-browser-dialog/media-browser-dialog.component';
 import * as pdfjsLib from 'pdfjs-dist';
 import { TextItem } from 'pdfjs-dist/types/src/display/api';
@@ -457,6 +458,7 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     private sanitizer: DomSanitizer,
     private fileStorage: FileStorageService,
     private mediaService: MediaService,
+    private fileCache: FileCacheService,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef
   ) {}
@@ -475,20 +477,30 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
       try {
         const fileRef = this.settings?.fileRef as MediaBrowserResult | undefined;
         if (fileRef) {
-          // Restore from media browser reference
-          await this.loadFromMediaRef(fileRef);
+          // Check cache first for media ref files
+          const cacheKey = this.fileCache.mediaRefKey(fileRef.path, fileRef.scope);
+          const cached = this.fileCache.get(cacheKey);
+          if (cached) {
+            await this.displayBlob(cached.blob, cached.contentType);
+          } else {
+            await this.loadFromMediaRef(fileRef);
+          }
         } else {
-          // Fall back to blob storage (existing upload behavior)
-          const storedFile = await this.fileStorage.getFile(this.widgetId);
-          if (storedFile?.blob) {
-            this.isImage = storedFile.fileType?.startsWith('image/') || false;
-
-            if (this.isImage) {
-              this.fileUrl = URL.createObjectURL(storedFile.blob);
-            } else {
-              this.pdfData = await storedFile.blob.arrayBuffer();
-              this.fileUrl = 'pdf';
-              await this.loadPdf();
+          // Check cache first for file storage files
+          const cacheKey = this.fileCache.fileStorageKey(this.widgetId);
+          const cached = this.fileCache.get(cacheKey);
+          if (cached) {
+            await this.displayBlob(cached.blob, cached.contentType);
+          } else {
+            // Fall back to blob storage (existing upload behavior)
+            const storedFile = await this.fileStorage.getFile(this.widgetId);
+            if (storedFile?.blob) {
+              this.fileCache.set(cacheKey, {
+                blob: storedFile.blob,
+                fileName: this.settings?.fileName || '',
+                contentType: storedFile.fileType || '',
+              });
+              await this.displayBlob(storedFile.blob, storedFile.fileType || '');
             }
           }
         }
@@ -609,22 +621,38 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     this.zoomLevel = 1;
 
     try {
-      const blob = await this.mediaService.downloadFile(ref.path, ref.scope).toPromise();
-      if (!blob) throw new Error('Download returned empty');
+      // Check cache first
+      const cacheKey = this.fileCache.mediaRefKey(ref.path, ref.scope);
+      let blob = this.fileCache.get(cacheKey)?.blob;
 
-      this.isImage = ref.contentType.startsWith('image/');
-      if (this.isImage) {
-        this.fileUrl = URL.createObjectURL(blob);
-      } else {
-        this.pdfData = await blob.arrayBuffer();
-        this.fileUrl = 'pdf';
-        await this.loadPdf();
+      if (!blob) {
+        blob = await this.mediaService.downloadFile(ref.path, ref.scope).toPromise() ?? undefined;
+        if (!blob) throw new Error('Download returned empty');
+        // Cache the downloaded blob
+        this.fileCache.set(cacheKey, {
+          blob,
+          fileName: ref.fileName,
+          contentType: ref.contentType,
+        });
       }
+
+      await this.displayBlob(blob, ref.contentType);
     } catch (error) {
       console.error('Error loading media ref:', error);
     } finally {
       this.loading = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  private async displayBlob(blob: Blob, contentType: string): Promise<void> {
+    this.isImage = contentType.startsWith('image/');
+    if (this.isImage) {
+      this.fileUrl = URL.createObjectURL(blob);
+    } else {
+      this.pdfData = await blob.arrayBuffer();
+      this.fileUrl = 'pdf';
+      await this.loadPdf();
     }
   }
 
@@ -960,6 +988,15 @@ export class ImagePdfViewerComponent implements OnInit, OnDestroy, AfterViewInit
     if (this.pdfDoc) {
       this.pdfDoc.destroy();
       this.pdfDoc = null;
+    }
+
+    // Evict cache entries
+    if (this.widgetId) {
+      const fileRef = this.settings?.fileRef as MediaBrowserResult | undefined;
+      if (fileRef) {
+        this.fileCache.evict(this.fileCache.mediaRefKey(fileRef.path, fileRef.scope));
+      }
+      this.fileCache.evict(this.fileCache.fileStorageKey(this.widgetId));
     }
 
     this.fileUrl = null;

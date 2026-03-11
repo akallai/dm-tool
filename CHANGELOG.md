@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Media Browser multiselect** — Browse button in music widget settings now supports selecting multiple files at once to build playlists
 
 ### Changed
+- **IMAGE_PDF file caching** — IMAGE_PDF widgets no longer re-download files when switching workspace tabs
 - **Random table widget layout overhaul** — result display pinned at top (always visible without scrolling); search filter appears when there are many tables for quick lookup; only the button area scrolls; table name and swap button always visible at the top for easy switching between tables
 - **Fixed background** — removed background selector from header; workspace now always uses a single cosmic background image
 - **Wiki toolbar** — compact grouped layout with smaller buttons; table editing tools now only appear when the cursor is inside a table
